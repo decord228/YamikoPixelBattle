@@ -22,10 +22,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #game-root{position:fixed;inset:0;z-index:0;background:#09090b;}
 #canvas-wrap{position:absolute;inset:0;overflow:hidden;cursor:crosshair;}
 #main-canvas{image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0;will-change:transform;position:absolute;top:0;left:0;}
-#overlay-canvas{position:absolute;top:0;left:0;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0;will-change:transform;}
-#grid-canvas{position:absolute;top:0;left:0;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0;will-change:transform;opacity:.35;}
-/* Canvas shadow so white canvas is clearly visible on dark bg */
+#grid-overlay{position:absolute;top:0;left:0;pointer-events:none;transform-origin:0 0;will-change:transform;display:none;}
 #canvas-shadow{position:absolute;top:0;left:0;pointer-events:none;transform-origin:0 0;will-change:transform;box-shadow:0 0 0 1px rgba(255,255,255,0.15),0 8px 48px rgba(0,0,0,.8);}
+#overlay-canvas{position:fixed;inset:0;pointer-events:none;z-index:5;}
 
 /* ── GLASS PANEL ── */
 .panel{background:rgba(15,15,17,0.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--border2);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px var(--border),inset 0 1px 0 rgba(255,255,255,0.05);}
@@ -220,11 +219,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .broadcast-input{width:100%;padding:9px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;resize:none;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
 .broadcast-input:focus{border-color:var(--accent);}
 
-/* ── ADMIN TOOLS (fill rect / image) ── */
-.tool-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;}
-.tool-row label{font-size:10px;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
-.tool-row input[type=number]{width:60px;padding:7px 9px;border-radius:8px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;font-family:'Space Mono',monospace;outline:none;text-align:center;}
-.tool-row input[type=number]:focus{border-color:var(--accent);}
+/* ── ADMIN TOOLS ── */
 .admin-color-select{width:38px;height:38px;border-radius:8px;cursor:pointer;border:2px solid var(--border2);transition:.18s;}
 .admin-color-select.selected{border-color:#fff;transform:scale(1.15);}
 .admin-palette{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;}
@@ -232,6 +227,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #image-drop-zone:hover,#image-drop-zone.drag-over{border-color:var(--accent);background:rgba(99,102,241,.05);}
 #image-drop-zone p{font-size:12px;color:var(--text2);margin-top:6px;}
 #image-preview{width:100%;max-height:120px;object-fit:contain;border-radius:8px;display:none;margin-bottom:10px;}
+
+/* Admin Floating Bar */
+#admin-floating-bar {
+  position: fixed; bottom: 80px; left: 50%; transform: translateX(-50%);
+  z-index: 100; background: rgba(15,15,17,0.95); padding: 10px 14px;
+  border-radius: 12px; border: 1px solid var(--accent);
+  display: flex; gap: 10px; align-items: center;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  display: none;
+}
+#admin-floating-bar-title {
+  color: #fff; font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: 0.5px; margin-right: 10px; font-family: 'Space Mono', monospace;
+}
 
 /* ── CURSOR FLAGS (Figma style) ── */
 .cursor-flag{position:absolute;pointer-events:none;z-index:20;transition:left .1s linear,top .1s linear;}
@@ -269,11 +278,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .connecting-logo{font-family:'Unbounded',sans-serif;font-size:30px;font-weight:900;background:linear-gradient(135deg,#c7d2fe,#818cf8,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;}
 .connecting-sub{font-size:12px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
 
-/* ── FLOAT IN ── */
-@keyframes float-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
-@keyframes shimmer{0%,100%{opacity:.5;}50%{opacity:1;}}
-.loading-shimmer{animation:shimmer 1.5s ease-in-out infinite;}
-
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;}
 
@@ -299,7 +303,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 </head>
 <body>
 
-<!-- CONNECTING -->
 <div id="connecting-screen">
   <div class="connecting-logo">PIXEL<br>BATTLE</div>
   <div class="spinner"></div>
@@ -307,23 +310,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">made by <span style="color:#818cf8">d3cord</span></div>
 </div>
 
-<!-- CANVAS -->
 <div id="game-root">
   <div id="canvas-wrap">
     <div id="canvas-shadow"></div>
     <canvas id="main-canvas"></canvas>
-    <canvas id="overlay-canvas"></canvas>
-    <canvas id="grid-canvas"></canvas>
+    <div id="grid-overlay"></div>
     <div id="cursors-layer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
   </div>
 </div>
 
+<canvas id="overlay-canvas"></canvas>
+
 <div id="backdrop"></div>
 
-<!-- UI -->
 <div id="ui">
 
-  <!-- TOP BAR -->
   <div id="top-bar">
     <div id="logo">PIXEL BATTLE</div>
     <div class="top-divider"></div>
@@ -336,7 +337,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div id="made-by">made by <span>d3cord</span></div>
   </div>
 
-  <!-- SIDEBAR -->
   <div id="sidebar">
     <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')">✏️<span class="tip">Карандаш [E]</span></div>
     <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')">🔍<span class="tip">Пипетка</span></div>
@@ -351,7 +351,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="sidebar-btn" id="btn-admin" style="display:none" onclick="showPanel('admin-panel');loadAdminUsers()">🛡️<span class="tip">Админ</span></div>
   </div>
 
-  <!-- PALETTE PANEL -->
   <div id="palette-panel" class="panel" style="display:none;">
     <div id="color-name-bar">Белый</div>
     <div id="color-grid"></div>
@@ -363,7 +362,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     </div>
   </div>
 
-  <!-- BOTTOM BAR -->
   <div id="bottom-bar">
     <div class="bar-btn" onclick="togglePalette()" title="Палитра [P]">🎨</div>
     <div class="bar-divider"></div>
@@ -373,17 +371,18 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="bar-btn" onclick="zoomOut()">－</div>
   </div>
 
-  <!-- INSPECTOR -->
+  <div id="admin-floating-bar">
+    <div id="admin-floating-bar-title">Редактирование</div>
+    <button class="btn btn-secondary btn-sm" onclick="cancelAdminTool()">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="applyAdminTool()">Применить</button>
+  </div>
+
   <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
 
-  <!-- TOAST -->
   <div id="toast-wrap"></div>
 
 </div>
 
-<!-- ══ PANELS ══ -->
-
-<!-- AUTH -->
 <div id="auth-panel" class="overlay-panel panel show">
   <div class="auth-logo">
     <div class="auth-logo-text">PIXEL<br>BATTLE</div>
@@ -409,7 +408,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- PROFILE -->
 <div id="profile-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">👤 Профиль</div><div class="panel-close" onclick="hidePanel('profile-panel')">✕</div></div>
   <div class="panel-body">
@@ -441,13 +439,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- LEADERBOARD -->
 <div id="leaderboard-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">🏆 Лидерборд</div><div class="panel-close" onclick="hidePanel('leaderboard-panel')">✕</div></div>
   <div class="panel-body"><div id="lb-list"><div style="color:var(--text3);text-align:center;padding:20px;" class="loading-shimmer">Загрузка...</div></div></div>
 </div>
 
-<!-- SETTINGS -->
 <div id="settings-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">⚙️ Настройки</div><div class="panel-close" onclick="hidePanel('settings-panel')">✕</div></div>
   <div class="panel-body">
@@ -464,7 +460,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ADMIN -->
 <div id="admin-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">🛡️ Панель администратора</div><div class="panel-close" onclick="hidePanel('admin-panel')">✕</div></div>
   <div class="panel-body">
@@ -476,7 +471,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="admin-tab" onclick="switchAdminTab('stats')">Статистика</div>
     </div>
 
-    <!-- USERS -->
     <div id="admin-tab-users">
       <input class="search-box" id="admin-search" placeholder="🔍 Поиск..." oninput="filterAdminUsers()">
       <div id="admin-users-list"><div style="color:var(--text3);text-align:center;padding:20px;" class="loading-shimmer">Загрузка...</div></div>
@@ -487,7 +481,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       </div>
     </div>
 
-    <!-- CANVAS -->
     <div id="admin-tab-canvas" style="display:none">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
       <div class="resize-form">
@@ -507,24 +500,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <button class="btn btn-danger" onclick="adminClearCanvas()">🗑️ Очистить весь холст</button>
     </div>
 
-    <!-- TOOLS (admin-only: fill rect + image) -->
     <div id="admin-tab-tools" style="display:none">
-      <!-- Fill Rect -->
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Заливка прямоугольника</div>
-      <div class="tool-row">
-        <div><label>X</label><input type="number" id="fill-x" value="0" min="0"></div>
-        <div><label>Y</label><input type="number" id="fill-y" value="0" min="0"></div>
-        <div><label>W</label><input type="number" id="fill-w" value="10" min="1"></div>
-        <div><label>H</label><input type="number" id="fill-h" value="10" min="1"></div>
-      </div>
       <div style="font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Цвет заливки</div>
       <div class="admin-palette" id="admin-fill-palette"></div>
-      <button class="btn btn-primary" onclick="adminFillRect()" style="margin-bottom:6px">Залить прямоугольник</button>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:16px;">Также вы можете кликнуть на холсте для задания координат после нажатия кнопки ниже</div>
+      <button class="btn btn-primary" onclick="startAdminFill()" style="margin-bottom:6px">Выделить область на холсте</button>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:16px;">Нажмите кнопку, после чего выделите зону прямо на холсте для заливки.</div>
 
       <div class="section-sep"></div>
 
-      <!-- Image Placer -->
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → пиксели)</div>
       <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()">
         <div style="font-size:28px">🖼️</div>
@@ -532,16 +516,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       </div>
       <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
       <img id="image-preview" alt="Preview">
-      <div class="tool-row" style="margin-bottom:10px;">
-        <div><label>X позиция</label><input type="number" id="img-x" value="0" min="0"></div>
-        <div><label>Y позиция</label><input type="number" id="img-y" value="0" min="0"></div>
-        <div><label>Масштаб %</label><input type="number" id="img-scale" value="100" min="1" max="400"></div>
-      </div>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:10px;">Картинка будет квантизирована до палитры и загружена на холст для всех игроков</div>
-      <button class="btn btn-primary" id="btn-place-image" onclick="adminPlaceImage()" disabled>🚀 Разместить на холсте</button>
+      
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px;">После нажатия на кнопку вы сможете изменить размер и расположение картинки по сетке.</div>
+      <button class="btn btn-primary" id="btn-place-image" onclick="startAdminImage()" disabled>🚀 Разместить на холсте</button>
     </div>
 
-    <!-- BROADCAST -->
     <div id="admin-tab-broadcast" style="display:none">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
       <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
@@ -553,7 +532,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <button class="btn btn-secondary" onclick="adminSendDM()">Отправить</button>
     </div>
 
-    <!-- STATS -->
     <div id="admin-tab-stats" style="display:none">
       <div class="admin-stats-grid">
         <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
@@ -618,47 +596,66 @@ let selectedEmoji = '👾';
 let isReconnecting = false;
 let serverCursorsEnabled = false;
 let adminFillColorIdx = 0;
-let adminImagePixels = null;
+
+// Admin Tools State
+let isDraggingTool = false;
+let adminFillStart = null, adminFillEnd = null;
+let adminImageData = null;
+let adminImgObj = null;
+let adminImgRect = {x: 0, y: 0, w: 0, h: 0};
+let adminActiveHandle = null;
+let adminDragOffset = {x:0, y:0};
 
 const wsUrl = localStorage.getItem('wsUrl') || 'wss://yamikopixelbattleserver.onrender.com';
 
 // ── CANVAS SETUP ──
 const mainCanvas = document.getElementById('main-canvas');
 const overlayCanvas = document.getElementById('overlay-canvas');
-const gridCanvas = document.getElementById('grid-canvas');
 const shadowDiv = document.getElementById('canvas-shadow');
 const mctx = mainCanvas.getContext('2d');
 const octx = overlayCanvas.getContext('2d');
-const gctx = gridCanvas.getContext('2d');
 
 function initCanvases() {
   mainCanvas.width = canvasW; mainCanvas.height = canvasH;
-  overlayCanvas.width = canvasW; overlayCanvas.height = canvasH;
-  gridCanvas.width = canvasW; gridCanvas.height = canvasH;
-  // White background so canvas is visible
+  resizeOverlay();
   mctx.fillStyle = '#ffffff';
   mctx.fillRect(0, 0, canvasW, canvasH);
   applyTransform();
 }
 
+function resizeOverlay() {
+  overlayCanvas.width = window.innerWidth;
+  overlayCanvas.height = window.innerHeight;
+  renderOverlay();
+}
+
 function applyTransform() {
   const t = `translate(${camX}px,${camY}px) scale(${camZoom})`;
   mainCanvas.style.transform = t;
-  overlayCanvas.style.transform = t;
-  gridCanvas.style.transform = t;
-  // Shadow div mirrors canvas position/size
   shadowDiv.style.transform = t;
   shadowDiv.style.width = canvasW + 'px';
   shadowDiv.style.height = canvasH + 'px';
+  
+  const gridOverlay = document.getElementById('grid-overlay');
+  if (gridEnabled && camZoom >= gridZoom) {
+      gridOverlay.style.display = 'block';
+      gridOverlay.style.transform = `translate(${camX}px,${camY}px)`;
+      gridOverlay.style.width = (canvasW * camZoom) + 'px';
+      gridOverlay.style.height = (canvasH * camZoom) + 'px';
+      gridOverlay.style.backgroundSize = `${camZoom}px ${camZoom}px`;
+      gridOverlay.style.backgroundImage = `
+          linear-gradient(to right, rgba(0,0,0,0.15) 1px, transparent 1px),
+          linear-gradient(to bottom, rgba(0,0,0,0.15) 1px, transparent 1px)
+      `;
+  } else {
+      gridOverlay.style.display = 'none';
+  }
+  
+  renderOverlay();
 }
 
 function renderGrid() {
-  gctx.clearRect(0,0,canvasW,canvasH);
-  if (!gridEnabled || camZoom < gridZoom) return;
-  gctx.strokeStyle = 'rgba(0,0,0,0.2)';
-  gctx.lineWidth = 0.5/camZoom;
-  for (let x=0;x<=canvasW;x++) {gctx.beginPath();gctx.moveTo(x,0);gctx.lineTo(x,canvasH);gctx.stroke();}
-  for (let y=0;y<=canvasH;y++) {gctx.beginPath();gctx.moveTo(0,y);gctx.lineTo(canvasW,y);gctx.stroke();}
+  applyTransform();
 }
 
 function renderPixel(x,y,colorIdx) {
@@ -683,17 +680,74 @@ function fullRender(data) {
 }
 
 function renderOverlay() {
-  octx.clearRect(0,0,canvasW,canvasH);
-  // Highlight hovered pixel
-  if (hoveredPixel.x >= 0 && hoveredPixel.y >= 0 && hoveredPixel.x < canvasW && hoveredPixel.y < canvasH) {
-    const cidx = canvasData[hoveredPixel.y * canvasW + hoveredPixel.x];
-    const col = PALETTE[cidx] || PALETTE[0];
-    // Complementary overlay
-    octx.fillStyle = 'rgba(255,255,255,0.35)';
-    octx.fillRect(hoveredPixel.x, hoveredPixel.y, 1, 1);
-    octx.strokeStyle = 'rgba(0,0,0,0.5)';
-    octx.lineWidth = 0.1;
-    octx.strokeRect(hoveredPixel.x+0.05, hoveredPixel.y+0.05, 0.9, 0.9);
+  octx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  
+  // Admin Tool: Fill
+  if (tool === 'admin_fill' && adminFillStart && adminFillEnd) {
+      let cx = Math.min(adminFillStart.x, adminFillEnd.x);
+      let cy = Math.min(adminFillStart.y, adminFillEnd.y);
+      let cw = Math.abs(adminFillStart.x - adminFillEnd.x) + 1;
+      let ch = Math.abs(adminFillStart.y - adminFillEnd.y) + 1;
+
+      let sx = cx * camZoom + camX;
+      let sy = cy * camZoom + camY;
+      let sw = cw * camZoom;
+      let sh = ch * camZoom;
+
+      octx.fillStyle = PALETTE[adminFillColorIdx].c + '90';
+      octx.fillRect(sx, sy, sw, sh);
+
+      octx.strokeStyle = '#ffffff';
+      octx.lineWidth = 2;
+      octx.setLineDash([8, 4]);
+      octx.strokeRect(sx, sy, sw, sh);
+      octx.setLineDash([]);
+  }
+
+  // Admin Tool: Image
+  if (tool === 'admin_image' && adminImgObj) {
+      let ir = adminImgRect;
+      let sx = ir.x * camZoom + camX;
+      let sy = ir.y * camZoom + camY;
+      let sw = ir.w * camZoom;
+      let sh = ir.h * camZoom;
+
+      octx.globalAlpha = 0.85;
+      octx.imageSmoothingEnabled = false;
+      octx.drawImage(adminImgObj, sx, sy, sw, sh);
+      octx.globalAlpha = 1.0;
+
+      octx.strokeStyle = '#6366f1'; 
+      octx.lineWidth = 2;
+      octx.strokeRect(sx, sy, sw, sh);
+
+      octx.fillStyle = '#ffffff';
+      octx.strokeStyle = '#6366f1';
+      octx.lineWidth = 2.5;
+
+      const drawCircle = (cx, cy) => {
+          octx.beginPath();
+          octx.arc(cx, cy, 7, 0, Math.PI * 2);
+          octx.fill();
+          octx.stroke();
+      };
+      drawCircle(sx, sy);               
+      drawCircle(sx + sw, sy);          
+      drawCircle(sx, sy + sh);          
+      drawCircle(sx + sw, sy + sh);     
+  }
+
+  // Regular Hover highlight
+  if (tool === 'pencil' || tool === 'eyedrop') {
+      if (hoveredPixel.x >= 0 && hoveredPixel.x < canvasW && hoveredPixel.y >= 0 && hoveredPixel.y < canvasH) {
+          let sx = hoveredPixel.x * camZoom + camX;
+          let sy = hoveredPixel.y * camZoom + camY;
+          octx.fillStyle = 'rgba(255,255,255,0.35)';
+          octx.fillRect(sx, sy, camZoom, camZoom);
+          octx.strokeStyle = 'rgba(0,0,0,0.5)';
+          octx.lineWidth = 1;
+          octx.strokeRect(sx, sy, camZoom, camZoom);
+      }
   }
 }
 
@@ -703,7 +757,6 @@ const cursorEls = {};
 
 function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
   if (!showCursors || !serverCursorsEnabled) return;
-  // Screen position
   const sx = canvasX * camZoom + camX;
   const sy = canvasY * camZoom + camY;
   const col = PALETTE[colorIdx] || PALETTE[0];
@@ -727,7 +780,6 @@ function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
   const c = cursorEls[username];
   c.el.style.left = sx + 'px';
   c.el.style.top = sy + 'px';
-  // Update color if changed
   const arrow = c.el.querySelector('path');
   if (arrow) arrow.setAttribute('fill', color);
   const nameEl = c.el.querySelector('.cursor-flag-body span:last-child');
@@ -759,7 +811,7 @@ function centerCamera() {
   camZoom = Math.max(camZoom, 1);
   camX = vw/2 - canvasW*camZoom/2;
   camY = vh/2 - canvasH*camZoom/2;
-  applyTransform(); renderGrid();
+  applyTransform(); 
 }
 
 function resetCamera() { centerCamera(); showToast('Камера сброшена','info'); }
@@ -771,8 +823,8 @@ function applyZoom(nz, cx, cy) {
   camX = cx - (cx-camX)*(nz/camZoom);
   camY = cy - (cy-camY)*(nz/camZoom);
   camZoom = nz;
-  applyTransform(); renderGrid();
-  updateAllCursorFlags(); // reposition cursor flags
+  applyTransform(); 
+  updateAllCursorFlags(); 
 }
 
 function resizeCanvas(w, h) {
@@ -865,7 +917,7 @@ function handleJSON(d) {
     if (d.settings) applyServerSettings(d.settings);
     onAuthSuccess(d);
   } else if (a==='toast') {
-    showToast(d.message||'Уведомление','info');
+    showToast(d.message||'Уведомление', d.message.includes('ошибка') ? 'error' : 'info');
   } else if (a==='leaderboard_data') {
     renderLeaderboard(d.data||[]);
   } else if (a==='admin_users_list') {
@@ -876,7 +928,6 @@ function handleJSON(d) {
     document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
   } else if (a==='resize') {
     resizeCanvas(d.w, d.h||canvasH);
-    // Re-auth to get fresh canvas
     sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});
   } else if (a==='cursor') {
     otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾'};
@@ -892,7 +943,6 @@ function applyServerSettings(s) {
   if (!s) return;
   serverCursorsEnabled = !!s.cursorTrackingEnabled;
   if (s.cooldownMs) cooldownTime = s.cooldownMs / 1000;
-  // Update admin toggle
   const atog = document.getElementById('admin-toggle-cursors');
   if (atog) atog.classList.toggle('on', serverCursorsEnabled);
   if (!serverCursorsEnabled) clearCursorFlags();
@@ -924,7 +974,7 @@ function onAuthSuccess(d) {
   updateProfileStats(currentPixels, currentRank);
   document.getElementById('btn-admin').style.display=isAdmin?'flex':'none';
   if (isAdmin) { loadAdminUsers(); buildAdminFillPalette(); }
-  showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'info');
+  showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'success');
   loadAvatarFromStorage();
   drawAvatarCanvas(selectedEmoji);
   saveSession(sessionFile.username, sessionFile.password);
@@ -956,12 +1006,11 @@ function changePassword() {
   if (np.length<4) {showToast('Пароль слишком короткий','error');return;}
   sessionFile.password=np;
   saveSession(sessionFile.username,np);
-  showToast('Пароль сохранён','info');
+  showToast('Пароль сохранён','success');
   document.getElementById('new-pass').value='';
   document.getElementById('new-pass-confirm').value='';
 }
 
-// ── SESSION ──
 function saveSession(u,p){try{localStorage.setItem('pb_session',JSON.stringify({username:u,password:p}));}catch(_){}}
 function loadSession(){try{const s=localStorage.getItem('pb_session');return s?JSON.parse(s):null;}catch(_){return null;}}
 function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
@@ -1091,7 +1140,6 @@ function spawnPixelFlash(x,y) {
   el.style.cssText=`left:${screen.x}px;top:${screen.y}px;background:${PALETTE[selectedColor]?.c||'#fff'};`;
   document.getElementById('game-root').appendChild(el);
   setTimeout(()=>el.remove(),450);
-  // Sparkles
   for (let i=0;i<3;i++) {
     const sp=document.createElement('div');
     sp.className='sparkle';
@@ -1104,8 +1152,8 @@ function spawnPixelFlash(x,y) {
 
 function canvasToScreen(cx,cy){return{x:cx*camZoom+camX,y:cy*camZoom+camY};}
 function screenToCanvas(sx,sy){return{x:(sx-camX)/camZoom,y:(sy-camY)/camZoom};}
+function getCanvasPos(sx,sy){return{x:(sx-camX)/camZoom,y:(sy-camY)/camZoom};}
 
-// ── EYEDROPPER ──
 function eyedrop(x,y) {
   if (x<0||y<0||x>=canvasW||y>=canvasH) return;
   selectColor(canvasData[y*canvasW+x]);
@@ -1113,18 +1161,106 @@ function eyedrop(x,y) {
   setTool('pencil');
 }
 
-// ── INPUT ──
+// ── INPUT (Admin Tools Handlers) ──
+function handleToolInteractionStart(clientX, clientY) {
+    if (tool === 'admin_fill') {
+        const p = getCanvasPos(clientX, clientY);
+        isDraggingTool = true;
+        adminActiveHandle = 'fill';
+        adminFillStart = {x: Math.floor(p.x), y: Math.floor(p.y)};
+        adminFillEnd = {x: Math.floor(p.x), y: Math.floor(p.y)};
+        renderOverlay();
+        return true;
+    } else if (tool === 'admin_image' && adminImgObj) {
+        let ir = adminImgRect;
+        let sx = ir.x * camZoom + camX;
+        let sy = ir.y * camZoom + camY;
+        let sw = ir.w * camZoom;
+        let sh = ir.h * camZoom;
+
+        const dist = (x1, y1) => Math.hypot(clientX - x1, clientY - y1);
+        const HIT_RADIUS = 15; 
+
+        if (dist(sx, sy) <= HIT_RADIUS) adminActiveHandle = 'tl';
+        else if (dist(sx + sw, sy) <= HIT_RADIUS) adminActiveHandle = 'tr';
+        else if (dist(sx, sy + sh) <= HIT_RADIUS) adminActiveHandle = 'bl';
+        else if (dist(sx + sw, sy + sh) <= HIT_RADIUS) adminActiveHandle = 'br';
+        else if (clientX >= sx && clientX <= sx + sw && clientY >= sy && clientY <= sy + sh) {
+            adminActiveHandle = 'move';
+            adminDragOffset = { x: (clientX - sx)/camZoom, y: (clientY - sy)/camZoom };
+        } else {
+            return false;
+        }
+        isDraggingTool = true;
+        return true;
+    }
+    return false;
+}
+
+function handleToolInteractionMove(clientX, clientY) {
+    if (tool === 'admin_fill' && adminActiveHandle === 'fill') {
+        const p = getCanvasPos(clientX, clientY);
+        adminFillEnd = {x: Math.floor(p.x), y: Math.floor(p.y)};
+        renderOverlay();
+        return true;
+    }
+    if (tool === 'admin_image' && adminActiveHandle) {
+        let ir = adminImgRect;
+        const p = getCanvasPos(clientX, clientY);
+        let px = p.x;
+        let py = p.y;
+
+        if (adminActiveHandle === 'move') {
+            ir.x = Math.round(px - adminDragOffset.x);
+            ir.y = Math.round(py - adminDragOffset.y);
+        } else if (adminActiveHandle === 'br') {
+            ir.w = Math.max(1, Math.round(px - ir.x));
+            ir.h = Math.max(1, Math.round(py - ir.y));
+        } else if (adminActiveHandle === 'tr') {
+            ir.w = Math.max(1, Math.round(px - ir.x));
+            let newY = Math.round(py);
+            ir.h = ir.y + ir.h - newY;
+            ir.y = newY;
+        } else if (adminActiveHandle === 'bl') {
+            ir.h = Math.max(1, Math.round(py - ir.y));
+            let newX = Math.round(px);
+            ir.w = ir.x + ir.w - newX;
+            ir.x = newX;
+        } else if (adminActiveHandle === 'tl') {
+            let newX = Math.round(px);
+            let newY = Math.round(py);
+            ir.w = ir.x + ir.w - newX;
+            ir.h = ir.y + ir.h - newY;
+            ir.x = newX;
+            ir.y = newY;
+        }
+        renderOverlay();
+        return true;
+    }
+    return false;
+}
+
 const wrap=document.getElementById('canvas-wrap');
-let lastTapTime=0;
 
 wrap.addEventListener('mousedown',e=>{
   if (e.button===1||e.button===2) {
     isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
     wrap.style.cursor='grabbing';e.preventDefault();
   } else if (e.button===0) {
+    if (tool === 'admin_fill' || tool === 'admin_image') {
+        if(!handleToolInteractionStart(e.clientX, e.clientY)) {
+            // Если кликнули мимо ползунков — даем возможность двигать камерой
+            isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
+            wrap.style.cursor='grabbing';
+        }
+        return;
+    }
+    
     const p=getCanvasPos(e.clientX,e.clientY);
+    let px=Math.floor(p.x), py=Math.floor(p.y);
+
     if (tool==='pencil') placePixel();
-    else if (tool==='eyedrop') eyedrop(Math.floor(p.x),Math.floor(p.y));
+    else if (tool==='eyedrop') eyedrop(px,py);
   }
 });
 
@@ -1135,6 +1271,12 @@ wrap.addEventListener('mousemove',e=>{
     applyTransform();
     return;
   }
+  
+  if (isDraggingTool && adminActiveHandle) {
+      handleToolInteractionMove(e.clientX, e.clientY);
+      return;
+  }
+
   const p=getCanvasPos(e.clientX,e.clientY);
   const px=Math.floor(p.x),py=Math.floor(p.y);
   if (px!==hoveredPixel.x||py!==hoveredPixel.y) {
@@ -1149,23 +1291,40 @@ wrap.addEventListener('mousemove',e=>{
   }
 });
 
-wrap.addEventListener('mouseup',e=>{if(e.button===1||e.button===2){isDragging=false;wrap.style.cursor='crosshair';}});
-wrap.addEventListener('wheel',e=>{e.preventDefault();applyZoom(camZoom*(e.deltaY<0?1.12:1/1.12),e.clientX,e.clientY);renderGrid();updateAllCursorFlags();},{passive:false});
+wrap.addEventListener('mouseup',e=>{
+  if(e.button===1||e.button===2 || (e.button===0 && isDragging)){
+      isDragging=false;wrap.style.cursor='crosshair';
+  }
+  isDraggingTool = false;
+  adminActiveHandle = null;
+});
+
+wrap.addEventListener('wheel',e=>{e.preventDefault();applyZoom(camZoom*(e.deltaY<0?1.12:1/1.12),e.clientX,e.clientY);},{passive:false});
 wrap.addEventListener('contextmenu',e=>e.preventDefault());
 wrap.addEventListener('mouseleave',()=>{hoveredPixel={x:-1,y:-1};renderOverlay();document.getElementById('inspector').style.display='none';updateCoordsBar(-1,-1);});
 
 // Touch
 let touches=[];
-let lastTouchTime=0;
 wrap.addEventListener('touchstart',e=>{
   e.preventDefault();
   touches=Array.from(e.touches);
-  if (touches.length===1) {isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};camStart={x:camX,y:camY};}
+  if (touches.length===1) {
+    if (tool === 'admin_fill' || tool === 'admin_image') {
+        if(handleToolInteractionStart(touches[0].clientX, touches[0].clientY)) return;
+    }
+    isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};camStart={x:camX,y:camY};
+  }
 },{passive:false});
 
 wrap.addEventListener('touchmove',e=>{
   e.preventDefault();
   const t=Array.from(e.touches);
+  
+  if (t.length===1 && isDraggingTool && adminActiveHandle) {
+      handleToolInteractionMove(t[0].clientX, t[0].clientY);
+      return;
+  }
+
   if (t.length===1&&isDragging) {
     camX=camStart.x+(t[0].clientX-dragStart.x);camY=camStart.y+(t[0].clientY-dragStart.y);applyTransform();
   } else if (t.length===2&&touches.length===2) {
@@ -1180,13 +1339,12 @@ wrap.addEventListener('touchmove',e=>{
 wrap.addEventListener('touchend',e=>{
   if (e.touches.length===0) {
     isDragging=false;
-    // Single tap = place pixel
+    isDraggingTool=false;
+    adminActiveHandle=null;
     if (e.changedTouches.length===1) {
-      const now=Date.now();
       const t=e.changedTouches[0];
-      // Check if moved significantly (drag vs tap)
       const dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;
-      if (Math.hypot(dx,dy)<10) {
+      if (Math.hypot(dx,dy)<10 && tool === 'pencil') {
         const p=getCanvasPos(t.clientX,t.clientY);
         hoveredPixel={x:Math.floor(p.x),y:Math.floor(p.y)};
         placePixel();
@@ -1195,8 +1353,6 @@ wrap.addEventListener('touchend',e=>{
   }
   touches=Array.from(e.touches);
 },{passive:false});
-
-function getCanvasPos(sx,sy){return{x:(sx-camX)/camZoom,y:(sy-camY)/camZoom};}
 
 function updateCoordsBar(x,y){document.getElementById('coords-badge').textContent=(x<0)?'— , —':`${x} , ${y}`;}
 
@@ -1220,7 +1376,7 @@ document.addEventListener('keydown',e=>{
   if (e.key==='e'||e.key==='E') setTool(tool==='pencil'?'eyedrop':'pencil');
   if (e.key==='g'||e.key==='G') toggleGrid();
   if (e.key==='p'||e.key==='P') togglePalette();
-  if (e.key==='Escape') hideAllPanels();
+  if (e.key==='Escape') { hideAllPanels(); cancelAdminTool(); }
   if (e.key==='+'||e.key==='=') zoomIn();
   if (e.key==='-') zoomOut();
   if (e.key===' ') {e.preventDefault();placePixel();}
@@ -1232,6 +1388,7 @@ function setTool(t) {
   document.getElementById('btn-tool-pencil').classList.toggle('active',t==='pencil');
   document.getElementById('btn-tool-eyedrop').classList.toggle('active',t==='eyedrop');
   wrap.style.cursor=t==='eyedrop'?'crosshair':'crosshair';
+  if(t !== 'admin_fill' && t !== 'admin_image') cancelAdminTool();
 }
 
 function toggleGrid() {
@@ -1360,7 +1517,7 @@ function adminSendDM() {
   const msg=document.getElementById('dm-msg').value.trim();
   if (!target||!msg) {showToast('Заполните поля','error');return;}
   sendJSON({action:'admin_cmd',cmd:'send_dm',target,params:msg});
-  showToast(`Отправлено ${target}`,'info');
+  showToast(`Отправлено ${target}`,'success');
 }
 
 function prefillDM(username) {
@@ -1379,7 +1536,7 @@ function loadAdminStats() {
   },600);
 }
 
-// ── ADMIN FILL RECT ──
+// ── ADMIN VISUAL TOOLS ──
 function buildAdminFillPalette() {
   const g=document.getElementById('admin-fill-palette'); if(!g)return;
   g.innerHTML='';
@@ -1396,16 +1553,16 @@ function buildAdminFillPalette() {
   });
 }
 
-function adminFillRect() {
-  const x=parseInt(document.getElementById('fill-x').value)||0;
-  const y=parseInt(document.getElementById('fill-y').value)||0;
-  const w=parseInt(document.getElementById('fill-w').value)||1;
-  const h=parseInt(document.getElementById('fill-h').value)||1;
-  sendJSON({action:'admin_cmd',cmd:'fill_rect',params:{x,y,w,h,colorIdx:adminFillColorIdx}});
+function startAdminFill() {
+    hidePanel('admin-panel');
+    tool = 'admin_fill';
+    adminFillStart = null; 
+    adminFillEnd = null;
+    document.getElementById('admin-floating-bar').style.display = 'flex';
+    document.getElementById('admin-floating-bar-title').textContent = 'ЗАЛИВКА (Выделите область)';
+    showToast('Выделите область на холсте', 'info');
+    renderOverlay();
 }
-
-// ── ADMIN IMAGE PLACER ──
-let adminImageData = null;
 
 function handleAdminImage(e) {
   const file=e.target.files[0];if(!file)return;
@@ -1417,17 +1574,16 @@ function handleAdminImage(e) {
       document.getElementById('image-preview').style.display='block';
       document.getElementById('btn-place-image').disabled=false;
       adminImageData=img;
-      showToast('Изображение загружено','info');
+      showToast('Изображение готово к размещению','success');
     };
     img.src=ev.target.result;
   };
   reader.readAsDataURL(file);
 }
 
-// Drag and drop for image zone
 const dropZone=document.getElementById('image-drop-zone');
 dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
-dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over');});
 dropZone.addEventListener('drop',e=>{
   e.preventDefault();dropZone.classList.remove('drag-over');
   const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
@@ -1436,62 +1592,104 @@ dropZone.addEventListener('drop',e=>{
   handleAdminImage({target:input});
 });
 
-function adminPlaceImage() {
-  if (!adminImageData) return;
-  const xOff=parseInt(document.getElementById('img-x').value)||0;
-  const yOff=parseInt(document.getElementById('img-y').value)||0;
-  const scale=parseInt(document.getElementById('img-scale').value)||100;
+function startAdminImage() {
+    if (!adminImageData) return;
+    hidePanel('admin-panel');
+    tool = 'admin_image';
+    adminImgObj = adminImageData;
 
-  const tmpCanvas=document.getElementById('admin-image-canvas');
-  const tW=Math.round(adminImageData.naturalWidth*scale/100);
-  const tH=Math.round(adminImageData.naturalHeight*scale/100);
-  tmpCanvas.width=tW;tmpCanvas.height=tH;
-  const tctx=tmpCanvas.getContext('2d');
-  tctx.drawImage(adminImageData,0,0,tW,tH);
-  const imgData=tctx.getImageData(0,0,tW,tH);
-  const pixels=[];
+    let centerCanvasX = Math.floor((window.innerWidth/2 - camX) / camZoom);
+    let centerCanvasY = Math.floor((window.innerHeight/2 - camY) / camZoom);
 
-  // Quantize each pixel to nearest palette color
-  for (let y=0;y<tH;y++) {
-    for (let x=0;x<tW;x++) {
-      const idx=(y*tW+x)*4;
-      const r=imgData.data[idx],g=imgData.data[idx+1],b=imgData.data[idx+2],a=imgData.data[idx+3];
-      if (a<128) continue; // Skip transparent
-      let bestIdx=0,bestDist=Infinity;
-      PALETTE.forEach((p,pi)=>{
-        const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb=parseInt(p.c.slice(5,7),16);
-        const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
-        if (dist<bestDist) {bestDist=dist;bestIdx=pi;}
-      });
-      const cx=x+xOff,cy=y+yOff;
-      if (cx>=0&&cx<canvasW&&cy>=0&&cy<canvasH) pixels.push({x:cx,y:cy,c:bestIdx});
-    }
-  }
+    let w = Math.min(adminImgObj.naturalWidth, Math.floor(canvasW / 2));
+    w = Math.max(10, w); 
+    let h = Math.floor(w * (adminImgObj.naturalHeight / adminImgObj.naturalWidth));
 
-  if (pixels.length===0) {showToast('Нет пикселей для размещения','error');return;}
-  showToast(`Размещаю ${pixels.length} пикселей...`,'info');
+    adminImgRect = {
+        x: centerCanvasX - Math.floor(w/2),
+        y: centerCanvasY - Math.floor(h/2),
+        w: w, h: h
+    };
 
-  // Send in chunks to avoid huge messages
-  const CHUNK=2000;
-  for (let i=0;i<pixels.length;i+=CHUNK) {
-    const chunk=pixels.slice(i,i+CHUNK);
-    setTimeout(()=>sendJSON({action:'admin_cmd',cmd:'place_image',params:{pixels:chunk}}),(i/CHUNK)*100);
-  }
+    document.getElementById('admin-floating-bar').style.display = 'flex';
+    document.getElementById('admin-floating-bar-title').textContent = 'РАЗМЕЩЕНИЕ КАРТИНКИ';
+    showToast('Измените размер и нажмите "Применить"', 'info');
+    renderOverlay();
 }
 
-// ── TOAST ──
-function showToast(msg, type='info') {
-  const wrap=document.getElementById('toast-wrap');
-  const t=document.createElement('div');
-  t.className=`toast toast-${type}`;
-  t.textContent=msg;
-  wrap.appendChild(t);
-  setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),350);},3000);
+function cancelAdminTool() {
+    if (document.getElementById('admin-floating-bar').style.display === 'none') return;
+    tool = 'pencil';
+    document.getElementById('admin-floating-bar').style.display = 'none';
+    adminFillStart = null; 
+    adminFillEnd = null;
+    adminImgObj = null;
+    renderOverlay();
+}
+
+function applyAdminTool() {
+    if (tool === 'admin_fill') {
+        if (adminFillStart && adminFillEnd) {
+            let x = Math.min(adminFillStart.x, adminFillEnd.x);
+            let y = Math.min(adminFillStart.y, adminFillEnd.y);
+            let w = Math.abs(adminFillStart.x - adminFillEnd.x) + 1;
+            let h = Math.abs(adminFillStart.y - adminFillEnd.y) + 1;
+            sendJSON({action:'admin_cmd', cmd:'fill_rect', params:{x,y,w,h,colorIdx:adminFillColorIdx}});
+        } else {
+            showToast('Область не выделена', 'error');
+            return;
+        }
+    } else if (tool === 'admin_image') {
+        if (adminImgObj && adminImgRect.w > 0 && adminImgRect.h > 0) {
+            const tmpCanvas = document.getElementById('admin-image-canvas');
+            tmpCanvas.width = adminImgRect.w;
+            tmpCanvas.height = adminImgRect.h;
+            const tctx = tmpCanvas.getContext('2d');
+            tctx.imageSmoothingEnabled = false;
+            tctx.drawImage(adminImgObj, 0, 0, adminImgRect.w, adminImgRect.h);
+            const imgData = tctx.getImageData(0,0,adminImgRect.w,adminImgRect.h);
+            const pixels = [];
+
+            for (let y=0;y<adminImgRect.h;y++) {
+                for (let x=0;x<adminImgRect.w;x++) {
+                    const idx = (y*adminImgRect.w+x)*4;
+                    const r=imgData.data[idx], g=imgData.data[idx+1], b=imgData.data[idx+2], a=imgData.data[idx+3];
+                    if (a < 50) continue; 
+                    let bestIdx=0, bestDist=Infinity;
+                    PALETTE.forEach((p,pi)=>{
+                        const pr=parseInt(p.c.slice(1,3),16), pg=parseInt(p.c.slice(3,5),16), pb=parseInt(p.c.slice(5,7),16);
+                        const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
+                        if (dist<bestDist) {bestDist=dist; bestIdx=pi;}
+                    });
+                    const cx = x + adminImgRect.x, cy = y + adminImgRect.y;
+                    if (cx>=0 && cx<canvasW && cy>=0 && cy<canvasH) pixels.push({x:cx,y:cy,c:bestIdx});
+                }
+            }
+            if (pixels.length===0) {showToast('Нет пикселей для размещения','error'); return;}
+            showToast(`Размещаю ${pixels.length} пикселей...`,'info');
+            
+            // Надежная асинхронная отправка пакетов
+            const CHUNK = 2000;
+            let pIndex = 0;
+            const sendNextChunk = () => {
+                if (pIndex >= pixels.length) {
+                    showToast('Картинка успешно размещена!', 'success');
+                    return;
+                }
+                const chunk = pixels.slice(pIndex, pIndex + CHUNK);
+                sendJSON({action:'admin_cmd', cmd:'place_image', params:{pixels:chunk}});
+                pIndex += CHUNK;
+                setTimeout(sendNextChunk, 80); 
+            };
+            sendNextChunk();
+        }
+    }
+    cancelAdminTool();
 }
 
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 
-window.addEventListener('resize',()=>{applyTransform();renderGrid();updateAllCursorFlags();});
+window.addEventListener('resize',()=>{applyTransform();resizeOverlay();updateAllCursorFlags();});
 
 // ── INIT ──
 function init() {

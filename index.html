@@ -1583,7 +1583,7 @@ function handleAdminImage(e) {
 
 const dropZone=document.getElementById('image-drop-zone');
 dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
-dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
 dropZone.addEventListener('drop',e=>{
   e.preventDefault();dropZone.classList.remove('drag-over');
   const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;

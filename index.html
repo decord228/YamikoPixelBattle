@@ -1,220 +1,1515 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		<meta charset="utf-8">
-		<meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0">
-		<title>yamiko_pixel_battle</title>
-		<style>
-html, body, #canvas {
-	margin: 0;
-	padding: 0;
-	border: 0;
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pixel Battle · d3cord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#09090b;--bg2:#0f0f11;--surface:#141416;--surface2:#1c1c20;--surface3:#242428;
+  --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);
+  --accent:#6366f1;--accent2:#818cf8;--accent-glow:rgba(99,102,241,0.3);
+  --red:#ef4444;--green:#22c55e;--yellow:#eab308;--orange:#f97316;
+  --text:#f4f4f5;--text2:#a1a1aa;--text3:#52525b;
+  --radius:16px;--radius-sm:10px;--radius-pill:999px;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+
+/* ── CANVAS ── */
+#game-root{position:fixed;inset:0;z-index:0;background:#09090b;}
+#canvas-wrap{position:absolute;inset:0;overflow:hidden;cursor:crosshair;}
+#main-canvas{image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0;will-change:transform;position:absolute;top:0;left:0;}
+#overlay-canvas{position:absolute;top:0;left:0;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0;will-change:transform;}
+#grid-canvas{position:absolute;top:0;left:0;pointer-events:none;image-rendering:pixelated;image-rendering:crisp-edges;transform-origin:0 0;will-change:transform;opacity:.35;}
+/* Canvas shadow so white canvas is clearly visible on dark bg */
+#canvas-shadow{position:absolute;top:0;left:0;pointer-events:none;transform-origin:0 0;will-change:transform;box-shadow:0 0 0 1px rgba(255,255,255,0.15),0 8px 48px rgba(0,0,0,.8);}
+
+/* ── GLASS PANEL ── */
+.panel{background:rgba(15,15,17,0.88);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border:1px solid var(--border2);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.6),0 0 0 1px var(--border),inset 0 1px 0 rgba(255,255,255,0.05);}
+
+/* ── UI LAYER ── */
+#ui{position:fixed;inset:0;z-index:10;pointer-events:none;}
+#ui>*{pointer-events:auto;}
+
+/* ── TOP BAR ── */
+#top-bar{position:absolute;top:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:10px;padding:9px 16px;background:rgba(15,15,17,0.92);backdrop-filter:blur(24px);border:1px solid var(--border2);border-radius:var(--radius-pill);box-shadow:0 4px 24px rgba(0,0,0,.5);white-space:nowrap;}
+#logo{font-family:'Unbounded',sans-serif;font-size:12px;font-weight:900;letter-spacing:1px;background:linear-gradient(135deg,#a5b4fc,#818cf8,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
+.top-divider{width:1px;height:18px;background:var(--border2);}
+#online-badge{display:flex;align-items:center;gap:5px;font-size:11px;font-family:'Space Mono',monospace;color:var(--text2);}
+#online-dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:pulse-dot 2s ease-in-out infinite;}
+@keyframes pulse-dot{0%,100%{opacity:1;transform:scale(1);}50%{opacity:.6;transform:scale(.8);}}
+#online-count{color:var(--text);font-weight:700;}
+#conn-status{font-size:10px;padding:3px 9px;border-radius:var(--radius-pill);background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);transition:.3s;}
+#conn-status.ok{background:rgba(34,197,94,.12);color:#4ade80;border-color:rgba(34,197,94,.3);}
+#coords-badge{font-family:'Space Mono',monospace;font-size:11px;color:var(--text2);background:var(--surface);padding:3px 10px;border-radius:var(--radius-pill);border:1px solid var(--border);min-width:90px;text-align:center;}
+#made-by{font-size:10px;color:var(--text3);letter-spacing:.5px;font-family:'Space Mono',monospace;}
+#made-by span{color:var(--accent2);}
+
+/* ── SIDEBAR ── */
+#sidebar{position:absolute;top:50%;left:14px;transform:translateY(-50%);display:flex;flex-direction:column;gap:7px;align-items:center;}
+.sidebar-btn{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(15,15,17,0.9);border:1px solid var(--border2);backdrop-filter:blur(16px);cursor:pointer;font-size:17px;transition:all .2s cubic-bezier(.34,1.56,.64,1);position:relative;box-shadow:0 4px 16px rgba(0,0,0,.4);}
+.sidebar-btn:hover{background:var(--surface3);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow),0 8px 24px rgba(0,0,0,.5);transform:scale(1.1);}
+.sidebar-btn.active{background:var(--accent);border-color:var(--accent2);box-shadow:0 0 0 3px var(--accent-glow),0 4px 16px rgba(99,102,241,.5);}
+.sidebar-btn .tip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--surface3);border:1px solid var(--border2);padding:5px 10px;border-radius:8px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.sidebar-btn:hover .tip{opacity:1;}
+.sidebar-divider{width:20px;height:1px;background:var(--border2);margin:3px 0;}
+
+/* ── PALETTE PANEL ── */
+#palette-panel{position:absolute;bottom:76px;right:14px;width:264px;padding:16px;}
+#color-name-bar{text-align:center;font-size:11px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;color:var(--text2);margin-bottom:10px;min-height:16px;}
+#color-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:5px;margin-bottom:12px;}
+.color-cell{aspect-ratio:1;border-radius:7px;cursor:pointer;border:2.5px solid transparent;transition:all .18s cubic-bezier(.34,1.56,.64,1);position:relative;min-width:0;}
+.color-cell:hover{transform:scale(1.3);z-index:5;box-shadow:0 4px 12px rgba(0,0,0,.5);}
+.color-cell.selected{border-color:rgba(255,255,255,.95);transform:scale(1.25);z-index:5;box-shadow:0 0 0 3px rgba(255,255,255,.25),0 4px 16px rgba(0,0,0,.5);}
+
+/* ── PLACE BTN ── */
+#place-btn-wrap{position:relative;height:46px;border-radius:var(--radius-pill);overflow:hidden;cursor:pointer;}
+#place-btn-bg{position:absolute;inset:0;background:#2d1f1e;border-radius:inherit;}
+#place-btn-fill{position:absolute;inset:0;background:linear-gradient(90deg,var(--accent),#8b5cf6);border-radius:inherit;transform-origin:left;transition:transform .08s linear;}
+#place-btn{position:relative;z-index:2;width:100%;height:100%;background:transparent;border:none;cursor:pointer;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;color:#fff;letter-spacing:1.5px;text-transform:uppercase;transition:all .2s;}
+#place-btn:disabled{opacity:.6;cursor:not-allowed;}
+#place-btn:not(:disabled):hover{letter-spacing:2px;}
+.place-border{position:absolute;inset:0;border-radius:inherit;border:1px solid rgba(255,255,255,.12);pointer-events:none;}
+
+/* ── BOTTOM BAR ── */
+#bottom-bar{position:absolute;bottom:14px;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:8px;padding:7px 12px;background:rgba(15,15,17,0.92);backdrop-filter:blur(24px);border:1px solid var(--border2);border-radius:var(--radius-pill);box-shadow:0 4px 24px rgba(0,0,0,.5);}
+.bar-btn{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);transition:all .2s cubic-bezier(.34,1.56,.64,1);}
+.bar-btn:hover{background:var(--surface3);transform:scale(1.1);}
+.bar-btn.active{background:var(--accent);border-color:var(--accent2);box-shadow:0 0 12px var(--accent-glow);}
+.bar-divider{width:1px;height:24px;background:var(--border2);}
+#quick-pal{display:flex;gap:5px;align-items:center;}
+.qp-cell{width:26px;height:26px;border-radius:7px;cursor:pointer;border:2.5px solid transparent;transition:.15s;}
+.qp-cell.sel{border-color:rgba(255,255,255,.9);transform:scale(1.15);}
+.qp-cell:hover{transform:scale(1.12);}
+
+/* ── OVERLAY PANELS ── */
+.overlay-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);opacity:0;pointer-events:none;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:50;width:440px;max-width:calc(100vw - 24px);max-height:calc(100vh - 64px);overflow:hidden;display:flex;flex-direction:column;}
+.overlay-panel.show{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);}
+.panel-header{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 0;flex-shrink:0;}
+.panel-title{font-family:'Unbounded',sans-serif;font-size:13px;font-weight:700;letter-spacing:.5px;}
+.panel-close{width:30px;height:30px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:var(--text2);background:var(--surface2);border:1px solid var(--border);transition:.2s;}
+.panel-close:hover{background:var(--surface3);color:var(--text);}
+.panel-body{padding:18px 20px 20px;overflow-y:auto;flex:1;}
+.panel-body::-webkit-scrollbar{width:4px;}
+.panel-body::-webkit-scrollbar-track{background:transparent;}
+.panel-body::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;}
+
+/* ── BACKDROP ── */
+#backdrop{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.65);backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:.25s;}
+#backdrop.show{opacity:1;pointer-events:auto;}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:12px;}
+.form-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block;letter-spacing:.5px;text-transform:uppercase;}
+.form-input{width:100%;padding:10px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:all .2s;outline:none;}
+.form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
+.form-input::placeholder{color:var(--text3);}
+.btn{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
+.btn-primary{background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;box-shadow:0 4px 20px var(--accent-glow);}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px var(--accent-glow);}
+.btn-secondary{background:var(--surface2);color:var(--text);border:1px solid var(--border2);}
+.btn-secondary:hover{background:var(--surface3);}
+.btn-danger{background:rgba(239,68,68,.12);color:#f87171;border:1px solid rgba(239,68,68,.25);}
+.btn-danger:hover{background:rgba(239,68,68,.22);}
+.btn-sm{padding:7px 13px;font-size:10px;border-radius:8px;width:auto;}
+.section-sep{height:1px;background:var(--border);margin:14px 0;}
+
+/* ── AUTH ── */
+#auth-panel{width:390px;}
+.auth-logo{text-align:center;padding:26px 20px 0;}
+.auth-logo-text{font-family:'Unbounded',sans-serif;font-size:26px;font-weight:900;background:linear-gradient(135deg,#c7d2fe,#818cf8,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;letter-spacing:-1px;}
+.auth-logo-sub{font-size:11px;color:var(--text3);margin-top:5px;letter-spacing:2px;text-transform:uppercase;}
+.auth-by{font-size:10px;color:var(--text3);margin-top:3px;font-family:'Space Mono',monospace;}
+.auth-by span{color:var(--accent2);}
+.auth-tabs{display:flex;gap:4px;padding:14px 20px 0;}
+.auth-tab{flex:1;padding:9px;text-align:center;border-radius:10px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text2);background:var(--surface2);border:1px solid var(--border);transition:.2s;}
+.auth-tab.active{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 16px var(--accent-glow);}
+
+/* ── PROFILE ── */
+#profile-avatar-ring{width:82px;height:82px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#818cf8,#a5b4fc);padding:2px;cursor:pointer;transition:.3s;position:relative;flex-shrink:0;}
+#profile-avatar-ring:hover{transform:scale(1.05);box-shadow:0 0 24px var(--accent-glow);}
+#profile-avatar-ring canvas{width:100%;height:100%;border-radius:50%;background:var(--surface2);display:block;}
+.avatar-overlay{position:absolute;inset:0;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;font-size:18px;opacity:0;transition:.2s;}
+#profile-avatar-ring:hover .avatar-overlay{opacity:1;}
+.profile-header{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
+.profile-name{font-family:'Unbounded',sans-serif;font-size:17px;font-weight:700;}
+.profile-role{font-size:11px;margin-top:3px;padding:2px 9px;border-radius:var(--radius-pill);display:inline-block;}
+.role-user{background:rgba(161,161,170,.1);color:var(--text2);}
+.role-admin{background:rgba(99,102,241,.15);color:var(--accent2);border:1px solid rgba(99,102,241,.3);}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:14px;}
+.stat-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px;text-align:center;}
+.stat-val{font-family:'Unbounded',sans-serif;font-size:20px;font-weight:700;color:var(--accent2);}
+.stat-lbl{font-size:10px;color:var(--text3);margin-top:2px;text-transform:uppercase;letter-spacing:1px;}
+.rank-badge{background:linear-gradient(135deg,rgba(99,102,241,.18),rgba(129,140,248,.08));border:1px solid rgba(99,102,241,.25);border-radius:12px;padding:11px 14px;display:flex;align-items:center;gap:10px;margin-bottom:13px;}
+.rank-icon{font-size:22px;}
+.rank-title{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:1px;}
+.rank-name{font-family:'Unbounded',sans-serif;font-size:13px;color:var(--accent2);margin-top:1px;}
+
+/* ── EMOJI AVATARS ── */
+.avatar-options{display:grid;grid-template-columns:repeat(8,1fr);gap:6px;margin:10px 0;}
+.av-opt{aspect-ratio:1;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:.2s;font-size:20px;display:flex;align-items:center;justify-content:center;background:var(--surface2);}
+.av-opt:hover{border-color:var(--accent);transform:scale(1.12);}
+.av-opt.selected{border-color:var(--accent);box-shadow:0 0 12px var(--accent-glow);}
+
+/* ── LEADERBOARD ── */
+.lb-row{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:12px;background:var(--surface2);border:1px solid var(--border);margin-bottom:7px;transition:.2s;}
+.lb-row:hover{background:var(--surface3);border-color:var(--border2);}
+.lb-rank{width:26px;height:26px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;flex-shrink:0;}
+.lb-rank-1{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#000;}
+.lb-rank-2{background:linear-gradient(135deg,#6b7280,#9ca3af);color:#000;}
+.lb-rank-3{background:linear-gradient(135deg,#b45309,#d97706);color:#fff;}
+.lb-rank-n{background:var(--surface3);color:var(--text2);}
+.lb-name{flex:1;font-weight:600;font-size:13px;}
+.lb-pixels{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent2);}
+
+/* ── SETTINGS ── */
+.setting-row{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid var(--border);}
+.setting-row:last-child{border-bottom:none;}
+.setting-label{font-size:12px;font-weight:500;}
+.setting-desc{font-size:10px;color:var(--text3);margin-top:1px;}
+.toggle{width:42px;height:24px;border-radius:12px;background:var(--surface3);cursor:pointer;position:relative;border:1px solid var(--border2);transition:.3s;flex-shrink:0;}
+.toggle.on{background:var(--accent);border-color:var(--accent);}
+.toggle::after{content:'';position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.3s cubic-bezier(.34,1.56,.64,1);}
+.toggle.on::after{transform:translateX(18px);}
+.range-wrap{display:flex;align-items:center;gap:8px;}
+.range-wrap input[type=range]{-webkit-appearance:none;width:90px;height:4px;border-radius:2px;background:var(--surface3);outline:none;cursor:pointer;}
+.range-wrap input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:15px;height:15px;border-radius:50%;background:var(--accent);cursor:pointer;}
+.range-val{font-family:'Space Mono',monospace;font-size:11px;color:var(--accent2);min-width:28px;text-align:right;}
+
+/* ── ADMIN ── */
+#admin-panel{width:540px;}
+.admin-tabs{display:flex;gap:3px;margin-bottom:14px;background:var(--surface2);padding:3px;border-radius:10px;}
+.admin-tab{flex:1;padding:7px 4px;text-align:center;border-radius:8px;cursor:pointer;font-size:10px;font-weight:600;color:var(--text2);transition:.2s;letter-spacing:.3px;}
+.admin-tab.active{background:var(--accent);color:#fff;box-shadow:0 2px 8px var(--accent-glow);}
+.user-card{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px;margin-bottom:7px;transition:.2s;}
+.user-card:hover{border-color:var(--border2);}
+.user-card-top{display:flex;align-items:center;gap:9px;margin-bottom:9px;}
+.user-card-name{font-weight:600;font-size:13px;flex:1;}
+.user-card-banned{color:var(--red);text-decoration:line-through;}
+.user-badge{font-size:9px;padding:2px 7px;border-radius:var(--radius-pill);font-weight:700;letter-spacing:.5px;}
+.badge-admin{background:rgba(99,102,241,.2);color:var(--accent2);border:1px solid rgba(99,102,241,.3);}
+.badge-user{background:var(--surface3);color:var(--text3);}
+.badge-banned{background:rgba(239,68,68,.15);color:#f87171;border:1px solid rgba(239,68,68,.3);}
+.user-actions{display:flex;gap:5px;flex-wrap:wrap;}
+.action-btn{padding:5px 11px;border-radius:7px;border:none;cursor:pointer;font-size:10px;font-weight:600;transition:.2s;font-family:'Inter',sans-serif;}
+.ab-role{background:rgba(99,102,241,.15);color:var(--accent2);}
+.ab-role:hover{background:rgba(99,102,241,.3);}
+.ab-timeout{background:rgba(234,179,8,.1);color:#facc15;}
+.ab-timeout:hover{background:rgba(234,179,8,.25);}
+.ab-ban{background:rgba(239,68,68,.12);color:#f87171;}
+.ab-ban:hover{background:rgba(239,68,68,.22);}
+.ab-unban{background:rgba(34,197,94,.12);color:#4ade80;}
+.ab-unban:hover{background:rgba(34,197,94,.22);}
+.ab-msg{background:var(--surface3);color:var(--text2);}
+.ab-msg:hover{background:var(--border2);}
+.admin-stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:14px;}
+.admin-stat{background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:13px;text-align:center;}
+.admin-stat-val{font-family:'Unbounded',sans-serif;font-size:18px;font-weight:700;color:var(--accent2);}
+.admin-stat-lbl{font-size:9px;color:var(--text3);margin-top:3px;text-transform:uppercase;letter-spacing:1px;}
+.search-box{width:100%;padding:9px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;margin-bottom:10px;outline:none;font-family:'Inter',sans-serif;}
+.search-box:focus{border-color:var(--accent);}
+.pagination{display:flex;align-items:center;gap:7px;justify-content:center;margin-top:10px;}
+.page-btn{padding:5px 13px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:11px;transition:.2s;}
+.page-btn:hover:not(:disabled){background:var(--surface3);color:var(--text);}
+.page-btn:disabled{opacity:.4;cursor:not-allowed;}
+.page-info{font-size:11px;color:var(--text2);font-family:'Space Mono',monospace;}
+.resize-form{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.broadcast-input{width:100%;padding:9px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;resize:none;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
+.broadcast-input:focus{border-color:var(--accent);}
+
+/* ── ADMIN TOOLS (fill rect / image) ── */
+.tool-row{display:flex;gap:8px;align-items:flex-end;margin-bottom:10px;flex-wrap:wrap;}
+.tool-row label{font-size:10px;color:var(--text2);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:.5px;}
+.tool-row input[type=number]{width:60px;padding:7px 9px;border-radius:8px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;font-family:'Space Mono',monospace;outline:none;text-align:center;}
+.tool-row input[type=number]:focus{border-color:var(--accent);}
+.admin-color-select{width:38px;height:38px;border-radius:8px;cursor:pointer;border:2px solid var(--border2);transition:.18s;}
+.admin-color-select.selected{border-color:#fff;transform:scale(1.15);}
+.admin-palette{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;}
+#image-drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:10px;}
+#image-drop-zone:hover,#image-drop-zone.drag-over{border-color:var(--accent);background:rgba(99,102,241,.05);}
+#image-drop-zone p{font-size:12px;color:var(--text2);margin-top:6px;}
+#image-preview{width:100%;max-height:120px;object-fit:contain;border-radius:8px;display:none;margin-bottom:10px;}
+
+/* ── CURSOR FLAGS (Figma style) ── */
+.cursor-flag{position:absolute;pointer-events:none;z-index:20;transition:left .1s linear,top .1s linear;}
+.cursor-flag-body{display:flex;align-items:center;gap:5px;background:rgba(20,20,22,.92);border:1px solid rgba(255,255,255,.15);border-radius:0 8px 8px 8px;padding:4px 8px 4px 6px;font-size:11px;white-space:nowrap;font-family:'Space Mono',monospace;box-shadow:0 3px 12px rgba(0,0,0,.5);transform:translateY(-100%) translateX(2px);}
+.cursor-flag-emoji{font-size:13px;}
+.cursor-arrow{width:0;height:0;border-style:solid;border-width:0 8px 10px 0;position:absolute;top:0;left:0;}
+
+/* ── TOAST ── */
+#toast-wrap{position:fixed;bottom:76px;left:50%;transform:translateX(-50%);z-index:100;display:flex;flex-direction:column;gap:7px;align-items:center;}
+.toast{padding:11px 18px;border-radius:var(--radius-pill);background:rgba(18,18,20,.96);border:1px solid var(--border2);backdrop-filter:blur(20px);font-size:12px;font-weight:500;box-shadow:0 8px 32px rgba(0,0,0,.6);animation:toast-in .35s cubic-bezier(.34,1.56,.64,1) forwards;display:flex;align-items:center;gap:7px;white-space:nowrap;}
+.toast.hide{animation:toast-out .3s ease forwards;}
+@keyframes toast-in{from{opacity:0;transform:translateY(20px) scale(.9);}to{opacity:1;transform:translateY(0) scale(1);}}
+@keyframes toast-out{from{opacity:1;}to{opacity:0;transform:translateY(-10px) scale(.9);}}
+.toast-success::before{content:'✓ ';}
+.toast-error::before{content:'✕ ';}
+.toast-info::before{content:'◈ ';}
+
+/* ── INSPECTOR ── */
+#inspector{position:fixed;pointer-events:none;z-index:60;background:rgba(14,14,16,.94);border:1px solid var(--border2);border-radius:10px;padding:7px 12px;font-size:11px;backdrop-filter:blur(16px);display:none;box-shadow:0 4px 16px rgba(0,0,0,.5);gap:7px;align-items:center;}
+#inspector-color{width:13px;height:13px;border-radius:3px;display:inline-block;border:1px solid rgba(255,255,255,.2);}
+
+/* ── PIXEL FLASH ── */
+@keyframes pixel-flash{0%{transform:translate(-50%,-50%) scale(0);opacity:1;}100%{transform:translate(-50%,-50%) scale(5);opacity:0;}}
+.pixel-flash{position:absolute;width:6px;height:6px;border-radius:50%;pointer-events:none;animation:pixel-flash .4s ease-out forwards;}
+
+/* ── SPARKLE ── */
+@keyframes sparkle{0%{transform:scale(0) rotate(0deg);opacity:1;}100%{transform:scale(1.5) rotate(180deg);opacity:0;}}
+.sparkle{position:absolute;pointer-events:none;animation:sparkle .5s ease-out forwards;font-size:10px;}
+
+/* ── CONNECTING ── */
+#connecting-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:18px;transition:opacity .5s;}
+#connecting-screen.hide{opacity:0;pointer-events:none;}
+.spinner{width:44px;height:44px;border-radius:50%;border:3px solid var(--surface3);border-top-color:var(--accent);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.connecting-logo{font-family:'Unbounded',sans-serif;font-size:30px;font-weight:900;background:linear-gradient(135deg,#c7d2fe,#818cf8,#6366f1);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;text-align:center;}
+.connecting-sub{font-size:12px;color:var(--text3);letter-spacing:2px;text-transform:uppercase;}
+
+/* ── FLOAT IN ── */
+@keyframes float-in{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:translateY(0);}}
+@keyframes shimmer{0%,100%{opacity:.5;}50%{opacity:1;}}
+.loading-shimmer{animation:shimmer 1.5s ease-in-out infinite;}
+
+/* ── SCROLLBAR ── */
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:4px;}
+
+/* ── MOBILE ── */
+@media(max-width:640px){
+  #top-bar{padding:7px 12px;gap:8px;top:10px;}
+  #logo{font-size:11px;}
+  #made-by,#coords-badge,.top-divider:last-of-type{display:none;}
+  #sidebar{bottom:76px;top:auto;left:0;right:0;transform:none;flex-direction:row;justify-content:center;flex-wrap:wrap;gap:6px;background:rgba(15,15,17,.88);backdrop-filter:blur(20px);border-top:1px solid var(--border2);padding:8px;border-radius:0;}
+  .sidebar-btn .tip{display:none;}
+  .sidebar-divider{display:none;}
+  #palette-panel{right:auto;left:50%;transform:translateX(-50%);bottom:132px;width:calc(100vw - 24px);max-width:320px;}
+  #bottom-bar{bottom:10px;padding:6px 10px;gap:6px;}
+  .overlay-panel{width:calc(100vw - 16px);max-height:calc(100vh - 80px);}
+  #admin-panel{width:calc(100vw - 16px);}
+  .admin-tabs .admin-tab{font-size:9px;padding:6px 3px;}
+}
+@media(max-width:380px){
+  .bar-btn{width:34px;height:34px;font-size:14px;}
+  .qp-cell{width:22px;height:22px;}
+}
+</style>
+</head>
+<body>
+
+<!-- CONNECTING -->
+<div id="connecting-screen">
+  <div class="connecting-logo">PIXEL<br>BATTLE</div>
+  <div class="spinner"></div>
+  <div class="connecting-sub">Подключение к серверу...</div>
+  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">made by <span style="color:#818cf8">d3cord</span></div>
+</div>
+
+<!-- CANVAS -->
+<div id="game-root">
+  <div id="canvas-wrap">
+    <div id="canvas-shadow"></div>
+    <canvas id="main-canvas"></canvas>
+    <canvas id="overlay-canvas"></canvas>
+    <canvas id="grid-canvas"></canvas>
+    <div id="cursors-layer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden;"></div>
+  </div>
+</div>
+
+<div id="backdrop"></div>
+
+<!-- UI -->
+<div id="ui">
+
+  <!-- TOP BAR -->
+  <div id="top-bar">
+    <div id="logo">PIXEL BATTLE</div>
+    <div class="top-divider"></div>
+    <div id="online-badge"><div id="online-dot"></div><span id="online-count">0</span>&nbsp;<span style="color:var(--text3)">онлайн</span></div>
+    <div class="top-divider"></div>
+    <div id="coords-badge">— , —</div>
+    <div class="top-divider"></div>
+    <div id="conn-status">⬤ Отключён</div>
+    <div class="top-divider"></div>
+    <div id="made-by">made by <span>d3cord</span></div>
+  </div>
+
+  <!-- SIDEBAR -->
+  <div id="sidebar">
+    <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')">✏️<span class="tip">Карандаш [E]</span></div>
+    <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')">🔍<span class="tip">Пипетка</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-btn" id="btn-grid" onclick="toggleGrid()">▦<span class="tip">Сетка [G]</span></div>
+    <div class="sidebar-btn" onclick="resetCamera()">⌖<span class="tip">Сбросить камеру</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-btn" onclick="showPanel('leaderboard-panel')">🏆<span class="tip">Лидерборд</span></div>
+    <div class="sidebar-btn" onclick="showPanel('settings-panel')">⚙️<span class="tip">Настройки</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-btn" id="btn-profile-open" onclick="showPanel('profile-panel')">👤<span class="tip">Профиль</span></div>
+    <div class="sidebar-btn" id="btn-admin" style="display:none" onclick="showPanel('admin-panel');loadAdminUsers()">🛡️<span class="tip">Админ</span></div>
+  </div>
+
+  <!-- PALETTE PANEL -->
+  <div id="palette-panel" class="panel" style="display:none;">
+    <div id="color-name-bar">Белый</div>
+    <div id="color-grid"></div>
+    <div id="place-btn-wrap">
+      <div id="place-btn-bg"></div>
+      <div id="place-btn-fill" style="transform:scaleX(1)"></div>
+      <button id="place-btn" onclick="placePixel()">ПОСТАВИТЬ</button>
+      <div class="place-border"></div>
+    </div>
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom-bar">
+    <div class="bar-btn" onclick="togglePalette()" title="Палитра [P]">🎨</div>
+    <div class="bar-divider"></div>
+    <div id="quick-pal"></div>
+    <div class="bar-divider"></div>
+    <div class="bar-btn" onclick="zoomIn()">＋</div>
+    <div class="bar-btn" onclick="zoomOut()">－</div>
+  </div>
+
+  <!-- INSPECTOR -->
+  <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
+
+  <!-- TOAST -->
+  <div id="toast-wrap"></div>
+
+</div>
+
+<!-- ══ PANELS ══ -->
+
+<!-- AUTH -->
+<div id="auth-panel" class="overlay-panel panel show">
+  <div class="auth-logo">
+    <div class="auth-logo-text">PIXEL<br>BATTLE</div>
+    <div class="auth-logo-sub">Захвати каждый пиксель</div>
+    <div class="auth-by">made by <span>d3cord</span></div>
+  </div>
+  <div class="auth-tabs">
+    <div class="auth-tab active" onclick="switchAuthTab('login')">Войти</div>
+    <div class="auth-tab" onclick="switchAuthTab('register')">Регистрация</div>
+  </div>
+  <div class="panel-body">
+    <div id="auth-login-form">
+      <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="auth-username" type="text" placeholder="введите ник" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary" onclick="doAuth(false)">Войти</button>
+    </div>
+    <div id="auth-register-form" style="display:none">
+      <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="reg-username" type="text" placeholder="придумайте ник" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="reg-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
+      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password"></div>
+      <button class="btn btn-primary" onclick="doAuth(true)">Создать аккаунт</button>
+    </div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div id="profile-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">👤 Профиль</div><div class="panel-close" onclick="hidePanel('profile-panel')">✕</div></div>
+  <div class="panel-body">
+    <div class="profile-header">
+      <div id="profile-avatar-ring">
+        <canvas id="avatar-canvas" width="78" height="78"></canvas>
+        <div class="avatar-overlay">😊</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="prof-name">—</div>
+        <div class="profile-role role-user" id="prof-role">Пользователь</div>
+        <div style="margin-top:6px;font-size:10px;color:var(--text3)">Выберите эмодзи-аватар ниже</div>
+      </div>
+    </div>
+    <div class="rank-badge"><div class="rank-icon" id="prof-rank-icon">🌱</div><div><div class="rank-title">Звание</div><div class="rank-name" id="prof-rank">Новичок</div></div></div>
+    <div class="stat-grid">
+      <div class="stat-card"><div class="stat-val" id="prof-pixels">0</div><div class="stat-lbl">Пикселей</div></div>
+      <div class="stat-card"><div class="stat-val" id="prof-session">0</div><div class="stat-lbl">Сессия</div></div>
+    </div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Выбрать аватар</div>
+    <div class="avatar-options" id="emoji-avatars"></div>
+    <div class="section-sep"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сменить пароль</div>
+    <div class="form-group"><input class="form-input" id="new-pass" type="password" placeholder="Новый пароль"></div>
+    <div class="form-group"><input class="form-input" id="new-pass-confirm" type="password" placeholder="Подтвердите пароль"></div>
+    <button class="btn btn-secondary" style="margin-bottom:10px" onclick="changePassword()">Сменить пароль</button>
+    <div class="section-sep"></div>
+    <button class="btn btn-danger" onclick="doLogout()">Выйти из аккаунта</button>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div id="leaderboard-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">🏆 Лидерборд</div><div class="panel-close" onclick="hidePanel('leaderboard-panel')">✕</div></div>
+  <div class="panel-body"><div id="lb-list"><div style="color:var(--text3);text-align:center;padding:20px;" class="loading-shimmer">Загрузка...</div></div></div>
+</div>
+
+<!-- SETTINGS -->
+<div id="settings-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">⚙️ Настройки</div><div class="panel-close" onclick="hidePanel('settings-panel')">✕</div></div>
+  <div class="panel-body">
+    <div class="setting-row"><div><div class="setting-label">Сетка</div><div class="setting-desc">Пиксельная сетка (зависит от зума)</div></div><div class="toggle" id="toggle-grid" onclick="toggleGrid()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Плавная камера</div><div class="setting-desc">Инерция при перемещении</div></div><div class="toggle on" id="toggle-smooth" onclick="toggleSmoothCamera()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Курсоры игроков</div><div class="setting-desc">Показывать флажки других игроков</div></div><div class="toggle on" id="toggle-cursors" onclick="toggleCursors()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Инспектор пикселей</div><div class="setting-desc">Всплывающая инфо при наведении</div></div><div class="toggle on" id="toggle-inspector" onclick="toggleInspector()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Звуки</div><div class="setting-desc">Звук при установке пикселя</div></div><div class="toggle" id="toggle-sound" onclick="toggleSound()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Масштаб сетки</div><div class="setting-desc">Мин. зум для отображения сетки</div></div><div class="range-wrap"><input type="range" min="2" max="20" value="6" id="grid-zoom-range" oninput="setGridZoom(this.value)"><span class="range-val" id="grid-zoom-val">6x</span></div></div>
+    <div class="section-sep"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сервер</div>
+    <div class="form-group"><label class="form-label">WebSocket URL</label><input class="form-input" id="ws-url" type="text" placeholder="wss://..."></div>
+    <button class="btn btn-secondary" onclick="reconnectWS()">Переподключиться</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">🛡️ Панель администратора</div><div class="panel-close" onclick="hidePanel('admin-panel')">✕</div></div>
+  <div class="panel-body">
+    <div class="admin-tabs">
+      <div class="admin-tab active" onclick="switchAdminTab('users')">Игроки</div>
+      <div class="admin-tab" onclick="switchAdminTab('canvas')">Холст</div>
+      <div class="admin-tab" onclick="switchAdminTab('tools')">Инструменты</div>
+      <div class="admin-tab" onclick="switchAdminTab('broadcast')">Сообщение</div>
+      <div class="admin-tab" onclick="switchAdminTab('stats')">Статистика</div>
+    </div>
+
+    <!-- USERS -->
+    <div id="admin-tab-users">
+      <input class="search-box" id="admin-search" placeholder="🔍 Поиск..." oninput="filterAdminUsers()">
+      <div id="admin-users-list"><div style="color:var(--text3);text-align:center;padding:20px;" class="loading-shimmer">Загрузка...</div></div>
+      <div class="pagination">
+        <button class="page-btn" onclick="adminPageNav(-1)">‹ Пред</button>
+        <span class="page-info" id="admin-page-info">1 / 1</span>
+        <button class="page-btn" onclick="adminPageNav(1)">След ›</button>
+      </div>
+    </div>
+
+    <!-- CANVAS -->
+    <div id="admin-tab-canvas" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
+      <div class="resize-form">
+        <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
+        <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
+      </div>
+      <div style="margin-bottom:12px;font-size:11px;color:var(--red);">⚠️ Изменение сохранит пиксели в пределах нового размера.</div>
+      <button class="btn btn-primary" onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
+      <div class="setting-row" style="padding-top:0">
+        <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
+        <div class="toggle" id="admin-toggle-cursors" onclick="adminToggleCursors()"></div>
+      </div>
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
+      <button class="btn btn-danger" onclick="adminClearCanvas()">🗑️ Очистить весь холст</button>
+    </div>
+
+    <!-- TOOLS (admin-only: fill rect + image) -->
+    <div id="admin-tab-tools" style="display:none">
+      <!-- Fill Rect -->
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Заливка прямоугольника</div>
+      <div class="tool-row">
+        <div><label>X</label><input type="number" id="fill-x" value="0" min="0"></div>
+        <div><label>Y</label><input type="number" id="fill-y" value="0" min="0"></div>
+        <div><label>W</label><input type="number" id="fill-w" value="10" min="1"></div>
+        <div><label>H</label><input type="number" id="fill-h" value="10" min="1"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Цвет заливки</div>
+      <div class="admin-palette" id="admin-fill-palette"></div>
+      <button class="btn btn-primary" onclick="adminFillRect()" style="margin-bottom:6px">Залить прямоугольник</button>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:16px;">Также вы можете кликнуть на холсте для задания координат после нажатия кнопки ниже</div>
+
+      <div class="section-sep"></div>
+
+      <!-- Image Placer -->
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → пиксели)</div>
+      <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()">
+        <div style="font-size:28px">🖼️</div>
+        <p>Нажмите или перетащите изображение</p>
+      </div>
+      <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
+      <img id="image-preview" alt="Preview">
+      <div class="tool-row" style="margin-bottom:10px;">
+        <div><label>X позиция</label><input type="number" id="img-x" value="0" min="0"></div>
+        <div><label>Y позиция</label><input type="number" id="img-y" value="0" min="0"></div>
+        <div><label>Масштаб %</label><input type="number" id="img-scale" value="100" min="1" max="400"></div>
+      </div>
+      <div style="font-size:10px;color:var(--text3);margin-bottom:10px;">Картинка будет квантизирована до палитры и загружена на холст для всех игроков</div>
+      <button class="btn btn-primary" id="btn-place-image" onclick="adminPlaceImage()" disabled>🚀 Разместить на холсте</button>
+    </div>
+
+    <!-- BROADCAST -->
+    <div id="admin-tab-broadcast" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
+      <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
+      <button class="btn btn-primary" onclick="adminBroadcast()" style="margin-bottom:14px">📢 Отправить всем</button>
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
+      <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
+      <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
+      <button class="btn btn-secondary" onclick="adminSendDM()">Отправить</button>
+    </div>
+
+    <!-- STATS -->
+    <div id="admin-tab-stats" style="display:none">
+      <div class="admin-stats-grid">
+        <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="stat-online">—</div><div class="admin-stat-lbl">Онлайн</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="stat-banned">—</div><div class="admin-stat-lbl">Забанено</div></div>
+      </div>
+      <div class="admin-stat" style="margin-bottom:9px;"><div class="admin-stat-val" id="stat-canvas-size">256×256</div><div class="admin-stat-lbl">Размер холста</div></div>
+      <div class="admin-stat"><div class="admin-stat-val" id="stat-total-pixels">—</div><div class="admin-stat-lbl">Пикселей поставлено</div></div>
+      <div class="section-sep"></div>
+      <button class="btn btn-secondary" onclick="loadAdminStats()">🔄 Обновить</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="admin-image-canvas" style="display:none"></canvas>
+
+<script>
+'use strict';
+
+// ── PALETTE ──
+const PALETTE = [
+  {c:'#ffffff',n:'Белый'},{c:'#e4e4e4',n:'Светло-серый'},{c:'#888888',n:'Серый'},{c:'#000000',n:'Чёрный'},
+  {c:'#5a3015',n:'Тёмно-коричневый'},{c:'#9c6b3f',n:'Коричневый'},{c:'#ffcda2',n:'Бежевый'},{c:'#8a0022',n:'Бордовый'},
+  {c:'#e40000',n:'Красный'},{c:'#ff6392',n:'Розовый'},{c:'#ff99aa',n:'Светло-розовый'},{c:'#d40078',n:'Малиновый'},
+  {c:'#ff9600',n:'Оранжевый'},{c:'#ffd635',n:'Жёлтый'},{c:'#fff8b8',n:'Светло-жёлтый'},{c:'#006030',n:'Тёмно-зелёный'},
+  {c:'#00a368',n:'Зелёный'},{c:'#00cc78',n:'Светло-зелёный'},{c:'#7eed56',n:'Лаймовый'},{c:'#00756f',n:'Тёмно-бирюзовый'},
+  {c:'#009eaa',n:'Бирюзовый'},{c:'#00ccc0',n:'Светло-бирюзовый'},{c:'#1d2b53',n:'Тёмно-синий'},{c:'#2450a4',n:'Синий'},
+  {c:'#3690ea',n:'Голубой'},{c:'#51e9f4',n:'Светло-голубой'},{c:'#493ac1',n:'Индиго'},{c:'#6a5cff',n:'Фиолетовый'},
+  {c:'#811e9f',n:'Пурпурный'},{c:'#b44ac0',n:'Сиреневый'},{c:'#2b1e3e',n:'Тёмно-пурпурный'},{c:'#1a1a1a',n:'Почти чёрный'}
+];
+
+const RANKS = [
+  {name:'Новичок',icon:'🌱',min:0},{name:'Художник',icon:'🎨',min:50},
+  {name:'Маэстро',icon:'🖌️',min:200},{name:'Легенда',icon:'⭐',min:1000},
+  {name:'Архитектор',icon:'🏛️',min:5000},{name:'Бог Пикселей',icon:'👑',min:20000}
+];
+
+const EMOJI_AVATARS = ['👾','🦊','🐺','🐉','🦋','🌙','⚡','🔥','💎','🌸','🎭','🤖','🦅','🐙','🌈','🎸','🦄','🐸','🐱','🐻','🎃','🌊','❄️','🍄'];
+
+// ── STATE ──
+let ws = null;
+let canvasW = 256, canvasH = 256;
+let canvasData = new Uint8Array(canvasW * canvasH);
+let selectedColor = 0;
+let cooldown = 0, cooldownTime = 3.0, cooldownTimer = null;
+let isLoggedIn = false, isAdmin = false;
+let currentUser = '', currentPixels = 0, sessionPixels = 0;
+let currentRank = 'Новичок', currentEmoji = '👾';
+let tool = 'pencil';
+let gridEnabled = false, smoothCamera = true, showCursors = true;
+let inspectorEnabled = true, soundEnabled = false;
+let gridZoom = 6;
+let camX = 0, camY = 0, camZoom = 3;
+let isDragging = false, dragStart = {x:0,y:0}, camStart = {x:0,y:0};
+let hoveredPixel = {x:-1,y:-1};
+let otherCursors = {};
+let lastSentCursor = {x:-1,y:-1};
+let adminPage = 1, adminTotalPages = 1;
+let allAdminUsers = [];
+let sessionFile = {username:'',password:''};
+let selectedEmoji = '👾';
+let isReconnecting = false;
+let serverCursorsEnabled = false;
+let adminFillColorIdx = 0;
+let adminImagePixels = null;
+
+const wsUrl = localStorage.getItem('wsUrl') || 'wss://yamikopixelbattleserver.onrender.com';
+
+// ── CANVAS SETUP ──
+const mainCanvas = document.getElementById('main-canvas');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const gridCanvas = document.getElementById('grid-canvas');
+const shadowDiv = document.getElementById('canvas-shadow');
+const mctx = mainCanvas.getContext('2d');
+const octx = overlayCanvas.getContext('2d');
+const gctx = gridCanvas.getContext('2d');
+
+function initCanvases() {
+  mainCanvas.width = canvasW; mainCanvas.height = canvasH;
+  overlayCanvas.width = canvasW; overlayCanvas.height = canvasH;
+  gridCanvas.width = canvasW; gridCanvas.height = canvasH;
+  // White background so canvas is visible
+  mctx.fillStyle = '#ffffff';
+  mctx.fillRect(0, 0, canvasW, canvasH);
+  applyTransform();
 }
 
-body {
-	color: white;
-	background-color: black;
-	overflow: hidden;
-	touch-action: none;
+function applyTransform() {
+  const t = `translate(${camX}px,${camY}px) scale(${camZoom})`;
+  mainCanvas.style.transform = t;
+  overlayCanvas.style.transform = t;
+  gridCanvas.style.transform = t;
+  // Shadow div mirrors canvas position/size
+  shadowDiv.style.transform = t;
+  shadowDiv.style.width = canvasW + 'px';
+  shadowDiv.style.height = canvasH + 'px';
 }
 
-#canvas {
-	display: block;
+function renderGrid() {
+  gctx.clearRect(0,0,canvasW,canvasH);
+  if (!gridEnabled || camZoom < gridZoom) return;
+  gctx.strokeStyle = 'rgba(0,0,0,0.2)';
+  gctx.lineWidth = 0.5/camZoom;
+  for (let x=0;x<=canvasW;x++) {gctx.beginPath();gctx.moveTo(x,0);gctx.lineTo(x,canvasH);gctx.stroke();}
+  for (let y=0;y<=canvasH;y++) {gctx.beginPath();gctx.moveTo(0,y);gctx.lineTo(canvasW,y);gctx.stroke();}
 }
 
-#canvas:focus {
-	outline: none;
+function renderPixel(x,y,colorIdx) {
+  const c = PALETTE[colorIdx] || PALETTE[0];
+  mctx.fillStyle = c.c;
+  mctx.fillRect(x,y,1,1);
 }
 
-#status, #status-splash, #status-progress {
-	position: absolute;
-	left: 0;
-	right: 0;
+function fullRender(data) {
+  const imgData = mctx.createImageData(canvasW, canvasH);
+  const buf = imgData.data;
+  for (let i=0;i<data.length;i++) {
+    const cidx = data[i];
+    const col = PALETTE[cidx] || PALETTE[0];
+    const hex = col.c;
+    buf[i*4]   = parseInt(hex.slice(1,3),16);
+    buf[i*4+1] = parseInt(hex.slice(3,5),16);
+    buf[i*4+2] = parseInt(hex.slice(5,7),16);
+    buf[i*4+3] = 255;
+  }
+  mctx.putImageData(imgData,0,0);
 }
 
-#status, #status-splash {
-	top: 0;
-	bottom: 0;
+function renderOverlay() {
+  octx.clearRect(0,0,canvasW,canvasH);
+  // Highlight hovered pixel
+  if (hoveredPixel.x >= 0 && hoveredPixel.y >= 0 && hoveredPixel.x < canvasW && hoveredPixel.y < canvasH) {
+    const cidx = canvasData[hoveredPixel.y * canvasW + hoveredPixel.x];
+    const col = PALETTE[cidx] || PALETTE[0];
+    // Complementary overlay
+    octx.fillStyle = 'rgba(255,255,255,0.35)';
+    octx.fillRect(hoveredPixel.x, hoveredPixel.y, 1, 1);
+    octx.strokeStyle = 'rgba(0,0,0,0.5)';
+    octx.lineWidth = 0.1;
+    octx.strokeRect(hoveredPixel.x+0.05, hoveredPixel.y+0.05, 0.9, 0.9);
+  }
 }
 
-#status {
-	background-color: #242424;
-	display: flex;
-	flex-direction: column;
-	justify-content: center;
-	align-items: center;
-	visibility: hidden;
+// ── CURSOR FLAGS (Figma-style) ──
+const cursorsLayer = document.getElementById('cursors-layer');
+const cursorEls = {};
+
+function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
+  if (!showCursors || !serverCursorsEnabled) return;
+  // Screen position
+  const sx = canvasX * camZoom + camX;
+  const sy = canvasY * camZoom + camY;
+  const col = PALETTE[colorIdx] || PALETTE[0];
+  const color = col.c;
+
+  if (!cursorEls[username]) {
+    const el = document.createElement('div');
+    el.className = 'cursor-flag';
+    el.innerHTML = `
+      <svg width="12" height="16" viewBox="0 0 12 16" style="display:block">
+        <path d="M0 0 L12 5 L7 8 L5 16 Z" fill="${color}" stroke="rgba(0,0,0,0.3)" stroke-width="0.5"/>
+      </svg>
+      <div class="cursor-flag-body" style="border-color:${color}20">
+        <span class="cursor-flag-emoji">${emoji||'👾'}</span>
+        <span style="color:${color};font-size:10px">${username}</span>
+      </div>`;
+    cursorsLayer.appendChild(el);
+    cursorEls[username] = { el, lastX: sx, lastY: sy };
+  }
+
+  const c = cursorEls[username];
+  c.el.style.left = sx + 'px';
+  c.el.style.top = sy + 'px';
+  // Update color if changed
+  const arrow = c.el.querySelector('path');
+  if (arrow) arrow.setAttribute('fill', color);
+  const nameEl = c.el.querySelector('.cursor-flag-body span:last-child');
+  if (nameEl) nameEl.style.color = color;
 }
 
-#status-splash {
-	max-height: 100%;
-	max-width: 100%;
-	margin: auto;
+function removeCursorFlag(username) {
+  if (cursorEls[username]) {
+    cursorEls[username].el.remove();
+    delete cursorEls[username];
+  }
 }
 
-#status-splash.show-image--false {
-	display: none;
+function updateAllCursorFlags() {
+  for (const [u, cur] of Object.entries(otherCursors)) {
+    updateCursorFlag(u, cur.x, cur.y, cur.c, cur.emoji);
+  }
 }
 
-#status-splash.fullsize--true {
-	height: 100%;
-	width: 100%;
-	object-fit: contain;
+function clearCursorFlags() {
+  Object.keys(cursorEls).forEach(u => cursorEls[u].el.remove());
+  for (const k in cursorEls) delete cursorEls[k];
 }
 
-#status-splash.use-filter--false {
-	image-rendering: pixelated;
+// ── CAMERA ──
+function centerCamera() {
+  const vw = window.innerWidth, vh = window.innerHeight;
+  camZoom = Math.min(Math.floor(vw / canvasW * 0.8), 4);
+  camZoom = Math.max(camZoom, 1);
+  camX = vw/2 - canvasW*camZoom/2;
+  camY = vh/2 - canvasH*camZoom/2;
+  applyTransform(); renderGrid();
 }
 
-#status-progress, #status-notice {
-	display: none;
+function resetCamera() { centerCamera(); showToast('Камера сброшена','info'); }
+function zoomIn() { applyZoom(camZoom*1.25, window.innerWidth/2, window.innerHeight/2); }
+function zoomOut() { applyZoom(camZoom/1.25, window.innerWidth/2, window.innerHeight/2); }
+
+function applyZoom(nz, cx, cy) {
+  nz = Math.max(0.5, Math.min(100, nz));
+  camX = cx - (cx-camX)*(nz/camZoom);
+  camY = cy - (cy-camY)*(nz/camZoom);
+  camZoom = nz;
+  applyTransform(); renderGrid();
+  updateAllCursorFlags(); // reposition cursor flags
 }
 
-#status-progress {
-	bottom: 10%;
-	width: 50%;
-	margin: 0 auto;
+function resizeCanvas(w, h) {
+  canvasW=w; canvasH=h; canvasData=new Uint8Array(w*h);
+  initCanvases();
+  document.getElementById('stat-canvas-size').textContent=`${w}×${h}`;
+  document.getElementById('admin-canvas-w').value=w;
+  document.getElementById('admin-canvas-h').value=h;
 }
 
-#status-notice {
-	background-color: #5b3943;
-	border-radius: 0.5rem;
-	border: 1px solid #9b3943;
-	color: #e0e0e0;
-	font-family: 'Noto Sans', 'Droid Sans', Arial, sans-serif;
-	line-height: 1.3;
-	margin: 0 2rem;
-	overflow: hidden;
-	padding: 1rem;
-	text-align: center;
-	z-index: 1;
+// ── WEBSOCKET ──
+function connect() {
+  if (ws && ws.readyState === WebSocket.OPEN) ws.close();
+  updateConnStatus(false);
+  const url = document.getElementById('ws-url').value || wsUrl;
+  ws = new WebSocket(url);
+  ws.binaryType = 'arraybuffer';
+
+  ws.onopen = () => {
+    updateConnStatus(true);
+    document.getElementById('connecting-screen').classList.add('hide');
+    const s = loadSession();
+    if (s && s.username && s.password) {
+      sessionFile = s;
+      sendJSON({action:'auth',username:s.username,password:s.password,email:'',is_register:false});
+    }
+  };
+
+  ws.onclose = () => {
+    updateConnStatus(false);
+    if (isLoggedIn) { isLoggedIn=false; showToast('Соединение потеряно. Переподключение...','error'); }
+    document.getElementById('online-count').textContent='0';
+    clearCursorFlags();
+    if (!isReconnecting) { isReconnecting=true; setTimeout(()=>{isReconnecting=false;connect();},3500); }
+  };
+
+  ws.onerror = () => {};
+
+  ws.onmessage = (e) => {
+    if (e.data instanceof ArrayBuffer) handleBinary(new Uint8Array(e.data));
+    else try { handleJSON(JSON.parse(e.data)); } catch(_) {}
+  };
 }
-		</style>
-		<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
-<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
 
-	</head>
-	<body>
-		<canvas id="canvas">
-			Your browser does not support the canvas tag.
-		</canvas>
+function sendJSON(obj) { if (ws && ws.readyState===WebSocket.OPEN) ws.send(JSON.stringify(obj)); }
 
-		<noscript>
-			Your browser does not support JavaScript.
-		</noscript>
+function reconnectWS() {
+  const url = document.getElementById('ws-url').value;
+  if (url) localStorage.setItem('wsUrl', url);
+  connect();
+}
 
-		<div id="status">
-			<img id="status-splash" class="show-image--true fullsize--true use-filter--true" src="index.png" alt="">
-			<progress id="status-progress"></progress>
-			<div id="status-notice"></div>
-		</div>
+function updateConnStatus(ok) {
+  const el = document.getElementById('conn-status');
+  el.textContent = ok ? '⬤ Онлайн' : '⬤ Отключён';
+  el.className = ok ? 'ok' : '';
+}
 
-		<script src="index.js"></script>
-		<script>
-const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":103228,"index.wasm":35739700},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
-const GODOT_THREADS_ENABLED = false;
-const engine = new Engine(GODOT_CONFIG);
+// ── BINARY ──
+function handleBinary(data) {
+  const len = data.length;
+  if (len === canvasW * canvasH) {
+    canvasData.set(data);
+    fullRender(data);
+  } else if (len === 3 && data[0] === 255) {
+    document.getElementById('online-count').textContent = (data[1]<<8)|data[2];
+  } else if (len % 5 === 0 && len > 0) {
+    for (let i=0;i<len;i+=5) {
+      const x=(data[i]<<8)|data[i+1], y=(data[i+2]<<8)|data[i+3], cidx=data[i+4];
+      if (x>=0&&x<canvasW&&y>=0&&y<canvasH&&cidx<PALETTE.length) {
+        canvasData[y*canvasW+x]=cidx;
+        renderPixel(x,y,cidx);
+      }
+    }
+  }
+}
 
-(function () {
-	const statusOverlay = document.getElementById('status');
-	const statusProgress = document.getElementById('status-progress');
-	const statusNotice = document.getElementById('status-notice');
+// ── JSON ──
+function handleJSON(d) {
+  const a = d.action||d.type||'';
+  if (a==='auth_success'||a==='auth_ok') {
+    isLoggedIn=true;
+    currentUser=d.username||'?';
+    isAdmin=(d.role==='admin');
+    currentPixels=d.pixels||0;
+    currentRank=d.rank||'Новичок';
+    currentEmoji=d.emoji||'👾';
+    selectedEmoji=currentEmoji;
+    if (d.canvas_w&&d.canvas_h&&(d.canvas_w!==canvasW||d.canvas_h!==canvasH)) resizeCanvas(d.canvas_w,d.canvas_h);
+    if (d.settings) applyServerSettings(d.settings);
+    onAuthSuccess(d);
+  } else if (a==='toast') {
+    showToast(d.message||'Уведомление','info');
+  } else if (a==='leaderboard_data') {
+    renderLeaderboard(d.data||[]);
+  } else if (a==='admin_users_list') {
+    allAdminUsers=d.users||[];
+    adminPage=d.page||1;
+    adminTotalPages=d.total_pages||1;
+    renderAdminUsers(allAdminUsers);
+    document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
+  } else if (a==='resize') {
+    resizeCanvas(d.w, d.h||canvasH);
+    // Re-auth to get fresh canvas
+    sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});
+  } else if (a==='cursor') {
+    otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾'};
+    updateCursorFlag(d.u, d.x, d.y, d.c, d.emoji||'👾');
+  } else if (a==='server_settings') {
+    applyServerSettings(d.settings);
+  } else if (a==='online_count') {
+    document.getElementById('online-count').textContent=d.count;
+  }
+}
 
-	let initializing = true;
-	let statusMode = '';
+function applyServerSettings(s) {
+  if (!s) return;
+  serverCursorsEnabled = !!s.cursorTrackingEnabled;
+  if (s.cooldownMs) cooldownTime = s.cooldownMs / 1000;
+  // Update admin toggle
+  const atog = document.getElementById('admin-toggle-cursors');
+  if (atog) atog.classList.toggle('on', serverCursorsEnabled);
+  if (!serverCursorsEnabled) clearCursorFlags();
+}
 
-	function setStatusMode(mode) {
-		if (statusMode === mode || !initializing) {
-			return;
-		}
-		if (mode === 'hidden') {
-			statusOverlay.remove();
-			initializing = false;
-			return;
-		}
-		statusOverlay.style.visibility = 'visible';
-		statusProgress.style.display = mode === 'progress' ? 'block' : 'none';
-		statusNotice.style.display = mode === 'notice' ? 'block' : 'none';
-		statusMode = mode;
-	}
+// ── AUTH ──
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1)));
+  document.getElementById('auth-login-form').style.display=tab==='login'?'':'none';
+  document.getElementById('auth-register-form').style.display=tab==='register'?'':'none';
+}
 
-	function setStatusNotice(text) {
-		while (statusNotice.lastChild) {
-			statusNotice.removeChild(statusNotice.lastChild);
-		}
-		const lines = text.split('\n');
-		lines.forEach((line) => {
-			statusNotice.appendChild(document.createTextNode(line));
-			statusNotice.appendChild(document.createElement('br'));
-		});
-	}
+function doAuth(isReg) {
+  if (!ws||ws.readyState!==WebSocket.OPEN) {showToast('Нет соединения','error');return;}
+  const u=isReg?document.getElementById('reg-username').value.trim():document.getElementById('auth-username').value.trim();
+  const p=isReg?document.getElementById('reg-password').value:document.getElementById('auth-password').value;
+  const e=isReg?document.getElementById('reg-email').value.trim():'';
+  if (!u||!p) {showToast('Заполните все поля','error');return;}
+  sessionFile={username:u,password:p};
+  sendJSON({action:'auth',username:u,password:p,email:e,is_register:isReg});
+}
 
-	function displayFailureNotice(err) {
-		console.error(err);
-		if (err instanceof Error) {
-			setStatusNotice(err.message);
-		} else if (typeof err === 'string') {
-			setStatusNotice(err);
-		} else {
-			setStatusNotice('An unknown error occurred.');
-		}
-		setStatusMode('notice');
-		initializing = false;
-	}
+function onAuthSuccess(d) {
+  document.getElementById('auth-panel').classList.remove('show');
+  document.getElementById('backdrop').classList.remove('show');
+  document.getElementById('prof-name').textContent=currentUser;
+  document.getElementById('prof-role').textContent=isAdmin?'Администратор':'Пользователь';
+  document.getElementById('prof-role').className='profile-role '+(isAdmin?'role-admin':'role-user');
+  updateProfileStats(currentPixels, currentRank);
+  document.getElementById('btn-admin').style.display=isAdmin?'flex':'none';
+  if (isAdmin) { loadAdminUsers(); buildAdminFillPalette(); }
+  showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'info');
+  loadAvatarFromStorage();
+  drawAvatarCanvas(selectedEmoji);
+  saveSession(sessionFile.username, sessionFile.password);
+}
 
-	const missing = Engine.getMissingFeatures({
-		threads: GODOT_THREADS_ENABLED,
-	});
+function doLogout() {
+  clearSession();
+  isLoggedIn=false;isAdmin=false;currentUser='';
+  document.getElementById('auth-panel').classList.add('show');
+  document.getElementById('btn-admin').style.display='none';
+  hidePanel('profile-panel');
+  clearCursorFlags();
+  showToast('Вы вышли из аккаунта','info');
+}
 
-	if (missing.length !== 0) {
-		if (GODOT_CONFIG['serviceWorker'] && GODOT_CONFIG['ensureCrossOriginIsolationHeaders'] && 'serviceWorker' in navigator) {
-			let serviceWorkerRegistrationPromise;
-			try {
-				serviceWorkerRegistrationPromise = navigator.serviceWorker.getRegistration();
-			} catch (err) {
-				serviceWorkerRegistrationPromise = Promise.reject(new Error('Service worker registration failed.'));
-			}
-			// There's a chance that installing the service worker would fix the issue
-			Promise.race([
-				serviceWorkerRegistrationPromise.then((registration) => {
-					if (registration != null) {
-						return Promise.reject(new Error('Service worker already exists.'));
-					}
-					return registration;
-				}).then(() => engine.installServiceWorker()),
-				// For some reason, `getRegistration()` can stall
-				new Promise((resolve) => {
-					setTimeout(() => resolve(), 2000);
-				}),
-			]).then(() => {
-				// Reload if there was no error.
-				window.location.reload();
-			}).catch((err) => {
-				console.error('Error while registering service worker:', err);
-			});
-		} else {
-			// Display the message as usual
-			const missingMsg = 'Error\nThe following features required to run Godot projects on the Web are missing:\n';
-			displayFailureNotice(missingMsg + missing.join('\n'));
-		}
-	} else {
-		setStatusMode('progress');
-		engine.startGame({
-			'onProgress': function (current, total) {
-				if (current > 0 && total > 0) {
-					statusProgress.value = current;
-					statusProgress.max = total;
-				} else {
-					statusProgress.removeAttribute('value');
-					statusProgress.removeAttribute('max');
-				}
-			},
-		}).then(() => {
-			setStatusMode('hidden');
-		}, displayFailureNotice);
-	}
-}());
-		</script>
-	</body>
+function updateProfileStats(pixels, rank) {
+  currentPixels=pixels;
+  document.getElementById('prof-pixels').textContent=pixels.toLocaleString();
+  document.getElementById('prof-session').textContent=sessionPixels.toLocaleString();
+  const r=RANKS.slice().reverse().find(r=>pixels>=r.min)||RANKS[0];
+  document.getElementById('prof-rank').textContent=r.name;
+  document.getElementById('prof-rank-icon').textContent=r.icon;
+}
+
+function changePassword() {
+  const np=document.getElementById('new-pass').value;
+  const nc=document.getElementById('new-pass-confirm').value;
+  if (!np||np!==nc) {showToast('Пароли не совпадают','error');return;}
+  if (np.length<4) {showToast('Пароль слишком короткий','error');return;}
+  sessionFile.password=np;
+  saveSession(sessionFile.username,np);
+  showToast('Пароль сохранён','info');
+  document.getElementById('new-pass').value='';
+  document.getElementById('new-pass-confirm').value='';
+}
+
+// ── SESSION ──
+function saveSession(u,p){try{localStorage.setItem('pb_session',JSON.stringify({username:u,password:p}));}catch(_){}}
+function loadSession(){try{const s=localStorage.getItem('pb_session');return s?JSON.parse(s):null;}catch(_){return null;}}
+function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
+
+// ── AVATAR ──
+function buildEmojiAvatarPicker() {
+  const c=document.getElementById('emoji-avatars'); c.innerHTML='';
+  EMOJI_AVATARS.forEach(em=>{
+    const d=document.createElement('div');
+    d.className='av-opt'+(selectedEmoji===em?' selected':'');
+    d.textContent=em;
+    d.onclick=()=>{
+      selectedEmoji=em;
+      buildEmojiAvatarPicker();
+      drawAvatarCanvas(em);
+      localStorage.setItem('pb_avatar',JSON.stringify({type:'emoji',val:em}));
+      sendJSON({action:'save_emoji',emoji:em});
+      showToast('Аватар изменён '+em,'info');
+    };
+    c.appendChild(d);
+  });
+}
+
+function drawAvatarCanvas(emoji) {
+  const canvas=document.getElementById('avatar-canvas');
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,78,78);
+  const grad=ctx.createLinearGradient(0,0,78,78);
+  grad.addColorStop(0,'#1c1c20');grad.addColorStop(1,'#141416');
+  ctx.fillStyle=grad;ctx.fillRect(0,0,78,78);
+  ctx.font='40px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(emoji||'👾',39,41);
+}
+
+function loadAvatarFromStorage() {
+  try {
+    const av=localStorage.getItem('pb_avatar');
+    if (av) {
+      const obj=JSON.parse(av);
+      if (obj.type==='emoji') { selectedEmoji=obj.val; drawAvatarCanvas(obj.val); }
+    } else drawAvatarCanvas(selectedEmoji);
+  } catch(_) { drawAvatarCanvas(selectedEmoji); }
+}
+
+// ── PALETTE UI ──
+function buildColorGrid() {
+  const g=document.getElementById('color-grid'); g.innerHTML='';
+  PALETTE.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='color-cell'+(i===selectedColor?' selected':'');
+    d.style.background=p.c;
+    d.title=p.n;
+    d.onclick=()=>selectColor(i);
+    g.appendChild(d);
+  });
+  buildQuickPalette();
+}
+
+function buildQuickPalette() {
+  const qp=document.getElementById('quick-pal'); qp.innerHTML='';
+  const recent=[selectedColor,...[8,12,16,23,26].filter(x=>x!==selectedColor)].slice(0,5);
+  recent.forEach((i,ri)=>{
+    const d=document.createElement('div');
+    d.className='qp-cell'+(i===selectedColor?' sel':'');
+    d.style.background=PALETTE[i]?.c||'#fff';
+    d.title=PALETTE[i]?.n||'';
+    d.onclick=()=>selectColor(i);
+    qp.appendChild(d);
+  });
+}
+
+function selectColor(idx) {
+  selectedColor=idx;
+  document.querySelectorAll('.color-cell').forEach((c,i)=>c.classList.toggle('selected',i===idx));
+  document.getElementById('color-name-bar').textContent=PALETTE[idx]?.n||'';
+  buildQuickPalette();
+  if (isLoggedIn) sendJSON({action:'cursor',x:hoveredPixel.x,y:hoveredPixel.y,c:idx});
+}
+
+// ── PIXEL PLACEMENT ──
+function placePixel() {
+  if (!isLoggedIn) {showToast('Войдите в аккаунт','error');return;}
+  if (cooldown>0) {showToast(`Подождите ${Math.ceil(cooldown)}с`,'error');return;}
+  const x=hoveredPixel.x,y=hoveredPixel.y;
+  if (x<0||y<0||x>=canvasW||y>=canvasH) {showToast('Наведите на холст','error');return;}
+  sendPixel(x,y,selectedColor);
+  canvasData[y*canvasW+x]=selectedColor;
+  renderPixel(x,y,selectedColor);
+  sessionPixels++;
+  updateProfileStats(currentPixels+1,currentRank);
+  spawnPixelFlash(x,y);
+  startCooldown();
+  if (soundEnabled) playClick();
+}
+
+function sendPixel(x,y,cidx) {
+  if (!ws||ws.readyState!==WebSocket.OPEN) return;
+  const buf=new Uint8Array(5);
+  buf[0]=(x>>8)&0xFF;buf[1]=x&0xFF;buf[2]=(y>>8)&0xFF;buf[3]=y&0xFF;buf[4]=cidx;
+  ws.send(buf.buffer);
+}
+
+function startCooldown() {
+  cooldown=cooldownTime;
+  document.getElementById('place-btn').disabled=true;
+  if (cooldownTimer) clearInterval(cooldownTimer);
+  cooldownTimer=setInterval(()=>{
+    cooldown-=0.05;
+    const ratio=1-(cooldown/cooldownTime);
+    document.getElementById('place-btn-fill').style.transform=`scaleX(${Math.max(0,Math.min(1,ratio))})`;
+    if (cooldown<=0) {
+      cooldown=0;
+      document.getElementById('place-btn').disabled=false;
+      document.getElementById('place-btn').textContent='ПОСТАВИТЬ';
+      document.getElementById('place-btn-fill').style.transform='scaleX(1)';
+      clearInterval(cooldownTimer);
+    } else {
+      document.getElementById('place-btn').textContent=`ОЖИДАНИЕ ${Math.ceil(cooldown)}С`;
+    }
+  },50);
+}
+
+function spawnPixelFlash(x,y) {
+  const screen=canvasToScreen(x+0.5,y+0.5);
+  const el=document.createElement('div');
+  el.className='pixel-flash';
+  el.style.cssText=`left:${screen.x}px;top:${screen.y}px;background:${PALETTE[selectedColor]?.c||'#fff'};`;
+  document.getElementById('game-root').appendChild(el);
+  setTimeout(()=>el.remove(),450);
+  // Sparkles
+  for (let i=0;i<3;i++) {
+    const sp=document.createElement('div');
+    sp.className='sparkle';
+    sp.textContent='✦';
+    sp.style.cssText=`left:${screen.x+(Math.random()-0.5)*30}px;top:${screen.y+(Math.random()-0.5)*30}px;color:${PALETTE[selectedColor]?.c||'#fff'};animation-delay:${i*0.08}s;`;
+    document.getElementById('game-root').appendChild(sp);
+    setTimeout(()=>sp.remove(),600);
+  }
+}
+
+function canvasToScreen(cx,cy){return{x:cx*camZoom+camX,y:cy*camZoom+camY};}
+function screenToCanvas(sx,sy){return{x:(sx-camX)/camZoom,y:(sy-camY)/camZoom};}
+
+// ── EYEDROPPER ──
+function eyedrop(x,y) {
+  if (x<0||y<0||x>=canvasW||y>=canvasH) return;
+  selectColor(canvasData[y*canvasW+x]);
+  showToast('Цвет выбран: '+PALETTE[canvasData[y*canvasW+x]]?.n,'info');
+  setTool('pencil');
+}
+
+// ── INPUT ──
+const wrap=document.getElementById('canvas-wrap');
+let lastTapTime=0;
+
+wrap.addEventListener('mousedown',e=>{
+  if (e.button===1||e.button===2) {
+    isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
+    wrap.style.cursor='grabbing';e.preventDefault();
+  } else if (e.button===0) {
+    const p=getCanvasPos(e.clientX,e.clientY);
+    if (tool==='pencil') placePixel();
+    else if (tool==='eyedrop') eyedrop(Math.floor(p.x),Math.floor(p.y));
+  }
+});
+
+wrap.addEventListener('mousemove',e=>{
+  if (isDragging) {
+    camX=camStart.x+(e.clientX-dragStart.x);
+    camY=camStart.y+(e.clientY-dragStart.y);
+    applyTransform();
+    return;
+  }
+  const p=getCanvasPos(e.clientX,e.clientY);
+  const px=Math.floor(p.x),py=Math.floor(p.y);
+  if (px!==hoveredPixel.x||py!==hoveredPixel.y) {
+    hoveredPixel={x:px,y:py};
+    renderOverlay();
+    updateInspector(e.clientX,e.clientY,px,py);
+    updateCoordsBar(px,py);
+    if (isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y)) {
+      lastSentCursor={x:px,y:py};
+      sendJSON({action:'cursor',x:px,y:py,c:selectedColor});
+    }
+  }
+});
+
+wrap.addEventListener('mouseup',e=>{if(e.button===1||e.button===2){isDragging=false;wrap.style.cursor='crosshair';}});
+wrap.addEventListener('wheel',e=>{e.preventDefault();applyZoom(camZoom*(e.deltaY<0?1.12:1/1.12),e.clientX,e.clientY);renderGrid();updateAllCursorFlags();},{passive:false});
+wrap.addEventListener('contextmenu',e=>e.preventDefault());
+wrap.addEventListener('mouseleave',()=>{hoveredPixel={x:-1,y:-1};renderOverlay();document.getElementById('inspector').style.display='none';updateCoordsBar(-1,-1);});
+
+// Touch
+let touches=[];
+let lastTouchTime=0;
+wrap.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  touches=Array.from(e.touches);
+  if (touches.length===1) {isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};camStart={x:camX,y:camY};}
+},{passive:false});
+
+wrap.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const t=Array.from(e.touches);
+  if (t.length===1&&isDragging) {
+    camX=camStart.x+(t[0].clientX-dragStart.x);camY=camStart.y+(t[0].clientY-dragStart.y);applyTransform();
+  } else if (t.length===2&&touches.length===2) {
+    const d0=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+    const d1=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+    const cx=(t[0].clientX+t[1].clientX)/2,cy=(t[0].clientY+t[1].clientY)/2;
+    applyZoom(camZoom*(d1/d0),cx,cy);
+  }
+  touches=t;
+},{passive:false});
+
+wrap.addEventListener('touchend',e=>{
+  if (e.touches.length===0) {
+    isDragging=false;
+    // Single tap = place pixel
+    if (e.changedTouches.length===1) {
+      const now=Date.now();
+      const t=e.changedTouches[0];
+      // Check if moved significantly (drag vs tap)
+      const dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;
+      if (Math.hypot(dx,dy)<10) {
+        const p=getCanvasPos(t.clientX,t.clientY);
+        hoveredPixel={x:Math.floor(p.x),y:Math.floor(p.y)};
+        placePixel();
+      }
+    }
+  }
+  touches=Array.from(e.touches);
+},{passive:false});
+
+function getCanvasPos(sx,sy){return{x:(sx-camX)/camZoom,y:(sy-camY)/camZoom};}
+
+function updateCoordsBar(x,y){document.getElementById('coords-badge').textContent=(x<0)?'— , —':`${x} , ${y}`;}
+
+function updateInspector(mx,my,px,py) {
+  if (!inspectorEnabled||px<0||py<0||px>=canvasW||py>=canvasH) {document.getElementById('inspector').style.display='none';return;}
+  const cidx=canvasData[py*canvasW+px];
+  const col=PALETTE[cidx]||{c:'#fff',n:'?'};
+  document.getElementById('inspector-color').style.background=col.c;
+  document.getElementById('inspector-text').textContent=`${px},${py} — ${col.n}`;
+  const el=document.getElementById('inspector');
+  el.style.display='flex';
+  let lx=mx+14,ly=my+14;
+  if (lx+200>window.innerWidth) lx=mx-190;
+  if (ly+38>window.innerHeight) ly=my-38;
+  el.style.left=lx+'px';el.style.top=ly+'px';
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if (['input','textarea'].includes(e.target.tagName.toLowerCase())) return;
+  if (e.key==='e'||e.key==='E') setTool(tool==='pencil'?'eyedrop':'pencil');
+  if (e.key==='g'||e.key==='G') toggleGrid();
+  if (e.key==='p'||e.key==='P') togglePalette();
+  if (e.key==='Escape') hideAllPanels();
+  if (e.key==='+'||e.key==='=') zoomIn();
+  if (e.key==='-') zoomOut();
+  if (e.key===' ') {e.preventDefault();placePixel();}
+});
+
+// ── TOOLS ──
+function setTool(t) {
+  tool=t;
+  document.getElementById('btn-tool-pencil').classList.toggle('active',t==='pencil');
+  document.getElementById('btn-tool-eyedrop').classList.toggle('active',t==='eyedrop');
+  wrap.style.cursor=t==='eyedrop'?'crosshair':'crosshair';
+}
+
+function toggleGrid() {
+  gridEnabled=!gridEnabled;
+  document.getElementById('btn-grid').classList.toggle('active',gridEnabled);
+  document.getElementById('toggle-grid').classList.toggle('on',gridEnabled);
+  renderGrid();
+}
+
+function togglePalette() {
+  const p=document.getElementById('palette-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+
+function toggleSmoothCamera(){smoothCamera=!smoothCamera;document.getElementById('toggle-smooth').classList.toggle('on',smoothCamera);}
+function toggleCursors(){showCursors=!showCursors;document.getElementById('toggle-cursors').classList.toggle('on',showCursors);if(!showCursors)clearCursorFlags();}
+function toggleInspector(){inspectorEnabled=!inspectorEnabled;document.getElementById('toggle-inspector').classList.toggle('on',inspectorEnabled);}
+function toggleSound(){soundEnabled=!soundEnabled;document.getElementById('toggle-sound').classList.toggle('on',soundEnabled);}
+function setGridZoom(v){gridZoom=parseInt(v);document.getElementById('grid-zoom-val').textContent=v+'x';renderGrid();}
+
+function playClick() {
+  try {
+    const ac=new AudioContext();const osc=ac.createOscillator();const g=ac.createGain();
+    osc.connect(g);g.connect(ac.destination);osc.frequency.value=880;
+    g.gain.setValueAtTime(0.08,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.07);
+    osc.start(ac.currentTime);osc.stop(ac.currentTime+0.07);
+  }catch(_){}
+}
+
+// ── PANELS ──
+function showPanel(id) {
+  hideAllPanels();
+  document.getElementById(id)?.classList.add('show');
+  document.getElementById('backdrop').classList.add('show');
+  if (id==='leaderboard-panel') sendJSON({action:'get_leaderboard'});
+  if (id==='profile-panel') {buildEmojiAvatarPicker();loadAvatarFromStorage();}
+  if (id==='admin-panel') loadAdminStats();
+}
+function hidePanel(id){document.getElementById(id)?.classList.remove('show');document.getElementById('backdrop').classList.remove('show');}
+function hideAllPanels(){document.querySelectorAll('.overlay-panel:not(#auth-panel)').forEach(p=>p.classList.remove('show'));document.getElementById('backdrop').classList.remove('show');}
+document.getElementById('backdrop').onclick=()=>{if(document.getElementById('auth-panel').classList.contains('show'))return;hideAllPanels();};
+
+// ── LEADERBOARD ──
+function renderLeaderboard(data) {
+  const c=document.getElementById('lb-list');
+  if (!data.length) {c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
+  c.innerHTML=data.map((u,i)=>`
+    <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
+      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <div style="font-size:16px">${u.emoji||'👾'}</div>
+      <div class="lb-name">${esc(u.username)}</div>
+      <div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div>
+    </div>`).join('');
+}
+
+// ── ADMIN ──
+function switchAdminTab(tab) {
+  ['users','canvas','tools','broadcast','stats'].forEach(t=>{
+    document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>{
+    el.classList.toggle('active',['users','canvas','tools','broadcast','stats'][i]===tab);
+  });
+  if (tab==='stats') loadAdminStats();
+}
+
+function loadAdminUsers(page){page=page||adminPage;sendJSON({action:'admin_cmd',cmd:'get_users',page});}
+function adminPageNav(dir){const np=adminPage+dir;if(np<1||np>adminTotalPages)return;loadAdminUsers(np);}
+
+function filterAdminUsers() {
+  const q=document.getElementById('admin-search').value.toLowerCase();
+  renderAdminUsers(q?allAdminUsers.filter(u=>u.username.toLowerCase().includes(q)):allAdminUsers);
+}
+
+function renderAdminUsers(users) {
+  const c=document.getElementById('admin-users-list');
+  if (!users.length) {c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
+  c.innerHTML=users.map(u=>`
+    <div class="user-card">
+      <div class="user-card-top">
+        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px)</span></div>
+        <span class="user-badge ${u.role==='admin'?'badge-admin':'badge-user'}">${u.role.toUpperCase()}</span>
+        ${u.banned?'<span class="user-badge badge-banned">BANNED</span>':''}
+      </div>
+      <div class="user-actions">
+        <button class="action-btn ab-role" onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Снять админа':'Дать админа'}</button>
+        <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',300)">5м</button>
+        <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
+        <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
+        <button class="action-btn ab-msg" onclick="prefillDM('${esc(u.username)}')">✉</button>
+      </div>
+    </div>`).join('');
+}
+
+function adminCmd(cmd,target,params){
+  sendJSON({action:'admin_cmd',cmd,target,params,page:adminPage});
+  setTimeout(()=>loadAdminUsers(adminPage),300);
+}
+
+function adminResizeCanvas() {
+  const w=parseInt(document.getElementById('admin-canvas-w').value);
+  const h=parseInt(document.getElementById('admin-canvas-h').value);
+  if (w<16||h<16||w>2048||h>2048) {showToast('Некорректный размер (16–2048)','error');return;}
+  sendJSON({action:'admin_cmd',cmd:'resize_canvas',params:{w,h}});
+}
+
+function adminClearCanvas() {
+  if (!confirm('Очистить весь холст?')) return;
+  sendJSON({action:'admin_cmd',cmd:'clear_canvas'});
+}
+
+function adminToggleCursors() {
+  serverCursorsEnabled=!serverCursorsEnabled;
+  sendJSON({action:'admin_cmd',cmd:'toggle_cursors',params:serverCursorsEnabled});
+}
+
+function adminBroadcast() {
+  const msg=document.getElementById('broadcast-msg').value.trim();
+  if (!msg) {showToast('Введите сообщение','error');return;}
+  sendJSON({action:'admin_cmd',cmd:'broadcast',params:msg});
+  document.getElementById('broadcast-msg').value='';
+}
+
+function adminSendDM() {
+  const target=document.getElementById('dm-target').value.trim();
+  const msg=document.getElementById('dm-msg').value.trim();
+  if (!target||!msg) {showToast('Заполните поля','error');return;}
+  sendJSON({action:'admin_cmd',cmd:'send_dm',target,params:msg});
+  showToast(`Отправлено ${target}`,'info');
+}
+
+function prefillDM(username) {
+  switchAdminTab('broadcast');
+  document.getElementById('dm-target').value=username;
+}
+
+function loadAdminStats() {
+  document.getElementById('stat-online').textContent=document.getElementById('online-count').textContent;
+  document.getElementById('stat-canvas-size').textContent=`${canvasW}×${canvasH}`;
+  sendJSON({action:'admin_cmd',cmd:'get_users',page:1});
+  setTimeout(()=>{
+    document.getElementById('stat-total-users').textContent=allAdminUsers.length||'—';
+    document.getElementById('stat-banned').textContent=allAdminUsers.filter(u=>u.banned).length||'—';
+    document.getElementById('stat-total-pixels').textContent=allAdminUsers.reduce((s,u)=>s+(u.pixels||0),0).toLocaleString();
+  },600);
+}
+
+// ── ADMIN FILL RECT ──
+function buildAdminFillPalette() {
+  const g=document.getElementById('admin-fill-palette'); if(!g)return;
+  g.innerHTML='';
+  PALETTE.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='admin-color-select'+(i===adminFillColorIdx?' selected':'');
+    d.style.background=p.c;
+    d.title=p.n;
+    d.onclick=()=>{
+      adminFillColorIdx=i;
+      document.querySelectorAll('.admin-color-select').forEach((c,j)=>c.classList.toggle('selected',j===i));
+    };
+    g.appendChild(d);
+  });
+}
+
+function adminFillRect() {
+  const x=parseInt(document.getElementById('fill-x').value)||0;
+  const y=parseInt(document.getElementById('fill-y').value)||0;
+  const w=parseInt(document.getElementById('fill-w').value)||1;
+  const h=parseInt(document.getElementById('fill-h').value)||1;
+  sendJSON({action:'admin_cmd',cmd:'fill_rect',params:{x,y,w,h,colorIdx:adminFillColorIdx}});
+}
+
+// ── ADMIN IMAGE PLACER ──
+let adminImageData = null;
+
+function handleAdminImage(e) {
+  const file=e.target.files[0];if(!file)return;
+  const reader=new FileReader();
+  reader.onload=ev=>{
+    const img=new Image();
+    img.onload=()=>{
+      document.getElementById('image-preview').src=ev.target.result;
+      document.getElementById('image-preview').style.display='block';
+      document.getElementById('btn-place-image').disabled=false;
+      adminImageData=img;
+      showToast('Изображение загружено','info');
+    };
+    img.src=ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+// Drag and drop for image zone
+const dropZone=document.getElementById('image-drop-zone');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
+  const input=document.getElementById('admin-image-file');
+  const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
+  handleAdminImage({target:input});
+});
+
+function adminPlaceImage() {
+  if (!adminImageData) return;
+  const xOff=parseInt(document.getElementById('img-x').value)||0;
+  const yOff=parseInt(document.getElementById('img-y').value)||0;
+  const scale=parseInt(document.getElementById('img-scale').value)||100;
+
+  const tmpCanvas=document.getElementById('admin-image-canvas');
+  const tW=Math.round(adminImageData.naturalWidth*scale/100);
+  const tH=Math.round(adminImageData.naturalHeight*scale/100);
+  tmpCanvas.width=tW;tmpCanvas.height=tH;
+  const tctx=tmpCanvas.getContext('2d');
+  tctx.drawImage(adminImageData,0,0,tW,tH);
+  const imgData=tctx.getImageData(0,0,tW,tH);
+  const pixels=[];
+
+  // Quantize each pixel to nearest palette color
+  for (let y=0;y<tH;y++) {
+    for (let x=0;x<tW;x++) {
+      const idx=(y*tW+x)*4;
+      const r=imgData.data[idx],g=imgData.data[idx+1],b=imgData.data[idx+2],a=imgData.data[idx+3];
+      if (a<128) continue; // Skip transparent
+      let bestIdx=0,bestDist=Infinity;
+      PALETTE.forEach((p,pi)=>{
+        const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb=parseInt(p.c.slice(5,7),16);
+        const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
+        if (dist<bestDist) {bestDist=dist;bestIdx=pi;}
+      });
+      const cx=x+xOff,cy=y+yOff;
+      if (cx>=0&&cx<canvasW&&cy>=0&&cy<canvasH) pixels.push({x:cx,y:cy,c:bestIdx});
+    }
+  }
+
+  if (pixels.length===0) {showToast('Нет пикселей для размещения','error');return;}
+  showToast(`Размещаю ${pixels.length} пикселей...`,'info');
+
+  // Send in chunks to avoid huge messages
+  const CHUNK=2000;
+  for (let i=0;i<pixels.length;i+=CHUNK) {
+    const chunk=pixels.slice(i,i+CHUNK);
+    setTimeout(()=>sendJSON({action:'admin_cmd',cmd:'place_image',params:{pixels:chunk}}),(i/CHUNK)*100);
+  }
+}
+
+// ── TOAST ──
+function showToast(msg, type='info') {
+  const wrap=document.getElementById('toast-wrap');
+  const t=document.createElement('div');
+  t.className=`toast toast-${type}`;
+  t.textContent=msg;
+  wrap.appendChild(t);
+  setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),350);},3000);
+}
+
+function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+
+window.addEventListener('resize',()=>{applyTransform();renderGrid();updateAllCursorFlags();});
+
+// ── INIT ──
+function init() {
+  initCanvases();
+  buildColorGrid();
+  buildEmojiAvatarPicker();
+  drawAvatarCanvas(selectedEmoji);
+  document.getElementById('ws-url').value=wsUrl;
+  centerCamera();
+  connect();
+  document.getElementById('stat-canvas-size').textContent=`${canvasW}×${canvasH}`;
+  document.getElementById('palette-panel').style.display='block';
+}
+
+document.getElementById('auth-password').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth(false);});
+document.getElementById('reg-password').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth(true);});
+
+init();
+</script>
+</body>
 </html>
-

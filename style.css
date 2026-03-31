@@ -65,7 +65,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* ── LEADERBOARD PANEL — top-right ── */
 #leaderboard-panel{
-  position:absolute;top:64px;right:14px;
+  position:absolute;top:14px;right:14px;
   width:320px;max-height:calc(100vh - 100px);
   opacity:0;pointer-events:none;transform:translateX(20px) scale(.97);
   transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:50;
@@ -75,7 +75,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 
 /* ── CHAT BUTTON + PANEL ── */
 #chat-btn{
-  position:absolute;bottom:14px;left:14px; 
+  position:absolute;bottom:14px;left:14px;
   width:48px;height:48px;border-radius:14px;
   display:flex;align-items:center;justify-content:center;
   background:rgba(15,15,17,0.9);border:1px solid var(--border2);backdrop-filter:blur(16px);
@@ -143,23 +143,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #place-btn:disabled{opacity:.6;cursor:not-allowed;}
 #place-btn:not(:disabled):hover{letter-spacing:2px;}
 .place-border{position:absolute;inset:0;border-radius:inherit;border:1px solid rgba(255,255,255,.12);pointer-events:none;}
-
-/* ── BOTTOM BAR ── */
-#bottom-bar{
-  position:absolute;bottom:14px;left:50%;transform:translateX(-50%);
-  display:flex;align-items:center;gap:8px;padding:7px 14px;
-  background:rgba(15,15,17,0.92);backdrop-filter:blur(24px);
-  border:1px solid var(--border2);border-radius:var(--radius-pill);
-  box-shadow:0 4px 24px rgba(0,0,0,.5);
-}
-.bar-btn{width:38px;height:38px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);transition:all .2s cubic-bezier(.34,1.56,.64,1);}
-.bar-btn:hover{background:var(--surface3);transform:scale(1.1);}
-.bar-btn.active{background:var(--accent);border-color:var(--accent2);box-shadow:0 0 12px var(--accent-glow);}
-.bar-divider{width:1px;height:24px;background:var(--border2);}
-#quick-pal{display:flex;gap:5px;align-items:center;}
-.qp-cell{width:26px;height:26px;border-radius:7px;cursor:pointer;border:2.5px solid transparent;transition:.15s;}
-.qp-cell.sel{border-color:rgba(255,255,255,.9);transform:scale(1.15);}
-.qp-cell:hover{transform:scale(1.12);}
 
 /* ── OVERLAY PANELS ── */
 .overlay-panel{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%) scale(.95);opacity:0;pointer-events:none;transition:all .25s cubic-bezier(.34,1.56,.64,1);z-index:50;width:440px;max-width:calc(100vw - 24px);max-height:calc(100vh - 64px);overflow:hidden;display:flex;flex-direction:column;}
@@ -428,7 +411,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   .sidebar-btn .tip{display:none;}
   .sidebar-divider{display:none;}
   #palette-panel{right:0;bottom:0;border-radius:var(--radius) 0 0 0;width:calc(100vw - 24px);max-width:280px;}
-  #bottom-bar{bottom:10px;padding:6px 10px;gap:6px;}
   .overlay-panel{width:calc(100vw - 16px);max-height:calc(100vh - 80px);}
   #admin-panel{width:calc(100vw - 16px);}
   #clan-panel{width:calc(100vw - 16px);}
@@ -439,8 +421,4 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   #profile-hud{top:10px;left:10px;min-width:180px;}
   #chat-btn { bottom: 140px; left: 10px; }
   #chat-panel{left:4px;bottom:140px;width:calc(100vw - 8px);}
-}
-@media(max-width:380px){
-  .bar-btn{width:34px;height:34px;font-size:14px;}
-  .qp-cell{width:22px;height:22px;}
 }

@@ -43,6 +43,8 @@ function onAuthSuccess(d) {
   drawAvatarCanvas(selectedEmoji);
   drawHudAvatar(selectedEmoji);
   saveSession(sessionFile.username,sessionFile.password);
+  
+  if (d.stencil) applySharedStencil(d.stencil);
   if (currentClan) sendJSON({action:'clan_get'});
   buildShopUI();
 }
@@ -145,26 +147,12 @@ function buildColorGrid() {
     d.onclick=()=>selectColor(i);
     g.appendChild(d);
   });
-  buildQuickPalette();
-}
-
-function buildQuickPalette() {
-  const qp=document.getElementById('quick-pal'); qp.innerHTML='';
-  const recent=[selectedColor,...[8,12,16,23,26].filter(x=>x!==selectedColor)].slice(0,5);
-  recent.forEach((i)=>{
-    const d=document.createElement('div');
-    d.className='qp-cell'+(i===selectedColor?' sel':'');
-    d.style.background=PALETTE[i]?.c||'#fff';d.title=PALETTE[i]?.n||'';
-    d.onclick=()=>selectColor(i);
-    qp.appendChild(d);
-  });
 }
 
 function selectColor(idx) {
   selectedColor=idx;
   document.querySelectorAll('.color-cell').forEach((c,i)=>c.classList.toggle('selected',i===idx));
   document.getElementById('color-name-bar').textContent=PALETTE[idx]?.n||'';
-  buildQuickPalette();
   if (isLoggedIn) sendJSON({action:'cursor',x:hoveredPixel.x,y:hoveredPixel.y,c:idx});
 }
 
@@ -301,14 +289,60 @@ function toggleStencilEdit() {
   }
 }
 
+// Загрузка трафарета в облако для сохранения
+async function uploadPersonalStencil(dataUrl) {
+    showToast('Сохранение в облако...', 'info');
+    try {
+        const res = await fetch('/api/upload-template', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ imageBase64: dataUrl, name: 'stencil_' + currentUser, username: currentUser })
+        });
+        const data = await res.json();
+        if (data.url) {
+            personalStencilUrl = data.url;
+            sendJSON({ action: 'save_personal_stencil', stencil: { img: data.url, rect: stencilRect, opacity: stencilOpacity } });
+            showToast('Трафарет сохранён в облаке!', 'success');
+        }
+    } catch (e) { console.error(e); }
+}
+
+function updateStencilGraphic() {
+  if (!stencilOrigImg) return;
+  const tmpC = document.createElement('canvas');
+  tmpC.width = stencilRect.w;
+  tmpC.height = stencilRect.h;
+  const tctx = tmpC.getContext('2d');
+  tctx.imageSmoothingEnabled = false; // Nearest neighbor
+  tctx.drawImage(stencilOrigImg, 0, 0, stencilRect.w, stencilRect.h);
+
+  const idata = tctx.getImageData(0, 0, stencilRect.w, stencilRect.h);
+  for (let i = 0; i < idata.data.length; i += 4) {
+      if (idata.data[i+3] < 128) idata.data[i+3] = 0;
+      else idata.data[i+3] = 255;
+  }
+  tctx.putImageData(idata, 0, 0);
+
+  const scaledImg = new Image();
+  scaledImg.onload = () => {
+    stencilImg = scaledImg;
+    stencilImageData = idata;
+    renderOverlay();
+  };
+  scaledImg.src = tmpC.toDataURL();
+}
+
 function scaleStencil(factor) {
-  if (!stencilImageData) { showToast('Сначала загрузите трафарет', 'error'); return; }
+  if (!stencilOrigImg) { showToast('Сначала загрузите трафарет', 'error'); return; }
   const newW = Math.max(1, Math.round(stencilRect.w * factor));
   const newH = Math.max(1, Math.round(stencilRect.h * factor));
   stencilRect.w = newW;
   stencilRect.h = newH;
-  renderOverlay();
+  updateStencilGraphic();
   showToast(`Размер: ${newW}×${newH} пикс.`, 'info');
+  if (personalStencilUrl) {
+      sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+  }
 }
 
 document.getElementById('stencil-file-input').addEventListener('change',e=>{
@@ -342,10 +376,9 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
       }
       tctx.putImageData(idata, 0, 0);
 
-      const newImg = new Image();
-      newImg.onload = () => {
-        stencilImg = newImg;
-        stencilImageData = idata;
+      const snappedImg = new Image();
+      snappedImg.onload = () => {
+        stencilOrigImg = snappedImg; // Сохраняем оригинал
         stencilOrigWidth = img.width;
         stencilOrigHeight = img.height;
         
@@ -361,10 +394,12 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
         stencilEditMode=true;
         document.getElementById('stencil-edit-toggle').classList.add('on');
         
-        showToast(`Трафарет загружен! ${img.width}×${img.height} пикс. = 1:1 с холстом.`,'info');
-        renderOverlay();
+        updateStencilGraphic(); // Применяем ресемплинг
+        showToast(`Трафарет загружен! ${img.width}×${img.height} пикс.`,'info');
+        
+        uploadPersonalStencil(tmpC.toDataURL());
       };
-      newImg.src = tmpC.toDataURL();
+      snappedImg.src = tmpC.toDataURL();
     };
     img.src=ev.target.result;
   };
@@ -375,17 +410,28 @@ function updateStencilOpacity(v){
   stencilOpacity=v/100;
   document.getElementById('stencil-opacity-val').textContent=v+'%';
   renderOverlay();
+  if (personalStencilUrl) {
+      sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+  }
 }
 
 function cancelStencil(){
-  stencilActive=false;stencilImg=null;stencilImageData=null;
+  stencilActive=false;stencilImg=null;stencilImageData=null;stencilOrigImg=null;personalStencilUrl=null;
   document.getElementById('stencil-panel').style.display='none';
+  sendJSON({ action: 'save_personal_stencil', stencil: null });
   renderOverlay();
 }
 
 async function shareStencilToClan(){
   if (!currentClan){showToast('Вы не в клане','error');return;}
   if (!stencilImg) {showToast('Сначала загрузите трафарет','error');return;}
+  
+  if (personalStencilUrl) {
+      sendJSON({ action: 'clan_share_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+      showToast('Трафарет отправлен соклановцам!', 'success');
+      return;
+  }
+  
   showToast('Загрузка в облако...', 'info');
   try {
     const res = await fetch('/api/upload-template', {
@@ -406,22 +452,24 @@ function applySharedStencil(data){
   const img=new Image();
   img.crossOrigin = "Anonymous";
   img.onload=()=>{
-    const tmpC = document.createElement('canvas');
-    tmpC.width = img.width; tmpC.height = img.height;
-    const tctx = tmpC.getContext('2d');
-    tctx.drawImage(img, 0, 0);
-    stencilImg=img;
+    stencilOrigImg = img; // Сохраняем оригинал
+    stencilOrigWidth = img.width;
+    stencilOrigHeight = img.height;
+
     stencilRect=data.rect||{x:0,y:0,w:img.width,h:img.height};
     stencilOpacity=data.opacity||0.6;
     stencilActive=true;
     stencilEditMode=false;
     document.getElementById('stencil-edit-toggle').classList.remove('on');
-    stencilImageData = tctx.getImageData(0,0,img.width,img.height);
     document.getElementById('stencil-panel').style.display='block';
     document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
     document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
-    renderOverlay();
-    showToast('Получен трафарет от клана!','success');
+    
+    personalStencilUrl = data.img;
+    sendJSON({ action: 'save_personal_stencil', stencil: { img: data.img, rect: stencilRect, opacity: stencilOpacity } });
+    
+    updateStencilGraphic(); // Применяем ресемплинг
+    showToast('Трафарет успешно загружен!','success');
   };
   img.src=data.img;
 }
@@ -430,8 +478,8 @@ function handleStencilStart(clientX,clientY){
   if (!stencilActive||!stencilImg||!stencilEditMode) return false;
   const off = getRenderOffset();
   const ir=stencilRect;
-  const sx=Math.floor(ir.x*camZoom)+off.x, sy=Math.floor(ir.y*camZoom)+off.y;
-  const sw=Math.floor(ir.w*camZoom), sh=Math.floor(ir.h*camZoom);
+  const sx=Math.round(ir.x*camZoom)+off.x, sy=Math.round(ir.y*camZoom)+off.y;
+  const sw=Math.round(ir.w*camZoom), sh=Math.round(ir.h*camZoom);
   if (clientX>=sx&&clientX<=sx+sw&&clientY>=sy&&clientY<=sy+sh){
     stencilHandle='move';
     stencilDragOffset={x:(clientX-sx)/camZoom,y:(clientY-sy)/camZoom};
@@ -487,7 +535,7 @@ function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text || !isLoggedIn) return;
-  sendJSON({action:'chat_message', text});
+  sendJSON({action:'chat_send', text});
   input.value = '';
 }
 
@@ -538,7 +586,7 @@ function sendClanChat() {
   const input = document.getElementById('clan-chat-input');
   const text = input.value.trim();
   if (!text || !isLoggedIn || !currentClan) return;
-  sendJSON({action:'clan_chat', text});
+  sendJSON({action:'clan_chat_send', text});
   input.value = '';
 }
 
@@ -698,7 +746,7 @@ function buildShopUI(){
 }
 
 function getItemCount(itemId) { return Array.isArray(purchasedItems) ? purchasedItems.filter(i => i === itemId).length : 0; }
-function buyItem(itemId) { sendJSON({action:'buy_item', item_id: itemId}); }
+function buyItem(itemId) { sendJSON({action:'shop_buy', itemId: itemId}); } // ФИКС НА shop_buy
 
 function useAdminShopItem(itemId) {
   if (itemId === 'admin_nuke') {
@@ -817,7 +865,7 @@ function handleToolInteractionStart(clientX,clientY){
   if ((tool==='admin_image' || adminImagePreviewMode)&&adminImgObj){
     const off = getRenderOffset();
     let ir=adminImgRect;
-    let sx=Math.floor(ir.x*camZoom)+off.x,sy=Math.floor(ir.y*camZoom)+off.y,sw=Math.floor(ir.w*camZoom),sh=Math.floor(ir.h*camZoom);
+    let sx=Math.round(ir.x*camZoom)+off.x,sy=Math.round(ir.y*camZoom)+off.y,sw=Math.round(ir.w*camZoom),sh=Math.round(ir.h*camZoom);
     const dist=(x1,y1)=>Math.hypot(clientX-x1,clientY-y1);
     const HIT=15;
     if (dist(sx,sy)<=HIT) adminActiveHandle='tl';
@@ -980,8 +1028,15 @@ function setTool(t){
   }
 }
 
+function togglePalette(){
+  const p = document.getElementById('palette-panel');
+  const isHidden = p.style.display === 'none';
+  p.style.display = isHidden ? 'block' : 'none';
+  const btn = document.getElementById('btn-palette');
+  if(btn) btn.classList.toggle('active', isHidden);
+}
+
 function toggleGrid(){ gridEnabled=!gridEnabled; document.getElementById('btn-grid').classList.toggle('active',gridEnabled); document.getElementById('toggle-grid').classList.toggle('on',gridEnabled); applyTransform(); }
-function togglePalette(){ const p=document.getElementById('palette-panel'); p.style.display=p.style.display==='none'?'block':'none'; }
 function toggleSmoothCamera(){smoothCamera=!smoothCamera;document.getElementById('toggle-smooth').classList.toggle('on',smoothCamera);}
 function toggleCursors(){showCursors=!showCursors;document.getElementById('toggle-cursors').classList.toggle('on',showCursors);if(!showCursors)clearCursorFlags();}
 function toggleInspector(){inspectorEnabled=!inspectorEnabled;document.getElementById('toggle-inspector').classList.toggle('on',inspectorEnabled);}

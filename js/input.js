@@ -71,7 +71,14 @@ wrap.addEventListener('mousemove',e=>{
 
 wrap.addEventListener('mouseup',e=>{
   if (e.button===1||e.button===2||(e.button===0&&isDragging)){ isDragging=false;wrap.style.cursor='crosshair'; }
+  
+  let wasDraggingStencil = !!stencilHandle;
   isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
+  
+  // Сохраняем позицию трафарета в облако после перемещения
+  if (wasDraggingStencil && typeof personalStencilUrl !== 'undefined' && personalStencilUrl) {
+      sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+  }
 
   if (isDraggingAdminShape) {
     isDraggingAdminShape = false;
@@ -155,7 +162,13 @@ wrap.addEventListener('touchmove',e=>{
 
 wrap.addEventListener('touchend',e=>{
   if (e.touches.length===0){
+    let wasDraggingStencil = !!stencilHandle;
     isDragging=false;isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
+    
+    if (wasDraggingStencil && typeof personalStencilUrl !== 'undefined' && personalStencilUrl) {
+        sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+    }
+
     if (e.changedTouches.length===1){
       const t=e.changedTouches[0]; const dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;
       if (Math.hypot(dx,dy)<10&&(tool==='pencil'||(!stencilEditMode && tool==='stencil'))){

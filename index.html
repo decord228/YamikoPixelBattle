@@ -62,6 +62,7 @@
     <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')">✏️<span class="tip">Карандаш [E]</span></div>
     <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')">🔍<span class="tip">Пипетка</span></div>
     <div class="sidebar-btn" id="btn-tool-stencil" onclick="toggleStencilPanel()">📐<span class="tip">Трафарет</span></div>
+    <div class="sidebar-btn" id="btn-palette" onclick="togglePalette()">🎨<span class="tip">Палитра [P]</span></div>
     <div class="sidebar-divider"></div>
     
     <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-rect" onclick="setTool('admin_rect')">▭<span class="tip">Прямоугольник (Админ)</span></div>
@@ -113,15 +114,6 @@
        <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto; background:var(--accent2);">ОТПРАВИТЬ</button>
     </div>
     <button class="btn btn-danger btn-sm" onclick="cancelStencil()" style="margin-top:16px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); font-weight:600;">✕ СКРЫТЬ ТРАФАРЕТ</button>
-  </div>
-
-  <div id="bottom-bar">
-    <div class="bar-btn" onclick="togglePalette()" title="Палитра [P]">🎨</div>
-    <div class="bar-divider"></div>
-    <div id="quick-pal"></div>
-    <div class="bar-divider"></div>
-    <div class="bar-btn" onclick="zoomIn()" title="Приблизить [+]">＋</div>
-    <div class="bar-btn" onclick="zoomOut()" title="Отдалить [-]">－</div>
   </div>
 
   <div id="chat-btn" onclick="toggleChat()">💬<div id="chat-unread"></div></div>

@@ -67,6 +67,7 @@ let stencilHandle = null;
 let stencilDragOffset = {x:0,y:0};
 let stencilImageData = null;
 let stencilOrigWidth = 0, stencilOrigHeight = 0;
+let savedStencils = []; // Сохраненные пресеты трафаретов
 
 // Active item usage
 let activeItem = null;

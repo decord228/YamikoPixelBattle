@@ -113,6 +113,12 @@
        <div><div class="setting-label" style="line-height:1.3;">Поделиться с<br>кланом</div></div>
        <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto; background:var(--accent2);">ОТПРАВИТЬ</button>
     </div>
+    
+    <div class="section-sep"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;">Мои шаблоны</div>
+    <button class="btn btn-secondary btn-sm" onclick="promptSaveStencil()" style="margin-bottom:8px; width:100%;">💾 Сохранить текущий</button>
+    <div id="saved-stencils-list" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;"></div>
+
     <button class="btn btn-danger btn-sm" onclick="cancelStencil()" style="margin-top:16px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); font-weight:600;">✕ СКРЫТЬ ТРАФАРЕТ</button>
   </div>
 
@@ -270,16 +276,12 @@
       <div class="clan-card">
         <div class="clan-name"><span id="clan-disp-name">—</span><span class="clan-tag" id="clan-disp-tag">—</span></div>
         <div class="clan-meta" id="clan-disp-desc"></div>
-        <div class="clan-meta">👑 Лидер: <strong id="clan-disp-leader">—</strong> · 👥 <span id="clan-disp-members">0</span> участников</div>
+        <div class="clan-meta" style="margin-top:8px;">👑 Лидер: <strong id="clan-disp-leader">—</strong> · 👥 <span id="clan-disp-members">0</span> участников</div>
       </div>
 
       <div class="clan-motd">
         <div class="clan-motd-label">💬 Сообщение дня</div>
         <div id="clan-motd-text">Добро пожаловать в клан!</div>
-        <div id="clan-motd-edit" style="display:none;margin-top:8px;">
-          <input class="form-input" id="clan-motd-input" placeholder="Сообщение дня..." style="font-size:11px;padding:6px 10px;margin-bottom:6px;">
-          <button class="btn btn-secondary btn-sm" onclick="saveClanMotd()">Сохранить</button>
-        </div>
       </div>
 
       <div class="sub-tabs">
@@ -306,16 +308,29 @@
       </div>
 
       <div id="clan-inner-settings" style="display:none">
-        <div class="setting-row" style="padding-top:0">
-          <div><div class="setting-label">Общий курсор</div><div class="setting-desc">Соклановцы видят курсоры друг друга</div></div>
-          <div class="toggle" id="clan-cursor-toggle" onclick="toggleClanCursor()"></div>
+        <div class="form-group"><label class="form-label">Значок клана (Эмодзи)</label><input class="form-input" id="cs-icon" maxlength="2"></div>
+        <div class="form-group"><label class="form-label">Цвет тега (HEX)</label>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <input type="color" id="cs-tag-color" style="height:38px; width:50px; border:none; border-radius:8px; cursor:pointer; background:var(--surface2);">
+            <div style="font-size:11px;color:var(--text2);">Выберите цвет</div>
+          </div>
         </div>
-        <div class="section-sep"></div>
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Сообщение дня</div>
-        <div id="clan-motd-edit-settings">
-          <input class="form-input" id="clan-motd-input-s" placeholder="Сообщение дня..." style="font-size:11px;padding:8px 10px;margin-bottom:8px;">
-          <button class="btn btn-secondary" onclick="saveClanMotdFromSettings()">Сохранить</button>
+        <div class="form-group"><label class="form-label">Тип вступления</label>
+          <select class="form-input" id="cs-join-type">
+            <option value="open">Открытый (Вступают все)</option>
+            <option value="request">По заявкам</option>
+            <option value="closed">Закрытый</option>
+          </select>
         </div>
+        <div class="form-group"><label class="form-label">Мин. пикселей для входа</label><input type="number" class="form-input" id="cs-min-pixels" min="0"></div>
+        <div class="form-group"><label class="form-label">Внешняя ссылка (Discord/Сайт)</label><input type="text" class="form-input" id="cs-social" placeholder="https://..."></div>
+        
+        <div class="setting-row"><div><div class="setting-label">Публичный клан</div><div class="setting-desc">Показывать в списке и топе кланов</div></div><div class="toggle" id="cs-public-toggle" onclick="this.classList.toggle('on')"></div></div>
+        <div class="setting-row"><div><div class="setting-label">Общий курсор</div><div class="setting-desc">Участники видят курсоры друг друга</div></div><div class="toggle" id="cs-cursor-toggle" onclick="this.classList.toggle('on')"></div></div>
+        
+        <div class="form-group" style="margin-top:14px;"><label class="form-label">Сообщение дня (MOTD)</label><textarea class="form-input" id="cs-motd" rows="3" placeholder="Отображается в профиле клана"></textarea></div>
+        
+        <button class="btn btn-primary" style="margin-top:8px;" onclick="saveClanSettings()">💾 Сохранить настройки</button>
       </div>
 
       <div class="section-sep"></div>

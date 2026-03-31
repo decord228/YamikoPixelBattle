@@ -71,6 +71,8 @@ function handleJSON(d) {
     purchasedItems=d.purchased_items||d.purchased_levels||[];
     currentClan=d.clan||'';
     selectedEmoji=currentEmoji;
+    savedStencils = d.saved_stencils || [];
+    if (typeof renderSavedStencils === 'function') renderSavedStencils();
     if (d.canvas_w&&d.canvas_h&&(d.canvas_w!==canvasW||d.canvas_h!==canvasH)) resizeCanvas(d.canvas_w,d.canvas_h);
     if (d.settings) applyServerSettings(d.settings);
     onAuthSuccess(d);
@@ -125,7 +127,7 @@ function handleJSON(d) {
   }
   else if (a==='clan_settings_update') {
     clanShareCursor=!!d.share_cursor;
-    const tog=document.getElementById('clan-cursor-toggle');
+    const tog=document.getElementById('cs-cursor-toggle');
     if (tog) tog.classList.toggle('on',clanShareCursor);
     if (!clanShareCursor) clearCursorFlags();
   }
@@ -136,7 +138,7 @@ function handleJSON(d) {
     if (d.msg) addClanChatMessage(d.msg.username, d.msg.text, d.msg.emoji);
   }
   else if (a==='clan_motd') {
-    document.getElementById('clan-motd-text').textContent = d.motd || '';
+    document.getElementById('clan-motd-text').textContent = d.motd || 'Добро пожаловать в клан!';
   }
   else if (a==='clan_requests') {
     renderClanRequests(d.requests || []);
@@ -154,6 +156,11 @@ function handleJSON(d) {
     if (d.coins!==undefined){currentCoins=d.coins;updateCoinsUI(currentCoins);}
     if (d.message) showToast(d.message,'success');
     buildShopUI();
+  }
+  else if (a==='stencil_presets_update') {
+    savedStencils = d.stencils || [];
+    if (typeof renderSavedStencils === 'function') renderSavedStencils();
+    if (d.message) showToast(d.message, 'success');
   }
   else if (a==='admin_stats_data') {
     document.getElementById('stat-total-users').textContent=d.total_users||0;

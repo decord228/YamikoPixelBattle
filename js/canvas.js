@@ -64,14 +64,14 @@ function renderOverlay() {
     const endY = Math.min(canvasH, Math.ceil((overlayCanvas.height - off.y) / camZoom));
 
     for (let i = startX; i <= endX; i++) {
-      const x = Math.round(i * camZoom) + off.x;
-      octx.moveTo(x + 0.5, Math.round(startY * camZoom) + off.y);
-      octx.lineTo(x + 0.5, Math.round(endY * camZoom) + off.y);
+      const x = Math.floor(i * camZoom) + off.x;
+      octx.moveTo(x + 0.5, Math.floor(startY * camZoom) + off.y);
+      octx.lineTo(x + 0.5, Math.floor(endY * camZoom) + off.y);
     }
     for (let j = startY; j <= endY; j++) {
-      const y = Math.round(j * camZoom) + off.y;
-      octx.moveTo(Math.round(startX * camZoom) + off.x, y + 0.5);
-      octx.lineTo(Math.round(endX * camZoom) + off.x, y + 0.5);
+      const y = Math.floor(j * camZoom) + off.y;
+      octx.moveTo(Math.floor(startX * camZoom) + off.x, y + 0.5);
+      octx.lineTo(Math.floor(endX * camZoom) + off.x, y + 0.5);
     }
     octx.stroke();
   }
@@ -82,17 +82,17 @@ function renderOverlay() {
       octx.lineWidth = Math.max(1, Math.floor(camZoom));
       
       if (tool === 'admin_rect') {
-          let rx1 = Math.round(Math.min(adminShapeStart.x, adminShapeEnd.x) * camZoom) + off.x;
-          let ry1 = Math.round(Math.min(adminShapeStart.y, adminShapeEnd.y) * camZoom) + off.y;
-          let rx2 = Math.round((Math.max(adminShapeStart.x, adminShapeEnd.x) + 1) * camZoom) + off.x;
-          let ry2 = Math.round((Math.max(adminShapeStart.y, adminShapeEnd.y) + 1) * camZoom) + off.y;
+          let rx1 = Math.floor(Math.min(adminShapeStart.x, adminShapeEnd.x) * camZoom) + off.x;
+          let ry1 = Math.floor(Math.min(adminShapeStart.y, adminShapeEnd.y) * camZoom) + off.y;
+          let rx2 = Math.floor((Math.max(adminShapeStart.x, adminShapeEnd.x) + 1) * camZoom) + off.x;
+          let ry2 = Math.floor((Math.max(adminShapeStart.y, adminShapeEnd.y) + 1) * camZoom) + off.y;
           if (adminShapeFilled) octx.fillRect(rx1, ry1, rx2-rx1, ry2-ry1);
           octx.strokeRect(rx1, ry1, rx2-rx1, ry2-ry1);
       } else {
-          let cxStart = Math.round((adminShapeStart.x + 0.5) * camZoom) + off.x;
-          let cyStart = Math.round((adminShapeStart.y + 0.5) * camZoom) + off.y;
-          let cxEnd = Math.round((adminShapeEnd.x + 0.5) * camZoom) + off.x;
-          let cyEnd = Math.round((adminShapeEnd.y + 0.5) * camZoom) + off.y;
+          let cxStart = Math.floor((adminShapeStart.x + 0.5) * camZoom) + off.x;
+          let cyStart = Math.floor((adminShapeStart.y + 0.5) * camZoom) + off.y;
+          let cxEnd = Math.floor((adminShapeEnd.x + 0.5) * camZoom) + off.x;
+          let cyEnd = Math.floor((adminShapeEnd.y + 0.5) * camZoom) + off.y;
 
           if (tool === 'admin_circle') {
              let r = Math.hypot(adminShapeEnd.x - adminShapeStart.x, adminShapeEnd.y - adminShapeStart.y) * camZoom;
@@ -111,18 +111,18 @@ function renderOverlay() {
 
   if (tool === 'admin_move') {
       if (adminMoveState === 'select' && isDraggingAdminShape) {
-          let rx1 = Math.round(Math.min(adminShapeStart.x, adminShapeEnd.x) * camZoom) + off.x;
-          let ry1 = Math.round(Math.min(adminShapeStart.y, adminShapeEnd.y) * camZoom) + off.y;
-          let rx2 = Math.round((Math.max(adminShapeStart.x, adminShapeEnd.x) + 1) * camZoom) + off.x;
-          let ry2 = Math.round((Math.max(adminShapeStart.y, adminShapeEnd.y) + 1) * camZoom) + off.y;
+          let rx1 = Math.floor(Math.min(adminShapeStart.x, adminShapeEnd.x) * camZoom) + off.x;
+          let ry1 = Math.floor(Math.min(adminShapeStart.y, adminShapeEnd.y) * camZoom) + off.y;
+          let rx2 = Math.floor((Math.max(adminShapeStart.x, adminShapeEnd.x) + 1) * camZoom) + off.x;
+          let ry2 = Math.floor((Math.max(adminShapeStart.y, adminShapeEnd.y) + 1) * camZoom) + off.y;
           
           octx.strokeStyle = '#ffffff'; octx.lineWidth = 2; octx.setLineDash([8,4]);
           octx.strokeRect(rx1, ry1, rx2-rx1, ry2-ry1); octx.setLineDash([]);
       } else if ((adminMoveState === 'selected' || adminMoveState === 'moving') && adminMoveRect && adminMoveCanvas) {
-          let rx = Math.round(adminMoveRect.dx * camZoom) + off.x;
-          let ry = Math.round(adminMoveRect.dy * camZoom) + off.y;
-          let rx2 = Math.round((adminMoveRect.dx + adminMoveRect.w) * camZoom) + off.x;
-          let ry2 = Math.round((adminMoveRect.dy + adminMoveRect.h) * camZoom) + off.y;
+          let rx = Math.floor(adminMoveRect.dx * camZoom) + off.x;
+          let ry = Math.floor(adminMoveRect.dy * camZoom) + off.y;
+          let rx2 = Math.floor((adminMoveRect.dx + adminMoveRect.w) * camZoom) + off.x;
+          let ry2 = Math.floor((adminMoveRect.dy + adminMoveRect.h) * camZoom) + off.y;
           let rw = rx2 - rx; let rh = ry2 - ry;
           
           octx.globalAlpha = 0.8; octx.imageSmoothingEnabled = false;
@@ -134,10 +134,10 @@ function renderOverlay() {
 
   if ((tool==='admin_image' || adminImagePreviewMode) && adminImgObj) {
     let ir=adminImgRect;
-    let sx = Math.round(ir.x * camZoom) + off.x;
-    let sy = Math.round(ir.y * camZoom) + off.y;
-    let ex = Math.round((ir.x + ir.w) * camZoom) + off.x;
-    let ey = Math.round((ir.y + ir.h) * camZoom) + off.y;
+    let sx = Math.floor(ir.x * camZoom) + off.x;
+    let sy = Math.floor(ir.y * camZoom) + off.y;
+    let ex = Math.floor((ir.x + ir.w) * camZoom) + off.x;
+    let ey = Math.floor((ir.y + ir.h) * camZoom) + off.y;
     let sw = ex - sx; let sh = ey - sy;
     
     octx.globalAlpha=0.75;octx.imageSmoothingEnabled=false;
@@ -151,10 +151,10 @@ function renderOverlay() {
 
   if (stencilActive && stencilImg) {
     let ir=stencilRect;
-    let sx = Math.round(ir.x * camZoom) + off.x;
-    let sy = Math.round(ir.y * camZoom) + off.y;
-    let ex = Math.round((ir.x + ir.w) * camZoom) + off.x;
-    let ey = Math.round((ir.y + ir.h) * camZoom) + off.y;
+    let sx = Math.floor(ir.x * camZoom) + off.x;
+    let sy = Math.floor(ir.y * camZoom) + off.y;
+    let ex = Math.floor((ir.x + ir.w) * camZoom) + off.x;
+    let ey = Math.floor((ir.y + ir.h) * camZoom) + off.y;
     let sw = ex - sx; let sh = ey - sy;
     
     octx.globalAlpha=stencilOpacity;octx.imageSmoothingEnabled=false;
@@ -172,10 +172,10 @@ function renderOverlay() {
 
   if (tool==='pencil'||tool==='eyedrop'||(!stencilEditMode && stencilActive)) {
     if (hoveredPixel.x>=0&&hoveredPixel.x<canvasW&&hoveredPixel.y>=0&&hoveredPixel.y<canvasH) {
-      const sx = Math.round(hoveredPixel.x * camZoom) + off.x;
-      const sy = Math.round(hoveredPixel.y * camZoom) + off.y;
-      const ex = Math.round((hoveredPixel.x + 1) * camZoom) + off.x;
-      const ey = Math.round((hoveredPixel.y + 1) * camZoom) + off.y;
+      const sx = Math.floor(hoveredPixel.x * camZoom) + off.x;
+      const sy = Math.floor(hoveredPixel.y * camZoom) + off.y;
+      const ex = Math.floor((hoveredPixel.x + 1) * camZoom) + off.x;
+      const ey = Math.floor((hoveredPixel.y + 1) * camZoom) + off.y;
       
       octx.fillStyle='rgba(255,255,255,0.35)';
       octx.fillRect(sx, sy, ex-sx, ey-sy);
@@ -199,10 +199,10 @@ function renderItemPreview() {
   else if (activeItem === 'mirror_stamp') size = 5;
   const half = Math.floor(size / 2);
   
-  const sx = Math.round((x - half) * camZoom) + off.x;
-  const sy = Math.round((y - half) * camZoom) + off.y;
-  const ex = Math.round((x - half + size) * camZoom) + off.x;
-  const ey = Math.round((y - half + size) * camZoom) + off.y;
+  const sx = Math.floor((x - half) * camZoom) + off.x;
+  const sy = Math.floor((y - half) * camZoom) + off.y;
+  const ex = Math.floor((x - half + size) * camZoom) + off.x;
+  const ey = Math.floor((y - half + size) * camZoom) + off.y;
   
   octx.fillStyle = 'rgba(245,158,11,0.25)';
   octx.fillRect(sx, sy, ex-sx, ey-sy);
@@ -218,7 +218,6 @@ function renderStencilErrors() {
   const ir = stencilRect;
   const off = getRenderOffset();
   
-  // Рамки видимой части экрана (для оптимизации рендера)
   const startX = Math.max(0, Math.max(ir.x, Math.floor(-off.x / camZoom)));
   const startY = Math.max(0, Math.max(ir.y, Math.floor(-off.y / camZoom)));
   const endX = Math.min(canvasW, Math.min(ir.x + ir.w, Math.ceil((overlayCanvas.width - off.x) / camZoom)));
@@ -231,7 +230,6 @@ function renderStencilErrors() {
   for (let y = startY; y < endY; y++) {
     for (let x = startX; x < endX; x++) {
       const canvasColorIdx = canvasData[y * canvasW + x];
-      // Игнорируем пустые (белые) пиксели, чтобы не делать кашу
       if (canvasColorIdx === 0) continue; 
       
       const sx = Math.floor((x - ir.x) / ir.w * stencilImageData.width);
@@ -252,22 +250,20 @@ function renderStencilErrors() {
         const pg = parseInt(palHex.slice(3,5), 16);
         const pb = parseInt(palHex.slice(5,7), 16);
         
-        // Если цвет на холсте сильно отличается от требуемого цвета трафарета
         if (Math.abs(pr - sr) > 10 || Math.abs(pg - sg) > 10 || Math.abs(pb - sb) > 10) {
-          const rectSx = Math.round(x * camZoom) + off.x;
-          const rectSy = Math.round(y * camZoom) + off.y;
-          const rectEx = Math.round((x + 1) * camZoom) + off.x;
-          const rectEy = Math.round((y + 1) * camZoom) + off.y;
+          const rectSx = Math.floor(x * camZoom) + off.x;
+          const rectSy = Math.floor(y * camZoom) + off.y;
+          const rectEx = Math.floor((x + 1) * camZoom) + off.x;
+          const rectEy = Math.floor((y + 1) * camZoom) + off.y;
           
           octx.fillRect(rectSx, rectSy, rectEx - rectSx, rectEy - rectSy);
           
-          // Крестик внутри пикселя
           if (camZoom >= 3) {
              octx.beginPath();
-             octx.moveTo(rectSx + 2, rectSy + 2);
-             octx.lineTo(rectEx - 2, rectEy - 2);
-             octx.moveTo(rectEx - 2, rectSy + 2);
-             octx.lineTo(rectSx + 2, rectEy - 2);
+             octx.moveTo(rectSx + 2.5, rectSy + 2.5);
+             octx.lineTo(rectEx - 2.5, rectEy - 2.5);
+             octx.moveTo(rectEx - 2.5, rectSy + 2.5);
+             octx.lineTo(rectSx + 2.5, rectEy - 2.5);
              octx.stroke();
           }
         }
@@ -280,8 +276,8 @@ function renderStencilErrors() {
 function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
   if (!showCursors||(!serverCursorsEnabled&&!clanShareCursor)) return;
   const off = getRenderOffset();
-  const sx = Math.round(canvasX * camZoom) + off.x;
-  const sy = Math.round(canvasY * camZoom) + off.y;
+  const sx = Math.floor(canvasX * camZoom) + off.x;
+  const sy = Math.floor(canvasY * camZoom) + off.y;
   const col = PALETTE[colorIdx] || PALETTE[0];
   const color = col.c;
 
@@ -383,7 +379,7 @@ function resizeCanvas(w,h) {
 
 function canvasToScreen(cx,cy) {
   const off = getRenderOffset();
-  return {x: Math.round(cx * camZoom) + off.x, y: Math.round(cy * camZoom) + off.y};
+  return {x: Math.floor(cx * camZoom) + off.x, y: Math.floor(cy * camZoom) + off.y};
 }
 function screenToCanvas(sx,sy) {
   const off = getRenderOffset();

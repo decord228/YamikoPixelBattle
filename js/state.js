@@ -59,6 +59,7 @@ let adminMoveCanvas = null;
 let stencilActive = false;
 let stencilEditMode = true; 
 let stencilImg = null;        
+let stencilOrigImg = null; // Оригинальная картинка для правильного скейлинга
 let stencilRect = {x:0,y:0,w:100,h:100};
 let stencilOpacity = 0.6;
 let stencilHandle = null;

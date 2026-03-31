@@ -301,13 +301,40 @@ function toggleStencilEdit() {
   }
 }
 
+// ── НОВАЯ ЛОГИКА ТРАФАРЕТА ──
+function updateStencilGraphic() {
+  if (!stencilOrigImg) return;
+  const tmpC = document.createElement('canvas');
+  tmpC.width = stencilRect.w;
+  tmpC.height = stencilRect.h;
+  const tctx = tmpC.getContext('2d');
+  tctx.imageSmoothingEnabled = false; // Nearest neighbor scale (убирает микропиксели)
+  tctx.drawImage(stencilOrigImg, 0, 0, stencilRect.w, stencilRect.h);
+
+  const idata = tctx.getImageData(0, 0, stencilRect.w, stencilRect.h);
+  // Очищаем полупрозрачные пиксели, возникшие от сжатия
+  for (let i = 0; i < idata.data.length; i += 4) {
+      if (idata.data[i+3] < 128) idata.data[i+3] = 0;
+      else idata.data[i+3] = 255;
+  }
+  tctx.putImageData(idata, 0, 0);
+
+  const scaledImg = new Image();
+  scaledImg.onload = () => {
+    stencilImg = scaledImg;
+    stencilImageData = idata;
+    renderOverlay();
+  };
+  scaledImg.src = tmpC.toDataURL();
+}
+
 function scaleStencil(factor) {
-  if (!stencilImageData) { showToast('Сначала загрузите трафарет', 'error'); return; }
+  if (!stencilOrigImg) { showToast('Сначала загрузите трафарет', 'error'); return; }
   const newW = Math.max(1, Math.round(stencilRect.w * factor));
   const newH = Math.max(1, Math.round(stencilRect.h * factor));
   stencilRect.w = newW;
   stencilRect.h = newH;
-  renderOverlay();
+  updateStencilGraphic(); // Перерисовываем трафарет жестко в новый размер сетки
   showToast(`Размер: ${newW}×${newH} пикс.`, 'info');
 }
 
@@ -319,6 +346,7 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
   reader.onload=ev=>{
     const img=new Image();
     img.onload=()=>{
+      // Сначала подгоняем ОРИГИНАЛЬНОЕ изображение под цвета палитры
       const tmpC = document.createElement('canvas');
       tmpC.width = img.width; tmpC.height = img.height;
       const tctx = tmpC.getContext('2d');
@@ -342,10 +370,9 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
       }
       tctx.putImageData(idata, 0, 0);
 
-      const newImg = new Image();
-      newImg.onload = () => {
-        stencilImg = newImg;
-        stencilImageData = idata;
+      const snappedImg = new Image();
+      snappedImg.onload = () => {
+        stencilOrigImg = snappedImg; // Сохраняем оригинальную выровненную картинку
         stencilOrigWidth = img.width;
         stencilOrigHeight = img.height;
         
@@ -361,10 +388,10 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
         stencilEditMode=true;
         document.getElementById('stencil-edit-toggle').classList.add('on');
         
-        showToast(`Трафарет загружен! ${img.width}×${img.height} пикс. = 1:1 с холстом.`,'info');
-        renderOverlay();
+        updateStencilGraphic(); // Генерируем скейл под сетку
+        showToast(`Трафарет загружен! ${img.width}×${img.height} пикс.`,'info');
       };
-      newImg.src = tmpC.toDataURL();
+      snappedImg.src = tmpC.toDataURL();
     };
     img.src=ev.target.result;
   };
@@ -378,7 +405,7 @@ function updateStencilOpacity(v){
 }
 
 function cancelStencil(){
-  stencilActive=false;stencilImg=null;stencilImageData=null;
+  stencilActive=false; stencilImg=null; stencilImageData=null; stencilOrigImg=null;
   document.getElementById('stencil-panel').style.display='none';
   renderOverlay();
 }
@@ -406,21 +433,20 @@ function applySharedStencil(data){
   const img=new Image();
   img.crossOrigin = "Anonymous";
   img.onload=()=>{
-    const tmpC = document.createElement('canvas');
-    tmpC.width = img.width; tmpC.height = img.height;
-    const tctx = tmpC.getContext('2d');
-    tctx.drawImage(img, 0, 0);
-    stencilImg=img;
+    stencilOrigImg = img;
+    stencilOrigWidth = img.width;
+    stencilOrigHeight = img.height;
+
     stencilRect=data.rect||{x:0,y:0,w:img.width,h:img.height};
     stencilOpacity=data.opacity||0.6;
     stencilActive=true;
     stencilEditMode=false;
     document.getElementById('stencil-edit-toggle').classList.remove('on');
-    stencilImageData = tctx.getImageData(0,0,img.width,img.height);
     document.getElementById('stencil-panel').style.display='block';
     document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
     document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
-    renderOverlay();
+    
+    updateStencilGraphic();
     showToast('Получен трафарет от клана!','success');
   };
   img.src=data.img;
@@ -487,7 +513,7 @@ function sendChat() {
   const input = document.getElementById('chat-input');
   const text = input.value.trim();
   if (!text || !isLoggedIn) return;
-  sendJSON({action:'chat_message', text});
+  sendJSON({action:'chat_send', text}); // Исправлено на chat_send
   input.value = '';
 }
 
@@ -538,7 +564,7 @@ function sendClanChat() {
   const input = document.getElementById('clan-chat-input');
   const text = input.value.trim();
   if (!text || !isLoggedIn || !currentClan) return;
-  sendJSON({action:'clan_chat', text});
+  sendJSON({action:'clan_chat_send', text}); // Исправлено на clan_chat_send
   input.value = '';
 }
 

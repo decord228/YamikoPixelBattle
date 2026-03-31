@@ -132,8 +132,8 @@ function handleJSON(d) {
   else if (a==='clan_stencil_update') {
     if (d.stencil) applySharedStencil(d.stencil);
   }
-  else if (a==='clan_chat') {
-    addClanChatMessage(d.user, d.text, d.emoji);
+  else if (a==='clan_chat_message') {
+    if (d.msg) addClanChatMessage(d.msg.username, d.msg.text, d.msg.emoji);
   }
   else if (a==='clan_motd') {
     document.getElementById('clan-motd-text').textContent = d.motd || '';
@@ -142,7 +142,12 @@ function handleJSON(d) {
     renderClanRequests(d.requests || []);
   }
   else if (a==='chat_message') {
-    addChatMessage(d.user, d.text, d.emoji || '👾');
+    if (d.msg) addChatMessage(d.msg.username, d.msg.text, d.msg.emoji || '👾');
+  }
+  else if (a==='chat_history') {
+    if (d.messages && Array.isArray(d.messages)) {
+      d.messages.forEach(m => addChatMessage(m.username, m.text, m.emoji || '👾'));
+    }
   }
   else if (a==='purchase_update' || a==='stencil_level_update') {
     purchasedItems=d.purchased_items||d.purchased_levels||[];

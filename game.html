@@ -1,0 +1,447 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Pixel Battle · d3cord</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div id="connecting-screen">
+  <div class="connecting-logo">PIXEL<br>BATTLE</div>
+  <div class="spinner"></div>
+  <div class="connecting-sub">Подключение к серверу...</div>
+  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">made by <span style="color:#818cf8">d3cord</span></div>
+</div>
+
+<div id="game-root">
+  <div id="canvas-wrap">
+    <div id="canvas-shadow"></div>
+    <canvas id="main-canvas"></canvas>
+    <div id="cursors-layer"></div>
+  </div>
+</div>
+
+<canvas id="overlay-canvas"></canvas>
+
+<div id="backdrop"></div>
+
+<div id="ui">
+
+  <div id="top-bar">
+    <div id="logo">PIXEL BATTLE</div>
+    <div class="top-divider"></div>
+    <div id="online-badge"><div id="online-dot"></div><span id="online-count">0</span>&nbsp;<span style="color:var(--text3)">онлайн</span></div>
+    <div class="top-divider"></div>
+    <div id="coords-badge">— , —</div>
+    <div class="top-divider"></div>
+    <div id="conn-status">⬤ Отключён</div>
+    <div class="top-divider"></div>
+    <div id="made-by">made by <span>d3cord</span></div>
+  </div>
+
+  <div id="profile-hud">
+    <div id="phud-avatar" onclick="showPanel('profile-panel')">
+      <canvas id="phud-avatar-canvas" width="34" height="34"></canvas>
+    </div>
+    <div id="phud-info">
+      <div id="phud-name">—</div>
+      <div id="phud-role" class="phud-role-user">Пользователь</div>
+      <div id="phud-coins">🪙 0</div>
+    </div>
+    <div id="phud-actions">
+      <div class="phud-btn" onclick="showPanel('clan-panel')" title="Кланы">🏴</div>
+      <div class="phud-btn" onclick="showPanel('shop-panel')" title="Магазин">🛒</div>
+    </div>
+  </div>
+
+  <div id="sidebar">
+    <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')">✏️<span class="tip">Карандаш [E]</span></div>
+    <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')">🔍<span class="tip">Пипетка</span></div>
+    <div class="sidebar-btn" id="btn-tool-stencil" onclick="toggleStencilPanel()">📐<span class="tip">Трафарет</span></div>
+    <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-rect" onclick="setTool('admin_rect')">▭<span class="tip">Прямоугольник (Админ)</span></div>
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-circle" onclick="setTool('admin_circle')">◯<span class="tip">Круг (Админ)</span></div>
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-line" onclick="setTool('admin_line')">╱<span class="tip">Линия (Админ)</span></div>
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-move" onclick="setTool('admin_move')">⇱<span class="tip">Перемещение (Админ)</span></div>
+    <div class="sidebar-divider admin-tool-btn" style="display:none"></div>
+    
+    <div class="sidebar-btn" id="btn-grid" onclick="toggleGrid()">▦<span class="tip">Сетка [G]</span></div>
+    <div class="sidebar-btn" onclick="resetCamera()">⌖<span class="tip">Сбросить камеру</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-btn" onclick="showLeaderboard()">🏆<span class="tip">Лидерборд</span></div>
+    <div class="sidebar-btn" onclick="showPanel('settings-panel')">⚙️<span class="tip">Настройки</span></div>
+    <div class="sidebar-divider"></div>
+    <div class="sidebar-btn" id="btn-admin" style="display:none" onclick="showPanel('admin-panel');loadAdminUsers()">🛡️<span class="tip">Админ</span></div>
+  </div>
+
+  <div id="palette-panel" class="panel" style="display:none;">
+    <div id="color-name-bar">Белый</div>
+    <div id="color-grid"></div>
+    <div id="place-btn-wrap">
+      <div id="place-btn-bg"></div>
+      <div id="place-btn-fill" style="transform:scaleX(1)"></div>
+      <button id="place-btn" onclick="placePixel()">ПОСТАВИТЬ</button>
+      <div class="place-border"></div>
+    </div>
+  </div>
+
+  <div id="stencil-panel" class="panel" style="display:none;">
+    <div style="font-family:'Unbounded',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">📐 Трафарет</div>
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('stencil-file-input').click()" style="margin-bottom:14px; font-weight:600;">📁 ЗАГРУЗИТЬ КАРТИНКУ</button>
+    <div class="setting-row" style="padding:8px 0;">
+       <div><div class="setting-label">Режим редактирования</div><div class="setting-desc">Блокирует рисование</div></div>
+       <div class="toggle on" id="stencil-edit-toggle" onclick="toggleStencilEdit()"></div>
+    </div>
+    <div class="form-group" style="margin-top:14px">
+       <label class="form-label" style="display:flex;justify-content:space-between"><span>ПРОЗРАЧНОСТЬ</span> <span id="stencil-opacity-val">60%</span></label>
+       <input type="range" id="stencil-panel-opacity" min="10" max="100" value="60" oninput="updateStencilOpacity(this.value)" style="width:100%; margin-top:6px;">
+    </div>
+    <div class="setting-row" id="stencil-scale-row" style="padding:8px 0;">
+       <div><div class="setting-label">Размер (пикс.)</div><div class="setting-desc">Масштаб = пиксели на холсте</div></div>
+       <div style="display:flex;gap:4px;">
+         <button class="btn btn-secondary btn-sm" onclick="scaleStencil(0.5)">÷2</button>
+         <button class="btn btn-secondary btn-sm" onclick="scaleStencil(2)">×2</button>
+       </div>
+    </div>
+    <div class="setting-row" id="stencil-clan-share-row" style="padding:12px 0 0 0; border-top:1px solid var(--border); margin-top:12px;">
+       <div><div class="setting-label" style="line-height:1.3;">Поделиться с<br>кланом</div></div>
+       <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto; background:var(--accent2);">ОТПРАВИТЬ</button>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="cancelStencil()" style="margin-top:16px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); font-weight:600;">✕ СКРЫТЬ ТРАФАРЕТ</button>
+  </div>
+
+  <div id="bottom-bar">
+    <div class="bar-btn" onclick="togglePalette()" title="Палитра [P]">🎨</div>
+    <div class="bar-divider"></div>
+    <div id="quick-pal"></div>
+    <div class="bar-divider"></div>
+    <div class="bar-btn" onclick="zoomIn()" title="Приблизить [+]">＋</div>
+    <div class="bar-btn" onclick="zoomOut()" title="Отдалить [-]">－</div>
+  </div>
+
+  <div id="chat-btn" onclick="toggleChat()">💬<div id="chat-unread"></div></div>
+
+  <div id="chat-panel">
+    <div id="chat-header">
+      <div id="chat-header-title">💬 Чат</div>
+      <div id="chat-close" onclick="toggleChat()">✕</div>
+    </div>
+    <div id="chat-messages"></div>
+    <div id="chat-input-row">
+      <input id="chat-input" placeholder="Введите сообщение..." maxlength="150" onkeydown="if(event.key==='Enter')sendChat()">
+      <button id="chat-send" onclick="sendChat()">↑</button>
+    </div>
+  </div>
+
+  <div id="admin-floating-bar">
+    <div id="admin-floating-bar-title">Действие</div>
+    <label id="admin-shape-fill-container" style="color:#fff;font-size:11px;margin-right:10px;display:flex;align-items:center;cursor:pointer;">
+      <input type="checkbox" id="admin-shape-fill" checked style="margin-right:4px;"> Заливка
+    </label>
+    <button class="btn btn-secondary btn-sm" onclick="cancelAdminTool()">Отмена</button>
+    <button class="btn btn-primary btn-sm" onclick="applyAdminTool()" id="admin-floating-apply">Применить</button>
+  </div>
+
+  <div id="use-item-overlay">
+    <span id="use-item-label">Выберите точку на холсте</span>
+    <button class="btn btn-secondary btn-sm" onclick="cancelUseItem()">Отмена</button>
+  </div>
+
+  <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
+  <div id="toast-wrap"></div>
+</div>
+
+<div id="auth-panel" class="overlay-panel panel show">
+  <div class="auth-logo">
+    <div class="auth-logo-text">PIXEL<br>BATTLE</div>
+    <div class="auth-logo-sub">Захвати каждый пиксель</div>
+    <div class="auth-by">made by <span>d3cord</span></div>
+  </div>
+  <div class="auth-tabs">
+    <div class="auth-tab active" onclick="switchAuthTab('login')">Войти</div>
+    <div class="auth-tab" onclick="switchAuthTab('register')">Регистрация</div>
+  </div>
+  <div class="panel-body">
+    <div id="auth-login-form">
+      <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="auth-username" type="text" placeholder="введите ник" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+      <button class="btn btn-primary" onclick="doAuth(false)">Войти</button>
+    </div>
+    <div id="auth-register-form" style="display:none">
+      <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="reg-username" type="text" placeholder="придумайте ник" autocomplete="username"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="reg-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
+      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password"></div>
+      <button class="btn btn-primary" onclick="doAuth(true)">Создать аккаунт</button>
+    </div>
+  </div>
+</div>
+
+<div id="profile-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">👤 Профиль</div><div class="panel-close" onclick="hidePanel('profile-panel')">✕</div></div>
+  <div class="panel-body">
+    <div class="profile-header">
+      <div id="profile-avatar-ring">
+        <canvas id="avatar-canvas" width="78" height="78"></canvas>
+        <div class="avatar-overlay">😊</div>
+      </div>
+      <div class="profile-info">
+        <div class="profile-name" id="prof-name">—</div>
+        <div class="profile-role role-user" id="prof-role">Пользователь</div>
+        <div style="margin-top:6px;font-size:10px;color:var(--text3)">Выберите эмодзи-аватар ниже</div>
+      </div>
+    </div>
+    <div class="rank-badge"><div class="rank-icon" id="prof-rank-icon">🌱</div><div><div class="rank-title">Звание</div><div class="rank-name" id="prof-rank">Новичок</div></div></div>
+    <div class="stat-grid-3">
+      <div class="stat-card"><div class="stat-val" id="prof-pixels">0</div><div class="stat-lbl">Пикселей</div></div>
+      <div class="stat-card"><div class="stat-val" id="prof-session">0</div><div class="stat-lbl">Сессия</div></div>
+      <div class="stat-card"><div class="stat-val coins-val" id="prof-coins">0</div><div class="stat-lbl">🪙 Монет</div></div>
+    </div>
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchProfileTab('avatar')">Аватар</div>
+      <div class="sub-tab" onclick="switchProfileTab('account')">Аккаунт</div>
+    </div>
+    <div id="prof-tab-avatar">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Выбрать аватар</div>
+      <div class="avatar-options" id="emoji-avatars"></div>
+    </div>
+    <div id="prof-tab-account" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сменить пароль</div>
+      <div class="form-group"><input class="form-input" id="new-pass" type="password" placeholder="Новый пароль"></div>
+      <div class="form-group"><input class="form-input" id="new-pass-confirm" type="password" placeholder="Подтвердите пароль"></div>
+      <button class="btn btn-secondary" style="margin-bottom:10px" onclick="changePassword()">Сменить пароль</button>
+      <div class="section-sep"></div>
+      <button class="btn btn-danger" onclick="doLogout()">Выйти из аккаунта</button>
+    </div>
+  </div>
+</div>
+
+<div id="leaderboard-panel" class="panel">
+  <div class="panel-header"><div class="panel-title">🏆 Лидерборд</div><div class="panel-close" onclick="hideLeaderboard()">✕</div></div>
+  <div class="panel-body">
+    <div class="sub-tabs">
+      <div class="sub-tab active" onclick="switchLbTab('players')">Игроки</div>
+      <div class="sub-tab" onclick="switchLbTab('clans')">Кланы</div>
+    </div>
+    <div id="lb-players-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+    <div id="lb-clans-list" style="display:none"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+  </div>
+</div>
+
+<div id="settings-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">⚙️ Настройки</div><div class="panel-close" onclick="hidePanel('settings-panel')">✕</div></div>
+  <div class="panel-body">
+    <div class="setting-row"><div><div class="setting-label">Сетка</div><div class="setting-desc">Пиксельная сетка (1 ячейка = 1 пиксель)</div></div><div class="toggle" id="toggle-grid" onclick="toggleGrid()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Плавная камера</div><div class="setting-desc">Инерция при перемещении (ease-out)</div></div><div class="toggle on" id="toggle-smooth" onclick="toggleSmoothCamera()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Курсоры игроков</div><div class="setting-desc">Показывать флажки других игроков</div></div><div class="toggle on" id="toggle-cursors" onclick="toggleCursors()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Инспектор пикселей</div><div class="setting-desc">Всплывающая инфо при наведении</div></div><div class="toggle on" id="toggle-inspector" onclick="toggleInspector()"></div></div>
+    <div class="setting-row"><div><div class="setting-label">Звуки</div><div class="setting-desc">Звук при установке пикселя</div></div><div class="toggle" id="toggle-sound" onclick="toggleSound()"></div></div>
+    <div class="section-sep"></div>
+    <button class="btn btn-secondary" onclick="reconnectWS()">🔄 Переподключиться</button>
+  </div>
+</div>
+
+<div id="clan-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">🏴 Кланы</div><div class="panel-close" onclick="hidePanel('clan-panel')">✕</div></div>
+  <div class="panel-body">
+    <div id="clan-view-no-clan">
+      <div class="sub-tabs">
+        <div class="sub-tab active" onclick="switchClanSubTab('browse')">Обзор</div>
+        <div class="sub-tab" onclick="switchClanSubTab('create')">Создать</div>
+        <div class="sub-tab" onclick="switchClanSubTab('join')">Вступить</div>
+      </div>
+      <div id="clan-sub-browse">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Топ кланов</div>
+        <div id="clan-browse-list" style="max-height:320px;overflow-y:auto"></div>
+      </div>
+      <div id="clan-sub-create" style="display:none">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Создать клан (50 🪙)</div>
+        <div class="form-group"><label class="form-label">Название клана</label><input class="form-input" id="clan-create-name" placeholder="2–24 символа"></div>
+        <div class="form-group"><label class="form-label">Тег (до 4 букв)</label><input class="form-input" id="clan-create-tag" placeholder="PXL" maxlength="4"></div>
+        <div class="form-group"><label class="form-label">Описание</label><input class="form-input" id="clan-create-desc" placeholder="Описание клана..."></div>
+        <button class="btn btn-primary" onclick="createClan()">🏴 Создать клан (50 🪙)</button>
+      </div>
+      <div id="clan-sub-join" style="display:none">
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Вступить по названию</div>
+        <div style="display:flex;gap:8px">
+          <input class="form-input" id="clan-join-name" placeholder="Название клана" style="flex:1">
+          <button class="btn btn-secondary btn-sm" onclick="joinClan()" style="flex-shrink:0">Вступить</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="clan-view-in-clan" style="display:none">
+      <div class="clan-card">
+        <div class="clan-name"><span id="clan-disp-name">—</span><span class="clan-tag" id="clan-disp-tag">—</span></div>
+        <div class="clan-meta" id="clan-disp-desc"></div>
+        <div class="clan-meta">👑 Лидер: <strong id="clan-disp-leader">—</strong> · 👥 <span id="clan-disp-members">0</span> участников</div>
+      </div>
+
+      <div class="clan-motd">
+        <div class="clan-motd-label">💬 Сообщение дня</div>
+        <div id="clan-motd-text">Добро пожаловать в клан!</div>
+        <div id="clan-motd-edit" style="display:none;margin-top:8px;">
+          <input class="form-input" id="clan-motd-input" placeholder="Сообщение дня..." style="font-size:11px;padding:6px 10px;margin-bottom:6px;">
+          <button class="btn btn-secondary btn-sm" onclick="saveClanMotd()">Сохранить</button>
+        </div>
+      </div>
+
+      <div class="sub-tabs">
+        <div class="sub-tab active" onclick="switchClanInnerTab('members')">Участники</div>
+        <div class="sub-tab" onclick="switchClanInnerTab('chat')">Чат</div>
+        <div class="sub-tab" onclick="switchClanInnerTab('requests')">Заявки</div>
+        <div class="sub-tab" id="clan-settings-tab" onclick="switchClanInnerTab('settings')" style="display:none">Настройки</div>
+      </div>
+
+      <div id="clan-inner-members">
+        <div class="member-list" id="clan-member-list"></div>
+      </div>
+
+      <div id="clan-inner-chat" style="display:none">
+        <div id="clan-chat-messages" style="height:200px;overflow-y:auto;margin-bottom:8px;"></div>
+        <div style="display:flex;gap:6px;">
+          <input class="form-input" id="clan-chat-input" placeholder="Сообщение клану..." style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')sendClanChat()">
+          <button class="btn btn-primary btn-sm" onclick="sendClanChat()">↑</button>
+        </div>
+      </div>
+
+      <div id="clan-inner-requests" style="display:none">
+        <div id="clan-requests-list" style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">Заявок нет</div>
+      </div>
+
+      <div id="clan-inner-settings" style="display:none">
+        <div class="setting-row" style="padding-top:0">
+          <div><div class="setting-label">Общий курсор</div><div class="setting-desc">Соклановцы видят курсоры друг друга</div></div>
+          <div class="toggle" id="clan-cursor-toggle" onclick="toggleClanCursor()"></div>
+        </div>
+        <div class="section-sep"></div>
+        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Сообщение дня</div>
+        <div id="clan-motd-edit-settings">
+          <input class="form-input" id="clan-motd-input-s" placeholder="Сообщение дня..." style="font-size:11px;padding:8px 10px;margin-bottom:8px;">
+          <button class="btn btn-secondary" onclick="saveClanMotdFromSettings()">Сохранить</button>
+        </div>
+      </div>
+
+      <div class="section-sep"></div>
+      <button class="btn btn-danger" onclick="leaveClan()">🚪 Покинуть клан</button>
+    </div>
+  </div>
+</div>
+
+<div id="shop-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">🛒 Магазин</div><div class="panel-close" onclick="hidePanel('shop-panel')">✕</div></div>
+  <div class="panel-body" id="shop-body">
+    <div style="color:var(--text3);text-align:center;padding:20px;">Войдите в аккаунт</div>
+  </div>
+</div>
+
+<div id="admin-panel" class="overlay-panel panel">
+  <div class="panel-header"><div class="panel-title">🛡️ Панель администратора</div><div class="panel-close" onclick="hidePanel('admin-panel')">✕</div></div>
+  <div class="panel-body">
+    <div class="admin-tabs">
+      <div class="admin-tab active" onclick="switchAdminTab('users')">Игроки</div>
+      <div class="admin-tab" onclick="switchAdminTab('canvas')">Холст</div>
+      <div class="admin-tab" onclick="switchAdminTab('broadcast')">Сообщение</div>
+      <div class="admin-tab" onclick="switchAdminTab('stats')">Статистика</div>
+    </div>
+
+    <div id="admin-tab-users">
+      <input class="search-box" id="admin-search" placeholder="🔍 Поиск..." oninput="filterAdminUsers()">
+      <div id="admin-users-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+      <div class="pagination">
+        <button class="page-btn" onclick="adminPageNav(-1)">‹ Пред</button>
+        <span class="page-info" id="admin-page-info">1 / 1</span>
+        <button class="page-btn" onclick="adminPageNav(1)">След ›</button>
+      </div>
+    </div>
+
+    <div id="admin-tab-canvas" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
+      <div class="resize-form">
+        <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
+        <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
+      </div>
+      <div style="margin-bottom:12px;font-size:11px;color:var(--red);">⚠️ Изменение сохранит пиксели в пределах нового размера.</div>
+      <button class="btn btn-primary" onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
+      <div class="section-sep"></div>
+
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">⏱️ Задержка пикселей (Кулдаун)</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+        <input type="range" class="admin-range" id="admin-cooldown-slider" min="0" max="30000" step="500" value="3000" oninput="updateCooldownLabel(this.value)">
+        <span id="admin-cooldown-label" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);min-width:50px;">3.0с</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="adminSetCooldown()" style="margin-bottom:10px;">Применить</button>
+      <div class="section-sep"></div>
+
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → превью → холст)</div>
+      <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
+        <div style="font-size:28px">🖼️</div>
+        <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите или перетащите изображение</p>
+        <p style="font-size:10px;color:var(--text3);margin-top:2px">Сначала откроется превью для позиционирования</p>
+      </div>
+      <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
+      <img id="image-preview" alt="Preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
+      <button class="btn btn-primary" id="btn-place-image" onclick="startAdminImagePreview()" disabled style="margin-bottom:10px;">🔍 Открыть превью</button>
+      
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🌍 Глобальный трафарет (для всех)</div>
+      <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" onclick="document.getElementById('admin-stencil-file').click()">
+        <div style="font-size:22px">📐</div>
+        <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
+      </div>
+      <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" onchange="handleAdminGlobalStencil(event)">
+      <button class="btn btn-secondary" id="btn-clear-global-stencil" onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
+
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
+      <div class="setting-row" style="padding-top:0">
+        <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
+        <div class="toggle" id="admin-toggle-cursors" onclick="adminToggleCursors()"></div>
+      </div>
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
+      <button class="btn btn-danger" onclick="adminClearCanvas()">🗑️ Очистить весь холст</button>
+    </div>
+
+    <div id="admin-tab-broadcast" style="display:none">
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
+      <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
+      <button class="btn btn-primary" onclick="adminBroadcast()" style="margin-bottom:14px">📢 Отправить всем</button>
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
+      <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
+      <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
+      <button class="btn btn-secondary" onclick="adminSendDM()">Отправить</button>
+    </div>
+
+    <div id="admin-tab-stats" style="display:none">
+      <div class="admin-stats-grid">
+        <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="stat-online">—</div><div class="admin-stat-lbl">Онлайн</div></div>
+        <div class="admin-stat"><div class="admin-stat-val" id="stat-banned">—</div><div class="admin-stat-lbl">Забанено</div></div>
+      </div>
+      <div class="admin-stat" style="margin-bottom:9px;"><div class="admin-stat-val" id="stat-canvas-size">256×256</div><div class="admin-stat-lbl">Размер холста</div></div>
+      <div class="admin-stat"><div class="admin-stat-val" id="stat-total-pixels">—</div><div class="admin-stat-lbl">Пикселей поставлено</div></div>
+      <div class="section-sep"></div>
+      <button class="btn btn-secondary" onclick="loadAdminStats()">🔄 Обновить</button>
+    </div>
+  </div>
+</div>
+
+<canvas id="admin-image-canvas" style="display:none"></canvas>
+<canvas id="stencil-tmp-canvas" style="display:none"></canvas>
+<input type="file" id="stencil-file-input" accept="image/*" style="display:none">
+
+<script src="js/config.js" defer></script>
+<script src="js/state.js" defer></script>
+<script src="js/canvas.js" defer></script>
+<script src="js/network.js" defer></script>
+<script src="js/ui.js" defer></script>
+<script src="js/input.js" defer></script>
+<script src="js/main.js" defer></script>
+</body>
+</html>

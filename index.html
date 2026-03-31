@@ -236,21 +236,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .broadcast-input{width:100%;padding:9px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;resize:none;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
 .broadcast-input:focus{border-color:var(--accent);}
 
-/* ── ADMIN TOOLS ── */
-.admin-color-select{width:38px;height:38px;border-radius:8px;cursor:pointer;border:2px solid var(--border2);transition:.18s;}
-.admin-color-select.selected{border-color:#fff;transform:scale(1.15);}
-.admin-palette{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;}
-#image-drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:10px;}
-#image-drop-zone:hover,#image-drop-zone.drag-over{border-color:var(--accent);background:rgba(99,102,241,.05);}
-#image-drop-zone p{font-size:12px;color:var(--text2);margin-top:6px;}
-#image-preview{width:100%;max-height:120px;object-fit:contain;border-radius:8px;display:none;margin-bottom:10px;}
-
-/* ── ADMIN SHAPES ── */
-.shape-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-.shape-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:11px;font-weight:600;transition:.2s;font-family:'Unbounded',sans-serif;}
-.shape-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.shape-btn:hover:not(.active){background:var(--surface3);color:var(--text);}
-
 /* Admin Floating Bar */
 #admin-floating-bar {
   position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
@@ -271,6 +256,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .member-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
 .member-chip{font-size:10px;padding:3px 9px;border-radius:var(--radius-pill);background:var(--surface3);color:var(--text2);border:1px solid var(--border);}
 .member-chip.leader{background:rgba(99,102,241,.15);color:var(--accent2);}
+
+/* ── STENCIL FLOATING PANEL ── */
+#stencil-panel {
+  position:absolute; top:50%; left:70px; transform:translateY(-50%); width:250px; padding:18px; z-index:30;
+}
 
 /* ── SHOP / ASSISTANT ── */
 .shop-item{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;transition:.2s;}
@@ -340,6 +330,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   .overlay-panel{width:calc(100vw - 16px);max-height:calc(100vh - 80px);}
   #admin-panel{width:calc(100vw - 16px);}
   .admin-tabs .admin-tab{font-size:9px;padding:6px 3px;}
+  #stencil-panel {left: 50%; transform: translateX(-50%) translateY(-50%);}
 }
 @media(max-width:380px){
   .bar-btn{width:34px;height:34px;font-size:14px;}
@@ -418,7 +409,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     </div>
   </div>
 
-  <div id="stencil-panel" class="panel" style="display:none; position:absolute; top:50%; left:70px; transform:translateY(-50%); width:250px; padding:18px; z-index:30;">
+  <div id="stencil-panel" class="panel" style="display:none;">
     <div style="font-family:'Unbounded',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">📐 Трафарет</div>
     
     <button class="btn btn-secondary btn-sm" onclick="document.getElementById('stencil-file-input').click()" style="margin-bottom:14px; font-weight:600;">📁 ЗАГРУЗИТЬ КАРТИНКУ</button>
@@ -433,7 +424,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
        <input type="range" id="stencil-panel-opacity" min="10" max="100" value="60" oninput="updateStencilOpacity(this.value)" style="width:100%; margin-top:6px;">
     </div>
     
-    <div class="setting-row" id="stencil-clan-share-row" style="display:none; padding:12px 0 0 0; border-top:1px solid var(--border); margin-top:12px;">
+    <div class="setting-row" id="stencil-clan-share-row" style="padding:12px 0 0 0; border-top:1px solid var(--border); margin-top:12px;">
        <div><div class="setting-label" style="line-height:1.3;">Поделиться с<br>кланом</div></div>
        <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto; background:var(--accent2);">ОТПРАВИТЬ</button>
     </div>
@@ -727,7 +718,7 @@ let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾';
 let currentCoins = 0, currentStencilLevel = 0, purchasedLevels = [];
 let currentClan = '';
-let tool = 'pencil'; // pencil, eyedrop, stencil, admin_rect, admin_circle, admin_line, admin_move
+let tool = 'pencil'; 
 let gridEnabled = false, smoothCamera = true, showCursors = true;
 let inspectorEnabled = true, soundEnabled = false;
 let camX = 0, camY = 0, camZoom = 3;
@@ -771,6 +762,7 @@ let stencilHandle = null;
 let stencilDragOffset = {x:0,y:0};
 let stencilImageData = null; 
 
+// WS_URL
 const WS_URL = 'wss://yamikopixelbattleserver.onrender.com';
 
 // ── CANVAS SETUP ──
@@ -919,10 +911,6 @@ function renderOverlay() {
     if (stencilEditMode) {
       octx.strokeStyle='#22c55e';octx.lineWidth=2;
       octx.setLineDash([6,3]);octx.strokeRect(sx,sy,sw,sh);octx.setLineDash([]);
-      [[sx,sy],[sx+sw,sy],[sx,sy+sh],[sx+sw,sy+sh]].forEach(([cx,cy])=>{
-        octx.beginPath();octx.arc(cx,cy,6,0,Math.PI*2);
-        octx.fillStyle='#22c55e';octx.fill();
-      });
     }
 
     if (currentStencilLevel>=2 && hoveredPixel.x>=0 && !stencilEditMode) {
@@ -950,7 +938,7 @@ function renderStencilHints() {
   const idx=(sy*stencilImageData.width+sx)*4;
   const tr=stencilImageData.data[idx], tg=stencilImageData.data[idx+1], tb=stencilImageData.data[idx+2], a=stencilImageData.data[idx+3];
   
-  if(a < 50) return; // Ignore fully transparent areas
+  if(a < 50) return;
 
   const dirs=[[0,-1],[1,0],[0,1],[-1,0]];
   octx.fillStyle='rgba(34,197,94,0.3)';
@@ -1125,15 +1113,18 @@ function handleJSON(d) {
     if (d.settings) applyServerSettings(d.settings);
     onAuthSuccess(d);
   }
+
   else if (a==='toast') {
     const msg=d.message||'Уведомление';
     const type=msg.includes('ошибка')||msg.includes('Нет')||msg.includes('уже')?'error':'info';
     showToast(msg,type);
   }
+
   else if (a==='leaderboard_data') {
     renderLeaderboardPlayers(d.players||[]);
     renderLeaderboardClans(d.clans||[]);
   }
+
   else if (a==='admin_users_list') {
     allAdminUsers=d.users||[];
     adminPage=d.page||1;
@@ -1141,21 +1132,27 @@ function handleJSON(d) {
     renderAdminUsers(allAdminUsers);
     document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
   }
+
   else if (a==='resize') {
     resizeCanvas(d.w,d.h||canvasH);
     sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});
   }
+
   else if (a==='cursor') {
     otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾',clan:d.clan||''};
     updateCursorFlag(d.u,d.x,d.y,d.c,d.emoji||'👾');
   }
+
   else if (a==='server_settings') { applyServerSettings(d.settings); }
+
   else if (a==='online_count') { document.getElementById('online-count').textContent=d.count; }
+
   else if (a==='coins_update') {
     currentCoins=d.coins||0;
     updateCoinsUI(currentCoins);
     if (d.pixels) currentPixels=d.pixels;
   }
+
   else if (a==='clan_update') {
     if (d.clan) {
       currentClan=d.clan.name||'';
@@ -1167,21 +1164,26 @@ function handleJSON(d) {
     if (d.coins!==undefined) {currentCoins=d.coins;updateCoinsUI(currentCoins);}
     if (d.message) showToast(d.message,'success');
   }
+
   else if (a==='clan_data') {
     if (d.clan) renderClanView(d.clan);
   }
+
   else if (a==='clan_list_data') {
     renderClanBrowseList(d.clans||[]);
   }
+
   else if (a==='clan_settings_update') {
     clanShareCursor=!!d.share_cursor;
     const tog=document.getElementById('clan-cursor-toggle');
     if (tog) tog.classList.toggle('on',clanShareCursor);
     if (!clanShareCursor) clearCursorFlags();
   }
+
   else if (a==='clan_stencil_update') {
     if (d.stencil) applySharedStencil(d.stencil);
   }
+
   else if (a==='stencil_level_update') {
     currentStencilLevel=d.level||0;
     purchasedLevels=d.purchased_levels||[];
@@ -1189,6 +1191,7 @@ function handleJSON(d) {
     if (d.message) showToast(d.message,'success');
     buildShopUI();
   }
+
   else if (a==='admin_stats_data') {
     document.getElementById('stat-total-users').textContent=d.total_users||0;
     document.getElementById('stat-online').textContent=d.online||0;
@@ -1377,7 +1380,7 @@ function selectColor(idx) {
 function placePixel() {
   if (!isLoggedIn){showToast('Войдите в аккаунт','error');return;}
   
-  if (stencilActive && stencilEditMode) return; // Strict block in edit mode
+  if (stencilActive && stencilEditMode) return; 
 
   if (cooldown>0){showToast(`Подождите ${Math.ceil(cooldown)}с`,'error');return;}
   const x=hoveredPixel.x,y=hoveredPixel.y;
@@ -1495,7 +1498,6 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
   reader.onload=ev=>{
     const img=new Image();
     img.onload=()=>{
-      // Convert image to pixel-palette immediately
       const tmpC = document.createElement('canvas');
       tmpC.width = img.width; tmpC.height = img.height;
       const tctx = tmpC.getContext('2d');
@@ -1524,16 +1526,24 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
         stencilImg = newImg;
         stencilImageData = idata;
         
-        const w=Math.min(img.width,100), h=Math.round(w*img.height/img.width);
+        // Жестко привязываем размеры трафарета к размерам картинки в пикселях
         const cp=screenToCanvas(window.innerWidth/2,window.innerHeight/2);
-        stencilRect={x:Math.floor(cp.x-w/2),y:Math.floor(cp.y-h/2),w,h};
+        stencilRect={
+          x: Math.floor(cp.x - img.width/2),
+          y: Math.floor(cp.y - img.height/2),
+          w: img.width, 
+          h: img.height
+        };
         
+        if(img.width > CANVAS_WIDTH || img.height > CANVAS_HEIGHT) {
+            showToast('Внимание: картинка больше холста!', 'error');
+        }
+
         stencilActive=true;
         stencilEditMode=true;
         document.getElementById('stencil-edit-toggle').classList.add('on');
         
-        document.getElementById('stencil-clan-share-row').style.display=currentClan?'flex':'none';
-        showToast('Трафарет адаптирован под палитру и загружен!','info');
+        showToast('Трафарет загружен! 1 пиксель картинки = 1 пиксель холста.','info');
         renderOverlay();
       };
       newImg.src = tmpC.toDataURL();
@@ -1557,7 +1567,7 @@ function cancelStencil(){
 
 async function shareStencilToClan(){
   if (!currentClan){showToast('Вы не в клане','error');return;}
-  if (!stencilImg) return;
+  if (!stencilImg) {showToast('Сначала загрузите трафарет','error');return;}
   
   showToast('Загрузка в облако...', 'info');
   try {
@@ -1589,7 +1599,7 @@ function applySharedStencil(data){
     tctx.drawImage(img, 0, 0);
     
     stencilImg=img;
-    stencilRect=data.rect||{x:0,y:0,w:100,h:100};
+    stencilRect=data.rect||{x:0,y:0,w:img.width,h:img.height};
     stencilOpacity=data.opacity||0.6;
     stencilActive=true;
     stencilEditMode=false;
@@ -1598,7 +1608,6 @@ function applySharedStencil(data){
     stencilImageData = tctx.getImageData(0,0,img.width,img.height);
     
     document.getElementById('stencil-panel').style.display='block';
-    document.getElementById('stencil-clan-share-row').style.display=currentClan?'flex':'none';
     document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
     document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
     renderOverlay();
@@ -1612,43 +1621,142 @@ function handleStencilStart(clientX,clientY){
   if (!stencilActive||!stencilImg||!stencilEditMode) return false;
   const ir=stencilRect;
   const sx=ir.x*camZoom+camX,sy=ir.y*camZoom+camY,sw=ir.w*camZoom,sh=ir.h*camZoom;
-  const dist=(x1,y1)=>Math.hypot(clientX-x1,clientY-y1);
-  const HIT=15;
-  if (dist(sx,sy)<=HIT) stencilHandle='tl';
-  else if (dist(sx+sw,sy)<=HIT) stencilHandle='tr';
-  else if (dist(sx,sy+sh)<=HIT) stencilHandle='bl';
-  else if (dist(sx+sw,sy+sh)<=HIT) stencilHandle='br';
-  else if (clientX>=sx&&clientX<=sx+sw&&clientY>=sy&&clientY<=sy+sh){
+  
+  if (clientX>=sx&&clientX<=sx+sw&&clientY>=sy&&clientY<=sy+sh){
     stencilHandle='move';
     stencilDragOffset={x:(clientX-sx)/camZoom,y:(clientY-sy)/camZoom};
-  } else return false;
-  return true;
+    return true;
+  }
+  return false;
 }
 
 function handleStencilMove(clientX,clientY){
   if (!stencilHandle || !stencilEditMode) return false;
-  const ir=stencilRect;
   const p=getCanvasPos(clientX,clientY);
-  const ratio=stencilImg?stencilImg.height/stencilImg.width:1;
   if (stencilHandle==='move'){
-    ir.x=Math.round(p.x-stencilDragOffset.x);
-    ir.y=Math.round(p.y-stencilDragOffset.y);
-  } else if (stencilHandle==='br'){
-    ir.w=Math.max(10,Math.round(p.x-ir.x));
-    ir.h=Math.round(ir.w*ratio);
-  } else if (stencilHandle==='tl'){
-    const newX=Math.round(p.x),newY=Math.round(p.y);
-    ir.w=Math.max(10,ir.x+ir.w-newX);ir.h=Math.round(ir.w*ratio);
-    ir.x=newX;ir.y=Math.round(ir.y+ir.h*(1-1));
-  } else if (stencilHandle==='tr'){
-    ir.w=Math.max(10,Math.round(p.x-ir.x));ir.h=Math.round(ir.w*ratio);
-  } else if (stencilHandle==='bl'){
-    const newX=Math.round(p.x);
-    ir.w=Math.max(10,ir.x+ir.w-newX);ir.h=Math.round(ir.w*ratio);
-    ir.x=newX;
+    stencilRect.x=Math.round(p.x-stencilDragOffset.x);
+    stencilRect.y=Math.round(p.y-stencilDragOffset.y);
   }
   renderOverlay();
   return true;
+}
+
+// ── CLAN UI ──
+function createClan(){
+  const name=document.getElementById('clan-create-name').value.trim();
+  const tag=document.getElementById('clan-create-tag').value.trim();
+  const desc=document.getElementById('clan-create-desc').value.trim();
+  if (!name){showToast('Введите название клана','error');return;}
+  sendJSON({action:'clan_create',name,tag,description:desc});
+}
+
+function joinClan(){
+  const name=document.getElementById('clan-join-name').value.trim();
+  if (!name){showToast('Введите название клана','error');return;}
+  sendJSON({action:'clan_join',name});
+}
+
+function leaveClan(){
+  if (!confirm('Покинуть клан?')) return;
+  sendJSON({action:'clan_leave'});
+}
+
+function toggleClanCursor(){
+  sendJSON({action:'clan_toggle_cursor'});
+}
+
+function renderClanView(clan){
+  currentClan=clan.name||'';
+  document.getElementById('clan-view-no-clan').style.display='none';
+  document.getElementById('clan-view-in-clan').style.display='';
+  document.getElementById('clan-disp-name').textContent=clan.name||'';
+  document.getElementById('clan-disp-tag').textContent=clan.tag||'';
+  document.getElementById('clan-disp-desc').textContent=clan.description||'';
+  document.getElementById('clan-disp-leader').textContent=clan.leader||'';
+  document.getElementById('clan-disp-members').textContent=(clan.members||[]).length;
+  const isLeader=currentUser===clan.leader;
+  document.getElementById('clan-leader-controls').style.display=isLeader?'':'none';
+  const tog=document.getElementById('clan-cursor-toggle');
+  if (tog){clanShareCursor=!!clan.share_cursor;tog.classList.toggle('on',clanShareCursor);}
+  const ml=document.getElementById('clan-member-list'); ml.innerHTML='';
+  (clan.members||[]).forEach(m=>{
+    const chip=document.createElement('div');
+    chip.className='member-chip'+(m===clan.leader?' leader':'');
+    chip.textContent=(m===clan.leader?'👑 ':'')+m;
+    ml.appendChild(chip);
+  });
+}
+
+function renderNoClanView(){
+  currentClan='';
+  document.getElementById('clan-view-no-clan').style.display='';
+  document.getElementById('clan-view-in-clan').style.display='none';
+  sendJSON({action:'clan_list'});
+}
+
+function renderClanBrowseList(clans){
+  const c=document.getElementById('clan-browse-list');
+  if (!clans.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:10px;">Кланов пока нет</div>';return;}
+  c.innerHTML=clans.slice(0,10).map(cl=>`
+    <div class="clan-card" style="cursor:pointer" onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}'">
+      <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag">${esc(cl.tag||'')}</span></div>
+      <div class="clan-meta">👥 ${cl.members} · 🖼 ${(cl.pixels||0).toLocaleString()} пикс.</div>
+      ${cl.description?`<div class="clan-meta">${esc(cl.description)}</div>`:''}
+    </div>`).join('');
+}
+
+// ── SHOP ──
+function buildShopUI(){
+  const c=document.getElementById('shop-stencil-level'); if(!c) return;
+  c.innerHTML=STENCIL_LEVELS.map(lvl=>{
+    const owned=purchasedLevels.includes(lvl.level)||(currentStencilLevel>=lvl.level);
+    return `
+    <div class="shop-item">
+      <div class="shop-header">
+        <div class="shop-item-title">🤖 ${lvl.title}</div>
+        ${owned?'<span class="shop-owned">✓ Куплено</span>':'<span class="shop-price">🪙 '+lvl.cost+'</span>'}
+      </div>
+      <div class="shop-item-desc">${lvl.desc}</div>
+      ${owned?'':`<button class="btn btn-primary btn-sm" onclick="buyStencilLevel(${lvl.level})" style="width:auto">Купить (${lvl.cost} 🪙)</button>`}
+    </div>`;
+  }).join('');
+}
+
+function buyStencilLevel(level){
+  sendJSON({action:'buy_stencil_level',level});
+}
+
+// ── LEADERBOARD ──
+function switchLbTab(tab){
+  document.querySelector('#leaderboard-panel .sub-tab:nth-child(1)').classList.toggle('active',tab==='players');
+  document.querySelector('#leaderboard-panel .sub-tab:nth-child(2)').classList.toggle('active',tab==='clans');
+  document.getElementById('lb-players-list').style.display=tab==='players'?'':'none';
+  document.getElementById('lb-clans-list').style.display=tab==='clans'?'':'none';
+}
+
+function renderLeaderboardPlayers(data){
+  const c=document.getElementById('lb-players-list');
+  if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
+  c.innerHTML=data.map((u,i)=>`
+    <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
+      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <div style="font-size:16px">${u.emoji||'👾'}</div>
+      <div class="lb-name">${esc(u.username)}</div>
+      <div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div>
+    </div>`).join('');
+}
+
+function renderLeaderboardClans(data){
+  const c=document.getElementById('lb-clans-list');
+  if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Кланов пока нет</div>';return;}
+  c.innerHTML=data.map((cl,i)=>`
+    <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
+      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <span class="clan-tag">${esc(cl.tag||'')}</span>
+      <div class="lb-name">${esc(cl.name)}</div>
+      <div style="font-size:11px;color:var(--text3)">👥${cl.members}</div>
+      <div class="lb-pixels">${(cl.pixels||0).toLocaleString()} px</div>
+    </div>`).join('');
 }
 
 // ── ADMIN TOOLS INTERACTION ──
@@ -1748,7 +1856,7 @@ wrap.addEventListener('mousedown',e=>{
     
     if (stencilActive && stencilEditMode){
       if (handleStencilStart(e.clientX,e.clientY)){isDraggingTool=true;}
-      return; // Строго блокируем рисование пикселей в режиме редактирования!
+      return; 
     }
 
     if (tool==='admin_image'){
@@ -1996,6 +2104,75 @@ document.addEventListener('keydown',e=>{
   if (e.key===' '){e.preventDefault();placePixel();}
 });
 
+// ── ADMIN ──
+function loadAdminUsers(page){page=page||adminPage;sendJSON({action:'admin_cmd',cmd:'get_users',page});}
+function adminPageNav(dir){const np=adminPage+dir;if(np<1||np>adminTotalPages)return;loadAdminUsers(np);}
+function filterAdminUsers(){
+  const q=document.getElementById('admin-search').value.toLowerCase();
+  renderAdminUsers(q?allAdminUsers.filter(u=>u.username.toLowerCase().includes(q)):allAdminUsers);
+}
+function renderAdminUsers(users){
+  const c=document.getElementById('admin-users-list');
+  if (!users.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
+  c.innerHTML=users.map(u=>`
+    <div class="user-card">
+      <div class="user-card-top">
+        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px · 🪙${u.coins||0})</span></div>
+        <span class="user-badge ${u.role==='admin'?'badge-admin':'badge-user'}">${u.role.toUpperCase()}</span>
+        ${u.banned?'<span class="user-badge badge-banned">BANNED</span>':''}
+      </div>
+      <div class="user-actions">
+        <button class="action-btn ab-role" onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Снять админа':'Дать админа'}</button>
+        <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',300)">5м</button>
+        <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
+        <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
+        <button class="action-btn ab-msg" onclick="prefillDM('${esc(u.username)}')">✉</button>
+        <button class="action-btn ab-role" onclick="promptGiveCoins('${esc(u.username)}')">🪙+</button>
+      </div>
+    </div>`).join('');
+}
+function promptGiveCoins(username){
+  const amt=parseInt(prompt(`Сколько монет выдать ${username}?`));
+  if (!amt||amt<=0) return;
+  sendJSON({action:'admin_cmd',cmd:'give_coins',target:username,params:amt});
+  setTimeout(()=>loadAdminUsers(adminPage),300);
+}
+function adminCmd(cmd,target,params){
+  sendJSON({action:'admin_cmd',cmd,target,params,page:adminPage});
+  setTimeout(()=>loadAdminUsers(adminPage),300);
+}
+function adminResizeCanvas(){
+  const w=parseInt(document.getElementById('admin-canvas-w').value);
+  const h=parseInt(document.getElementById('admin-canvas-h').value);
+  if (w<16||h<16||w>2048||h>2048){showToast('Некорректный размер (16–2048)','error');return;}
+  sendJSON({action:'admin_cmd',cmd:'resize_canvas',params:{w,h}});
+}
+function adminClearCanvas(){
+  if (!confirm('Очистить весь холст?')) return;
+  sendJSON({action:'admin_cmd',cmd:'clear_canvas'});
+}
+function adminToggleCursors(){
+  serverCursorsEnabled=!serverCursorsEnabled;
+  sendJSON({action:'admin_cmd',cmd:'toggle_cursors',params:serverCursorsEnabled});
+}
+function adminBroadcast(){
+  const msg=document.getElementById('broadcast-msg').value.trim();
+  if (!msg){showToast('Введите сообщение','error');return;}
+  sendJSON({action:'admin_cmd',cmd:'broadcast',params:msg});
+  document.getElementById('broadcast-msg').value='';
+}
+function adminSendDM(){
+  const target=document.getElementById('dm-target').value.trim();
+  const msg=document.getElementById('dm-msg').value.trim();
+  if (!target||!msg){showToast('Заполните поля','error');return;}
+  sendJSON({action:'admin_cmd',cmd:'send_dm',target,params:msg});
+  showToast(`Отправлено ${target}`,'success');
+}
+function prefillDM(username){switchAdminTab('broadcast');document.getElementById('dm-target').value=username;}
+function loadAdminStats(){
+  sendJSON({action:'admin_cmd',cmd:'admin_stats'});
+}
+
 // ── TOOLS ──
 function setTool(t){
   tool=t;
@@ -2052,6 +2229,16 @@ function playClick(){
 }
 
 // ── PANELS ──
+function switchAdminTab(tab){
+  ['users','canvas','broadcast','stats'].forEach(t=>{
+    document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none';
+  });
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>{
+    el.classList.toggle('active',['users','canvas','broadcast','stats'][i]===tab);
+  });
+  if (tab==='stats') loadAdminStats();
+}
+
 function showPanel(id){
   hideAllPanels();
   document.getElementById(id)?.classList.add('show');

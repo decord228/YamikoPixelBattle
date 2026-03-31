@@ -46,7 +46,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 #coords-badge{font-family:'Space Mono',monospace;font-size:11px;color:var(--text2);background:var(--surface);padding:3px 10px;border-radius:var(--radius-pill);border:1px solid var(--border);min-width:90px;text-align:center;}
 #made-by{font-size:10px;color:var(--text3);letter-spacing:.5px;font-family:'Space Mono',monospace;}
 #made-by span{color:var(--accent2);}
-/* Coins badge in top bar */
 #coins-badge{display:flex;align-items:center;gap:4px;font-size:11px;font-family:'Space Mono',monospace;color:#fbbf24;background:rgba(251,191,36,.1);border:1px solid rgba(251,191,36,.25);padding:3px 9px;border-radius:var(--radius-pill);transition:.3s;}
 #coins-badge.bump{animation:coin-bump .3s cubic-bezier(.34,1.56,.64,1);}
 @keyframes coin-bump{0%,100%{transform:scale(1);}50%{transform:scale(1.18);}}
@@ -56,7 +55,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .sidebar-btn{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;background:rgba(15,15,17,0.9);border:1px solid var(--border2);backdrop-filter:blur(16px);cursor:pointer;font-size:17px;transition:all .2s cubic-bezier(.34,1.56,.64,1);position:relative;box-shadow:0 4px 16px rgba(0,0,0,.4);}
 .sidebar-btn:hover{background:var(--surface3);border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow),0 8px 24px rgba(0,0,0,.5);transform:scale(1.1);}
 .sidebar-btn.active{background:var(--accent);border-color:var(--accent2);box-shadow:0 0 0 3px var(--accent-glow),0 4px 16px rgba(99,102,241,.5);}
-.sidebar-btn .tip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--surface3);border:1px solid var(--border2);padding:5px 10px;border-radius:8px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 4px 12px rgba(0,0,0,.4);}
+.sidebar-btn.admin-active{background:var(--orange);border-color:var(--yellow);box-shadow:0 0 0 3px rgba(234,179,8,0.3),0 4px 16px rgba(249,115,22,0.5);}
+.sidebar-btn .tip{position:absolute;left:calc(100% + 10px);top:50%;transform:translateY(-50%);background:var(--surface3);border:1px solid var(--border2);padding:5px 10px;border-radius:8px;font-size:11px;white-space:nowrap;opacity:0;pointer-events:none;transition:.2s;box-shadow:0 4px 12px rgba(0,0,0,.4);z-index:100;}
 .sidebar-btn:hover .tip{opacity:1;}
 .sidebar-divider{width:20px;height:1px;background:var(--border2);margin:3px 0;}
 
@@ -115,7 +115,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .form-label{font-size:11px;font-weight:600;color:var(--text2);margin-bottom:5px;display:block;letter-spacing:.5px;text-transform:uppercase;}
 .form-input{width:100%;padding:10px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:13px;font-family:'Inter',sans-serif;transition:all .2s;outline:none;}
 .form-input:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-glow);}
-.form-input::placeholder{color:var(--text3);}
 .btn{width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;font-family:'Unbounded',sans-serif;font-size:11px;font-weight:700;letter-spacing:1px;text-transform:uppercase;transition:all .2s;}
 .btn-primary{background:linear-gradient(135deg,var(--accent),#7c3aed);color:#fff;box-shadow:0 4px 20px var(--accent-glow);}
 .btn-primary:hover{transform:translateY(-1px);box-shadow:0 8px 28px var(--accent-glow);}
@@ -235,20 +234,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .broadcast-input{width:100%;padding:9px 13px;border-radius:10px;background:var(--surface2);border:1px solid var(--border2);color:var(--text);font-size:12px;resize:none;font-family:'Inter',sans-serif;outline:none;margin-bottom:8px;}
 .broadcast-input:focus{border-color:var(--accent);}
 
-/* ── ADMIN TOOLS ── */
-.admin-color-select{width:38px;height:38px;border-radius:8px;cursor:pointer;border:2px solid var(--border2);transition:.18s;}
-.admin-color-select.selected{border-color:#fff;transform:scale(1.15);}
-.admin-palette{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;margin-bottom:10px;}
 #image-drop-zone{border:2px dashed var(--border2);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:10px;}
 #image-drop-zone:hover,#image-drop-zone.drag-over{border-color:var(--accent);background:rgba(99,102,241,.05);}
 #image-drop-zone p{font-size:12px;color:var(--text2);margin-top:6px;}
 #image-preview{width:100%;max-height:120px;object-fit:contain;border-radius:8px;display:none;margin-bottom:10px;}
-
-/* ── ADMIN SHAPES ── */
-.shape-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
-.shape-btn{padding:7px 14px;border-radius:8px;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);cursor:pointer;font-size:11px;font-weight:600;transition:.2s;font-family:'Unbounded',sans-serif;}
-.shape-btn.active{background:var(--accent);color:#fff;border-color:var(--accent);}
-.shape-btn:hover:not(.active){background:var(--surface3);color:var(--text);}
 
 /* Admin Floating Bar */
 #admin-floating-bar {
@@ -270,21 +259,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
 .member-list{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px;}
 .member-chip{font-size:10px;padding:3px 9px;border-radius:var(--radius-pill);background:var(--surface3);color:var(--text2);border:1px solid var(--border);}
 .member-chip.leader{background:rgba(99,102,241,.15);color:var(--accent2);}
-
-/* ── STENCIL ── */
-#stencil-floating-bar{
-  position:fixed;bottom:80px;left:50%;transform:translateX(-50%);
-  z-index:100;background:rgba(15,15,17,0.95);padding:10px 16px;
-  border-radius:12px;border:1px solid rgba(34,197,94,.5);
-  display:none;gap:10px;align-items:center;
-  box-shadow:0 8px 32px rgba(0,0,0,.6);flex-wrap:wrap;
-}
-#stencil-floating-bar label{font-size:11px;color:var(--text2);}
-#stencil-opacity-range{-webkit-appearance:none;width:80px;height:4px;border-radius:2px;background:var(--surface3);outline:none;cursor:pointer;}
-#stencil-opacity-range::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--green);cursor:pointer;}
-#stencil-size-range{-webkit-appearance:none;width:80px;height:4px;border-radius:2px;background:var(--surface3);outline:none;cursor:pointer;}
-#stencil-size-range::-webkit-slider-thumb{-webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--green);cursor:pointer;}
-.stencil-range-val{font-family:'Space Mono',monospace;font-size:10px;color:var(--green);min-width:28px;}
 
 /* ── SHOP / ASSISTANT ── */
 .shop-item{background:var(--surface2);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;transition:.2s;}
@@ -346,10 +320,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   #top-bar{padding:7px 12px;gap:8px;top:10px;}
   #logo{font-size:11px;}
   #made-by,#coords-badge,.top-divider:last-of-type{display:none;}
-  #sidebar{bottom:76px;top:auto;left:0;right:0;transform:none;flex-direction:row;justify-content:center;flex-wrap:wrap;gap:6px;background:rgba(15,15,17,.88);backdrop-filter:blur(20px);border-top:1px solid var(--border2);padding:8px;border-radius:0;}
+  #sidebar{bottom:76px;top:auto;left:0;right:0;transform:none;flex-direction:row;justify-content:center;flex-wrap:wrap;gap:6px;background:rgba(15,15,17,.88);backdrop-filter:blur(20px);border-top:1px solid var(--border2);padding:8px;border-radius:0; z-index:20;}
   .sidebar-btn .tip{display:none;}
   .sidebar-divider{display:none;}
-  #palette-panel{right:auto;left:50%;transform:translateX(-50%);bottom:132px;width:calc(100vw - 24px);max-width:320px;}
+  #palette-panel{right:auto;left:50%;transform:translateX(-50%);bottom:132px;width:calc(100vw - 24px);max-width:320px; z-index:15;}
   #bottom-bar{bottom:10px;padding:6px 10px;gap:6px;}
   .overlay-panel{width:calc(100vw - 16px);max-height:calc(100vh - 80px);}
   #admin-panel{width:calc(100vw - 16px);}
@@ -402,8 +376,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   <div id="sidebar">
     <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')">✏️<span class="tip">Карандаш [E]</span></div>
     <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')">🔍<span class="tip">Пипетка</span></div>
-    <div class="sidebar-btn" id="btn-tool-stencil" onclick="openStencilPicker()">📐<span class="tip">Трафарет</span></div>
+    <div class="sidebar-btn" id="btn-tool-stencil" onclick="toggleStencilPanel()">📐<span class="tip">Трафарет</span></div>
     <div class="sidebar-divider"></div>
+    
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-rect" onclick="setTool('admin_rect')">▭<span class="tip">Прямоугольник (Админ)</span></div>
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-circle" onclick="setTool('admin_circle')">◯<span class="tip">Круг (Админ)</span></div>
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-line" onclick="setTool('admin_line')">╱<span class="tip">Линия (Админ)</span></div>
+    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-move" onclick="setTool('admin_move')">⇱<span class="tip">Перемещение (Админ)</span></div>
+    <div class="sidebar-divider admin-tool-btn" style="display:none"></div>
+    
     <div class="sidebar-btn" id="btn-grid" onclick="toggleGrid()">▦<span class="tip">Сетка [G]</span></div>
     <div class="sidebar-btn" onclick="resetCamera()">⌖<span class="tip">Сбросить камеру</span></div>
     <div class="sidebar-divider"></div>
@@ -425,7 +406,24 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     </div>
   </div>
 
-  <!-- ── BOTTOM BAR (centered, symmetric) ── -->
+  <div id="stencil-panel" class="panel" style="display:none; position:absolute; top:70px; left:70px; width:260px; padding:16px; z-index:30;">
+    <div class="panel-title" style="margin-bottom:10px">📐 Трафарет</div>
+    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('stencil-file-input').click()">📁 Загрузить картинку</button>
+    <div class="setting-row" style="margin-top:10px; padding:8px 0;">
+       <div><div class="setting-label">Режим редактирования</div><div class="setting-desc">Блокирует рисование</div></div>
+       <div class="toggle on" id="stencil-edit-toggle" onclick="toggleStencilEdit()"></div>
+    </div>
+    <div class="form-group" style="margin-top:10px">
+       <label class="form-label" style="display:flex;justify-content:space-between"><span>Прозрачность</span> <span id="stencil-opacity-val">60%</span></label>
+       <input type="range" id="stencil-panel-opacity" min="10" max="100" value="60" oninput="updateStencilOpacity(this.value)" style="width:100%">
+    </div>
+    <div class="setting-row" id="stencil-clan-share-row" style="display:none; padding:8px 0;">
+       <div><div class="setting-label">Поделиться с кланом</div></div>
+       <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto;">Отправить</button>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="cancelStencil()" style="margin-top:10px">✕ Скрыть трафарет</button>
+  </div>
+
   <div id="bottom-bar">
     <div class="bar-btn" onclick="togglePalette()" title="Палитра [P]">🎨</div>
     <div class="bar-divider"></div>
@@ -435,34 +433,19 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
     <div class="bar-btn" onclick="zoomOut()" title="Отдалить [-]">－</div>
   </div>
 
-  <!-- ── ADMIN FLOATING BAR ── -->
   <div id="admin-floating-bar">
-    <div id="admin-floating-bar-title">Редактирование</div>
+    <div id="admin-floating-bar-title">Действие</div>
+    <label id="admin-shape-fill-container" style="color:#fff;font-size:11px;margin-right:10px;display:flex;align-items:center;cursor:pointer;">
+      <input type="checkbox" id="admin-shape-fill" checked style="margin-right:4px;"> Заливка
+    </label>
     <button class="btn btn-secondary btn-sm" onclick="cancelAdminTool()">Отмена</button>
-    <button class="btn btn-primary btn-sm" onclick="applyAdminTool()">Применить</button>
-  </div>
-
-  <!-- ── STENCIL FLOATING BAR ── -->
-  <div id="stencil-floating-bar">
-    <span style="font-size:11px;font-weight:700;color:#4ade80;font-family:'Space Mono',monospace;margin-right:6px;">📐 ТРАФАРЕТ</span>
-    <label>Прозрачность</label>
-    <input type="range" id="stencil-opacity-range" min="10" max="100" value="60" oninput="updateStencilOpacity(this.value)">
-    <span class="stencil-range-val" id="stencil-opacity-val">60%</span>
-    <label>Размер</label>
-    <input type="range" id="stencil-size-range" min="10" max="400" value="100" oninput="updateStencilSize(this.value)">
-    <span class="stencil-range-val" id="stencil-size-val">100px</span>
-    <div id="stencil-share-btn" style="display:none">
-      <button class="btn btn-secondary btn-sm" onclick="shareStencilToClan()">👥 Клану</button>
-    </div>
-    <button class="btn btn-secondary btn-sm" onclick="cancelStencil()">Отмена</button>
-    <button class="btn btn-primary btn-sm" style="background:linear-gradient(135deg,#22c55e,#16a34a)" onclick="applyStencil()">Применить</button>
+    <button class="btn btn-primary btn-sm" onclick="applyAdminTool()" id="admin-floating-apply">Применить</button>
   </div>
 
   <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
   <div id="toast-wrap"></div>
 </div>
 
-<!-- ── AUTH PANEL ── -->
 <div id="auth-panel" class="overlay-panel panel show">
   <div class="auth-logo">
     <div class="auth-logo-text">PIXEL<br>BATTLE</div>
@@ -488,11 +471,9 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ── PROFILE PANEL ── -->
 <div id="profile-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">👤 Профиль</div><div class="panel-close" onclick="hidePanel('profile-panel')">✕</div></div>
   <div class="panel-body">
-    <!-- Profile Header -->
     <div class="profile-header">
       <div id="profile-avatar-ring">
         <canvas id="avatar-canvas" width="78" height="78"></canvas>
@@ -511,7 +492,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="stat-card"><div class="stat-val coins-val" id="prof-coins">0</div><div class="stat-lbl">🪙 Монет</div></div>
     </div>
 
-    <!-- Profile Tabs -->
     <div class="sub-tabs" style="margin-top:4px">
       <div class="sub-tab active" onclick="switchProfileTab('avatar')">Аватар</div>
       <div class="sub-tab" onclick="switchProfileTab('clan')">Клан</div>
@@ -519,13 +499,11 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="sub-tab" onclick="switchProfileTab('account')">Аккаунт</div>
     </div>
 
-    <!-- Avatar Tab -->
     <div id="prof-tab-avatar">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Выбрать аватар</div>
       <div class="avatar-options" id="emoji-avatars"></div>
     </div>
 
-    <!-- Clan Tab -->
     <div id="prof-tab-clan" style="display:none">
       <div id="clan-view-no-clan">
         <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Создать клан (50 🪙)</div>
@@ -563,14 +541,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       </div>
     </div>
 
-    <!-- Shop Tab -->
     <div id="prof-tab-shop" style="display:none">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:12px;letter-spacing:.5px;text-transform:uppercase;">🤖 Помощник по трафарету</div>
       <div style="font-size:11px;color:var(--text3);margin-bottom:12px;line-height:1.6;">Уровни помощника автоматизируют работу с трафаретом. Монеты зарабатываются за каждый поставленный пиксель (1 🪙 за 10 пикс.).</div>
       <div id="shop-stencil-level"></div>
     </div>
 
-    <!-- Account Tab -->
     <div id="prof-tab-account" style="display:none">
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сменить пароль</div>
       <div class="form-group"><input class="form-input" id="new-pass" type="password" placeholder="Новый пароль"></div>
@@ -582,7 +558,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ── LEADERBOARD PANEL ── -->
 <div id="leaderboard-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">🏆 Лидерборд</div><div class="panel-close" onclick="hidePanel('leaderboard-panel')">✕</div></div>
   <div class="panel-body">
@@ -595,7 +570,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ── SETTINGS PANEL ── -->
 <div id="settings-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">⚙️ Настройки</div><div class="panel-close" onclick="hidePanel('settings-panel')">✕</div></div>
   <div class="panel-body">
@@ -609,15 +583,12 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
   </div>
 </div>
 
-<!-- ── ADMIN PANEL ── -->
 <div id="admin-panel" class="overlay-panel panel">
   <div class="panel-header"><div class="panel-title">🛡️ Панель администратора</div><div class="panel-close" onclick="hidePanel('admin-panel')">✕</div></div>
   <div class="panel-body">
     <div class="admin-tabs">
       <div class="admin-tab active" onclick="switchAdminTab('users')">Игроки</div>
       <div class="admin-tab" onclick="switchAdminTab('canvas')">Холст</div>
-      <div class="admin-tab" onclick="switchAdminTab('tools')">Инструменты</div>
-      <div class="admin-tab" onclick="switchAdminTab('shapes')">Фигуры</div>
       <div class="admin-tab" onclick="switchAdminTab('broadcast')">Сообщение</div>
       <div class="admin-tab" onclick="switchAdminTab('stats')">Статистика</div>
     </div>
@@ -641,6 +612,26 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div style="margin-bottom:12px;font-size:11px;color:var(--red);">⚠️ Изменение сохранит пиксели в пределах нового размера.</div>
       <button class="btn btn-primary" onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
       <div class="section-sep"></div>
+      
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → пиксели)</div>
+      <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()">
+        <div style="font-size:28px">🖼️</div>
+        <p>Нажмите или перетащите изображение</p>
+      </div>
+      <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
+      <img id="image-preview" alt="Preview">
+      <button class="btn btn-primary" id="btn-place-image" onclick="startAdminImage()" disabled style="margin-bottom:10px;">🚀 Разместить на холсте</button>
+      
+      <div class="section-sep"></div>
+      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🌍 Глобальный трафарет (для всех)</div>
+      <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" onclick="document.getElementById('admin-stencil-file').click()">
+        <div style="font-size:22px">📐</div>
+        <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
+      </div>
+      <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" onchange="handleAdminGlobalStencil(event)">
+      <button class="btn btn-secondary" id="btn-clear-global-stencil" onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
+
+      <div class="section-sep"></div>
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
       <div class="setting-row" style="padding-top:0">
         <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
@@ -649,70 +640,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg);color:var(
       <div class="section-sep"></div>
       <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
       <button class="btn btn-danger" onclick="adminClearCanvas()">🗑️ Очистить весь холст</button>
-    </div>
-
-    <div id="admin-tab-tools" style="display:none">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Заливка прямоугольника</div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Цвет заливки</div>
-      <div class="admin-palette" id="admin-fill-palette"></div>
-      <button class="btn btn-primary" onclick="startAdminFill()" style="margin-bottom:6px">Выделить область на холсте</button>
-      <div style="font-size:10px;color:var(--text3);margin-bottom:16px;">Нажмите кнопку, после чего выделите зону прямо на холсте для заливки.</div>
-      <div class="section-sep"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → пиксели)</div>
-      <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()">
-        <div style="font-size:28px">🖼️</div>
-        <p>Нажмите или перетащите изображение</p>
-      </div>
-      <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
-      <img id="image-preview" alt="Preview">
-      <div style="font-size:10px;color:var(--text3);margin-bottom:10px;">После нажатия на кнопку вы сможете изменить размер и расположение картинки по сетке.</div>
-      <button class="btn btn-primary" id="btn-place-image" onclick="startAdminImage()" disabled>🚀 Разместить на холсте</button>
-      <div class="section-sep"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🌍 Глобальный трафарет (для всех)</div>
-      <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" onclick="document.getElementById('admin-stencil-file').click()">
-        <div style="font-size:22px">📐</div>
-        <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
-      </div>
-      <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" onchange="handleAdminGlobalStencil(event)">
-      <button class="btn btn-secondary" id="btn-clear-global-stencil" onclick="clearGlobalStencil()" style="margin-top:4px">Снять глобальный трафарет</button>
-    </div>
-
-    <div id="admin-tab-shapes" style="display:none">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Тип фигуры</div>
-      <div class="shape-row">
-        <div class="shape-btn active" id="shape-btn-circle" onclick="selectShape('circle')">⭕ Круг</div>
-        <div class="shape-btn" id="shape-btn-line" onclick="selectShape('line')">╱ Линия</div>
-        <div class="shape-btn" id="shape-btn-ellipse" onclick="selectShape('ellipse')">⬭ Эллипс</div>
-      </div>
-      <div style="font-size:10px;color:var(--text2);margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">Цвет</div>
-      <div class="admin-palette" id="admin-shape-palette"></div>
-      <div id="shape-params-circle">
-        <div class="form-group"><label class="form-label">Центр X</label><input class="form-input" id="shape-cx" type="number" value="128" min="0"></div>
-        <div class="form-group"><label class="form-label">Центр Y</label><input class="form-input" id="shape-cy" type="number" value="128" min="0"></div>
-        <div class="form-group"><label class="form-label">Радиус</label><input class="form-input" id="shape-r" type="number" value="20" min="1"></div>
-        <div class="setting-row" style="padding:8px 0"><div class="setting-label">Залитый</div><div class="toggle on" id="shape-filled-toggle" onclick="this.classList.toggle('on')"></div></div>
-      </div>
-      <div id="shape-params-line" style="display:none">
-        <div class="resize-form">
-          <div class="form-group"><label class="form-label">X0</label><input class="form-input" id="shape-x0" type="number" value="100"></div>
-          <div class="form-group"><label class="form-label">Y0</label><input class="form-input" id="shape-y0" type="number" value="100"></div>
-        </div>
-        <div class="resize-form">
-          <div class="form-group"><label class="form-label">X1</label><input class="form-input" id="shape-x1" type="number" value="150"></div>
-          <div class="form-group"><label class="form-label">Y1</label><input class="form-input" id="shape-y1" type="number" value="150"></div>
-        </div>
-      </div>
-      <div id="shape-params-ellipse" style="display:none">
-        <div class="resize-form">
-          <div class="form-group"><label class="form-label">Центр X</label><input class="form-input" id="shape-ecx" type="number" value="128"></div>
-          <div class="form-group"><label class="form-label">Центр Y</label><input class="form-input" id="shape-ecy" type="number" value="128"></div>
-        </div>
-        <div class="resize-form">
-          <div class="form-group"><label class="form-label">Радиус X</label><input class="form-input" id="shape-rx" type="number" value="40"></div>
-          <div class="form-group"><label class="form-label">Радиус Y</label><input class="form-input" id="shape-ry" type="number" value="20"></div>
-        </div>
-      </div>
-      <button class="btn btn-primary" onclick="drawAdminShape()" style="margin-top:4px">🎨 Нарисовать фигуру</button>
     </div>
 
     <div id="admin-tab-broadcast" style="display:none">
@@ -766,7 +693,7 @@ const RANKS = [
 ];
 
 const STENCIL_LEVELS = [
-  {level:1,title:'Помощник Ур.1',desc:'Авто-выбор цвета из палитры при клике на трафарет.',cost:100},
+  {level:1,title:'Помощник Ур.1',desc:'Авто-выбор цвета из палитры при наведении на трафарет.',cost:100},
   {level:2,title:'Помощник Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',cost:300},
 ];
 
@@ -783,7 +710,7 @@ let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾';
 let currentCoins = 0, currentStencilLevel = 0, purchasedLevels = [];
 let currentClan = '';
-let tool = 'pencil';
+let tool = 'pencil'; // pencil, eyedrop, stencil, admin_rect, admin_circle, admin_line, admin_move
 let gridEnabled = false, smoothCamera = true, showCursors = true;
 let inspectorEnabled = true, soundEnabled = false;
 let camX = 0, camY = 0, camZoom = 3;
@@ -797,34 +724,35 @@ let sessionFile = {username:'',password:''};
 let selectedEmoji = '👾';
 let isReconnecting = false;
 let serverCursorsEnabled = false;
-let adminFillColorIdx = 0;
-let adminShapeColorIdx = 0;
-let activeShape = 'circle';
-let clanCursorEnabled = false;
-let clanShareCursor = false; // server-side state
+let clanShareCursor = false;
 
-// Admin Tools State
-let isDraggingTool = false;
-let adminFillStart = null, adminFillEnd = null;
+// Admin Image Tool
 let adminImageData = null;
 let adminImgObj = null;
 let adminImgRect = {x:0,y:0,w:0,h:0};
+let isDraggingTool = false;
 let adminActiveHandle = null;
 let adminDragOffset = {x:0,y:0};
 
+// Admin Shape Tools
+let isDraggingAdminShape = false;
+let adminShapeStart = {x:0,y:0}, adminShapeEnd = {x:0,y:0};
+let adminShapeFilled = true;
+
+// Admin Move Tool
+let adminMoveState = 'idle'; // idle, select, selected, moving
+let adminMoveRect = null; // {sx, sy, w, h, dx, dy}
+let adminMoveCanvas = null; // offscreen canvas for preview
+
 // Stencil State
 let stencilActive = false;
-let stencilImg = null;        // Image object
-let stencilPixels = [];       // [{x,y,palIdx}] mapped to palette
+let stencilEditMode = true; // when true, drag moves stencil. false - locks it
+let stencilImg = null;        
 let stencilRect = {x:0,y:0,w:100,h:100};
 let stencilOpacity = 0.6;
 let stencilHandle = null;
 let stencilDragOffset = {x:0,y:0};
-let stencilImageData = null;  // raw ImageData for mapping
-
-// Global stencil (from admin / clan)
-let globalStencilActive = false;
-let globalStencilData = null;
+let stencilImageData = null; 
 
 const WS_URL = 'wss://yamikopixelbattleserver.onrender.com';
 
@@ -862,7 +790,6 @@ function applyTransform() {
     gridOverlay.style.transform = `translate(${camX}px,${camY}px)`;
     gridOverlay.style.width = (canvasW * camZoom) + 'px';
     gridOverlay.style.height = (canvasH * camZoom) + 'px';
-    // 1:1 grid – one cell = one canvas pixel, size = camZoom
     gridOverlay.style.backgroundSize = `${camZoom}px ${camZoom}px`;
     gridOverlay.style.backgroundImage = `
       linear-gradient(to right, rgba(0,0,0,0.15) 1px, transparent 1px),
@@ -897,20 +824,62 @@ function fullRender(data) {
 function renderOverlay() {
   octx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
 
-  // ── Admin Fill ──
-  if (tool==='admin_fill' && adminFillStart && adminFillEnd) {
-    let cx=Math.min(adminFillStart.x,adminFillEnd.x);
-    let cy=Math.min(adminFillStart.y,adminFillEnd.y);
-    let cw=Math.abs(adminFillStart.x-adminFillEnd.x)+1;
-    let ch=Math.abs(adminFillStart.y-adminFillEnd.y)+1;
-    let sx=cx*camZoom+camX,sy=cy*camZoom+camY,sw=cw*camZoom,sh=ch*camZoom;
-    octx.fillStyle=PALETTE[adminFillColorIdx].c+'90';
-    octx.fillRect(sx,sy,sw,sh);
-    octx.strokeStyle='#ffffff';octx.lineWidth=2;
-    octx.setLineDash([8,4]);octx.strokeRect(sx,sy,sw,sh);octx.setLineDash([]);
+  // ── Admin Shapes ──
+  if (isDraggingAdminShape && (tool === 'admin_rect' || tool === 'admin_circle' || tool === 'admin_line')) {
+      octx.strokeStyle = PALETTE[selectedColor].c;
+      octx.fillStyle = PALETTE[selectedColor].c + '80';
+      octx.lineWidth = camZoom;
+      
+      let sx = adminShapeStart.x * camZoom + camX;
+      let sy = adminShapeStart.y * camZoom + camY;
+      let ex = adminShapeEnd.x * camZoom + camX;
+      let ey = adminShapeEnd.y * camZoom + camY;
+
+      if (tool === 'admin_rect') {
+          let x = Math.min(sx, ex), y = Math.min(sy, ey);
+          let w = Math.abs(ex - sx) + camZoom, h = Math.abs(ey - sy) + camZoom;
+          if(adminShapeFilled) octx.fillRect(x, y, w, h);
+          octx.strokeRect(x, y, w, h);
+      } else if (tool === 'admin_circle') {
+          let r = Math.hypot(adminShapeEnd.x - adminShapeStart.x, adminShapeEnd.y - adminShapeStart.y) * camZoom;
+          octx.beginPath();
+          octx.arc(sx + camZoom/2, sy + camZoom/2, r, 0, Math.PI*2);
+          if(adminShapeFilled) octx.fill();
+          octx.stroke();
+      } else if (tool === 'admin_line') {
+          octx.beginPath();
+          octx.moveTo(sx + camZoom/2, sy + camZoom/2);
+          octx.lineTo(ex + camZoom/2, ey + camZoom/2);
+          octx.stroke();
+      }
   }
 
-  // ── Admin Image ──
+  // ── Admin Move Tool ──
+  if (tool === 'admin_move') {
+      if (adminMoveState === 'select' && isDraggingAdminShape) {
+          let sx = adminShapeStart.x * camZoom + camX;
+          let sy = adminShapeStart.y * camZoom + camY;
+          let ex = adminShapeEnd.x * camZoom + camX;
+          let ey = adminShapeEnd.y * camZoom + camY;
+          let x = Math.min(sx, ex), y = Math.min(sy, ey);
+          let w = Math.abs(ex - sx) + camZoom, h = Math.abs(ey - sy) + camZoom;
+          
+          octx.strokeStyle = '#ffffff'; octx.lineWidth = 2; octx.setLineDash([8,4]);
+          octx.strokeRect(x, y, w, h); octx.setLineDash([]);
+      } else if ((adminMoveState === 'selected' || adminMoveState === 'moving') && adminMoveRect && adminMoveCanvas) {
+          let rx = adminMoveRect.dx * camZoom + camX;
+          let ry = adminMoveRect.dy * camZoom + camY;
+          let rw = adminMoveRect.w * camZoom;
+          let rh = adminMoveRect.h * camZoom;
+          
+          octx.globalAlpha = 0.8; octx.imageSmoothingEnabled = false;
+          octx.drawImage(adminMoveCanvas, rx, ry, rw, rh); octx.globalAlpha = 1.0;
+          octx.strokeStyle = '#eab308'; octx.lineWidth = 2; octx.setLineDash([6,3]);
+          octx.strokeRect(rx, ry, rw, rh); octx.setLineDash([]);
+      }
+  }
+
+  // ── Admin Image Place ──
   if (tool==='admin_image' && adminImgObj) {
     let ir=adminImgRect;
     let sx=ir.x*camZoom+camX,sy=ir.y*camZoom+camY,sw=ir.w*camZoom,sh=ir.h*camZoom;
@@ -929,20 +898,23 @@ function renderOverlay() {
     let sx=ir.x*camZoom+camX,sy=ir.y*camZoom+camY,sw=ir.w*camZoom,sh=ir.h*camZoom;
     octx.globalAlpha=stencilOpacity;octx.imageSmoothingEnabled=false;
     octx.drawImage(stencilImg,sx,sy,sw,sh);octx.globalAlpha=1;
-    octx.strokeStyle='#22c55e';octx.lineWidth=2;
-    octx.setLineDash([6,3]);octx.strokeRect(sx,sy,sw,sh);octx.setLineDash([]);
-    [[sx,sy],[sx+sw,sy],[sx,sy+sh],[sx+sw,sy+sh]].forEach(([cx,cy])=>{
-      octx.beginPath();octx.arc(cx,cy,6,0,Math.PI*2);
-      octx.fillStyle='#22c55e';octx.fill();
-    });
-    // Stencil assistant Lv2: highlight neighbor hints
-    if (currentStencilLevel>=2 && hoveredPixel.x>=0) {
+    
+    if (stencilEditMode) {
+      octx.strokeStyle='#22c55e';octx.lineWidth=2;
+      octx.setLineDash([6,3]);octx.strokeRect(sx,sy,sw,sh);octx.setLineDash([]);
+      [[sx,sy],[sx+sw,sy],[sx,sy+sh],[sx+sw,sy+sh]].forEach(([cx,cy])=>{
+        octx.beginPath();octx.arc(cx,cy,6,0,Math.PI*2);
+        octx.fillStyle='#22c55e';octx.fill();
+      });
+    }
+
+    if (currentStencilLevel>=2 && hoveredPixel.x>=0 && !stencilEditMode) {
       renderStencilHints();
     }
   }
 
   // ── Hover ──
-  if (tool==='pencil'||tool==='eyedrop'||tool==='stencil') {
+  if (tool==='pencil'||tool==='eyedrop'||(!stencilEditMode && stencilActive)) {
     if (hoveredPixel.x>=0&&hoveredPixel.x<canvasW&&hoveredPixel.y>=0&&hoveredPixel.y<canvasH) {
       let sx=hoveredPixel.x*camZoom+camX,sy=hoveredPixel.y*camZoom+camY;
       octx.fillStyle='rgba(255,255,255,0.35)';octx.fillRect(sx,sy,camZoom,camZoom);
@@ -955,13 +927,12 @@ function renderStencilHints() {
   if (!stencilImageData || !stencilActive) return;
   const hx=hoveredPixel.x, hy=hoveredPixel.y;
   const ir=stencilRect;
-  // Find stencil pixel at hovered canvas position
   const sx=Math.floor((hx-ir.x)/ir.w*stencilImageData.width);
   const sy=Math.floor((hy-ir.y)/ir.h*stencilImageData.height);
   if (sx<0||sx>=stencilImageData.width||sy<0||sy>=stencilImageData.height) return;
   const idx=(sy*stencilImageData.width+sx)*4;
   const tr=stencilImageData.data[idx], tg=stencilImageData.data[idx+1], tb=stencilImageData.data[idx+2];
-  // Find neighbors with same color and empty canvas pixel
+  
   const dirs=[[0,-1],[1,0],[0,1],[-1,0]];
   octx.fillStyle='rgba(34,197,94,0.3)';
   dirs.forEach(([dx,dy])=>{
@@ -1007,7 +978,6 @@ function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
     cursorEls[username] = {el};
   }
   const c = cursorEls[username];
-  // Position: tip of SVG arrow is at top-left (1,1) of path ≈ 0,0
   c.el.style.left = sx + 'px';
   c.el.style.top  = sy + 'px';
   const arrow = c.el.querySelector('path');
@@ -1016,19 +986,15 @@ function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
   if (nameEl) nameEl.style.color = color;
 }
 
-function removeCursorFlag(username) {
-  if (cursorEls[username]) { cursorEls[username].el.remove(); delete cursorEls[username]; }
+function clearCursorFlags() {
+  Object.keys(cursorEls).forEach(u=>cursorEls[u].el.remove());
+  for (const k in cursorEls) delete cursorEls[k];
 }
 
 function updateAllCursorFlags() {
   for (const [u,cur] of Object.entries(otherCursors)) {
     updateCursorFlag(u,cur.x,cur.y,cur.c,cur.emoji);
   }
-}
-
-function clearCursorFlags() {
-  Object.keys(cursorEls).forEach(u=>cursorEls[u].el.remove());
-  for (const k in cursorEls) delete cursorEls[k];
 }
 
 // ── CAMERA ──
@@ -1139,18 +1105,15 @@ function handleJSON(d) {
     if (d.settings) applyServerSettings(d.settings);
     onAuthSuccess(d);
   }
-
   else if (a==='toast') {
     const msg=d.message||'Уведомление';
     const type=msg.includes('ошибка')||msg.includes('Нет')||msg.includes('уже')?'error':'info';
     showToast(msg,type);
   }
-
   else if (a==='leaderboard_data') {
     renderLeaderboardPlayers(d.players||[]);
     renderLeaderboardClans(d.clans||[]);
   }
-
   else if (a==='admin_users_list') {
     allAdminUsers=d.users||[];
     adminPage=d.page||1;
@@ -1158,27 +1121,21 @@ function handleJSON(d) {
     renderAdminUsers(allAdminUsers);
     document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
   }
-
   else if (a==='resize') {
     resizeCanvas(d.w,d.h||canvasH);
     sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});
   }
-
   else if (a==='cursor') {
     otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾',clan:d.clan||''};
     updateCursorFlag(d.u,d.x,d.y,d.c,d.emoji||'👾');
   }
-
   else if (a==='server_settings') { applyServerSettings(d.settings); }
-
   else if (a==='online_count') { document.getElementById('online-count').textContent=d.count; }
-
   else if (a==='coins_update') {
     currentCoins=d.coins||0;
     updateCoinsUI(currentCoins);
     if (d.pixels) currentPixels=d.pixels;
   }
-
   else if (a==='clan_update') {
     if (d.clan) {
       currentClan=d.clan.name||'';
@@ -1190,31 +1147,21 @@ function handleJSON(d) {
     if (d.coins!==undefined) {currentCoins=d.coins;updateCoinsUI(currentCoins);}
     if (d.message) showToast(d.message,'success');
   }
-
   else if (a==='clan_data') {
     if (d.clan) renderClanView(d.clan);
   }
-
   else if (a==='clan_list_data') {
     renderClanBrowseList(d.clans||[]);
   }
-
   else if (a==='clan_settings_update') {
     clanShareCursor=!!d.share_cursor;
     const tog=document.getElementById('clan-cursor-toggle');
     if (tog) tog.classList.toggle('on',clanShareCursor);
     if (!clanShareCursor) clearCursorFlags();
   }
-
   else if (a==='clan_stencil_update') {
     if (d.stencil) applySharedStencil(d.stencil);
   }
-
-  else if (a==='clan_member_joined') {
-    showToast(`${d.username} вступил в клан!`,'info');
-    sendJSON({action:'clan_get'});
-  }
-
   else if (a==='stencil_level_update') {
     currentStencilLevel=d.level||0;
     purchasedLevels=d.purchased_levels||[];
@@ -1222,7 +1169,6 @@ function handleJSON(d) {
     if (d.message) showToast(d.message,'success');
     buildShopUI();
   }
-
   else if (a==='admin_stats_data') {
     document.getElementById('stat-total-users').textContent=d.total_users||0;
     document.getElementById('stat-online').textContent=d.online||0;
@@ -1275,13 +1221,15 @@ function onAuthSuccess(d) {
   document.getElementById('prof-role').className='profile-role '+(isAdmin?'role-admin':'role-user');
   updateProfileStats(currentPixels,currentRank);
   updateCoinsUI(currentCoins);
+  
   document.getElementById('btn-admin').style.display=isAdmin?'flex':'none';
-  if (isAdmin){loadAdminUsers();buildAdminFillPalette();buildAdminShapePalette();}
+  document.querySelectorAll('.admin-tool-btn').forEach(el => el.style.display = isAdmin?'flex':'none');
+  
+  if (isAdmin){loadAdminUsers();}
   showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'success');
   loadAvatarFromStorage();
   drawAvatarCanvas(selectedEmoji);
   saveSession(sessionFile.username,sessionFile.password);
-  // Load clan info
   if (currentClan) sendJSON({action:'clan_get'});
   buildShopUI();
 }
@@ -1291,6 +1239,7 @@ function doLogout() {
   isLoggedIn=false;isAdmin=false;currentUser='';currentClan='';
   document.getElementById('auth-panel').classList.add('show');
   document.getElementById('btn-admin').style.display='none';
+  document.querySelectorAll('.admin-tool-btn').forEach(el => el.style.display = 'none');
   hidePanel('profile-panel');
   clearCursorFlags();
   showToast('Вы вышли из аккаунта','info');
@@ -1411,8 +1360,8 @@ function placePixel() {
   const x=hoveredPixel.x,y=hoveredPixel.y;
   if (x<0||y<0||x>=canvasW||y>=canvasH){showToast('Наведите на холст','error');return;}
   let colorToPlace=selectedColor;
-  // Stencil assistant Lv1: auto-select color
-  if (stencilActive&&currentStencilLevel>=1&&stencilImageData) {
+  
+  if (stencilActive&&currentStencilLevel>=1&&stencilImageData&&!stencilEditMode) {
     const ir=stencilRect;
     const sx=Math.floor((x-ir.x)/ir.w*stencilImageData.width);
     const sy=Math.floor((y-ir.y)/ir.h*stencilImageData.height);
@@ -1494,11 +1443,25 @@ function eyedrop(x,y){
   setTool('pencil');
 }
 
-// ── STENCIL ──
-function openStencilPicker() {
-  const input=document.getElementById('stencil-file-input');
-  input.value='';
-  input.click();
+// ── STENCIL PANEL ──
+function toggleStencilPanel() {
+  const p = document.getElementById('stencil-panel');
+  if (p.style.display === 'none') {
+      p.style.display = 'block';
+  } else {
+      p.style.display = 'none';
+  }
+}
+
+function toggleStencilEdit() {
+  stencilEditMode = !stencilEditMode;
+  document.getElementById('stencil-edit-toggle').classList.toggle('on', stencilEditMode);
+  renderOverlay();
+  if (stencilEditMode) {
+      showToast('Режим редактирования: ВКЛ. Рисование заблокировано.', 'info');
+  } else {
+      showToast('Режим редактирования: ВЫКЛ. Теперь можно рисовать поверх трафарета.', 'success');
+  }
 }
 
 document.getElementById('stencil-file-input').addEventListener('change',e=>{
@@ -1508,21 +1471,21 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
     const img=new Image();
     img.onload=()=>{
       stencilImg=img;
-      // Map to palette
       const tmpC=document.getElementById('stencil-tmp-canvas');
       tmpC.width=img.width;tmpC.height=img.height;
       const tctx=tmpC.getContext('2d');
       tctx.drawImage(img,0,0);
       stencilImageData=tctx.getImageData(0,0,img.width,img.height);
-      // Center on screen
       const w=Math.min(img.width,100), h=Math.round(w*img.height/img.width);
       const cp=screenToCanvas(window.innerWidth/2,window.innerHeight/2);
       stencilRect={x:Math.floor(cp.x-w/2),y:Math.floor(cp.y-h/2),w,h};
+      
       stencilActive=true;
-      setTool('stencil');
-      document.getElementById('stencil-floating-bar').style.display='flex';
-      document.getElementById('stencil-share-btn').style.display=currentClan?'':'none';
-      showToast('Трафарет загружен. Настройте и нажмите «Применить»','info');
+      stencilEditMode=true;
+      document.getElementById('stencil-edit-toggle').classList.add('on');
+      
+      document.getElementById('stencil-clan-share-row').style.display=currentClan?'flex':'none';
+      showToast('Трафарет загружен! Настрой его и выключи "Режим редактирования", чтобы начать рисовать.','info');
       renderOverlay();
     };
     img.src=ev.target.result;
@@ -1536,69 +1499,10 @@ function updateStencilOpacity(v){
   renderOverlay();
 }
 
-function updateStencilSize(v){
-  if (!stencilImg) return;
-  const ratio=stencilImg.height/stencilImg.width;
-  const centerX=stencilRect.x+stencilRect.w/2;
-  const centerY=stencilRect.y+stencilRect.h/2;
-  stencilRect.w=parseInt(v);
-  stencilRect.h=Math.round(stencilRect.w*ratio);
-  stencilRect.x=Math.round(centerX-stencilRect.w/2);
-  stencilRect.y=Math.round(centerY-stencilRect.h/2);
-  document.getElementById('stencil-size-val').textContent=v+'px';
-  renderOverlay();
-}
-
 function cancelStencil(){
   stencilActive=false;stencilImg=null;stencilImageData=null;
-  document.getElementById('stencil-floating-bar').style.display='none';
-  setTool('pencil');renderOverlay();
-}
-
-function applyStencil(){
-  if (!stencilActive||!stencilImg||!stencilImageData) return;
-  // Convert stencil pixels to palette and place them all via server
-  const pixels=[];
-  const tmpC=document.getElementById('stencil-tmp-canvas');
-  tmpC.width=stencilRect.w;tmpC.height=stencilRect.h;
-  const tctx=tmpC.getContext('2d');
-  tctx.imageSmoothingEnabled=false;
-  tctx.drawImage(stencilImg,0,0,stencilRect.w,stencilRect.h);
-  const idata=tctx.getImageData(0,0,stencilRect.w,stencilRect.h);
-  for (let py=0;py<stencilRect.h;py++){
-    for (let px=0;px<stencilRect.w;px++){
-      const idx=(py*stencilRect.w+px)*4;
-      const r=idata.data[idx],g=idata.data[idx+1],b=idata.data[idx+2],a=idata.data[idx+3];
-      if (a<50) continue;
-      let bestIdx=0,bestDist=Infinity;
-      PALETTE.forEach((p,pi)=>{
-        const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb2=parseInt(p.c.slice(5,7),16);
-        const dist=(r-pr)**2+(g-pg)**2+(b-pb2)**2;
-        if (dist<bestDist){bestDist=dist;bestIdx=pi;}
-      });
-      const cx=px+stencilRect.x,cy=py+stencilRect.y;
-      if (cx>=0&&cx<canvasW&&cy>=0&&cy<canvasH) pixels.push({x:cx,y:cy,c:bestIdx});
-    }
-  }
-  if (!pixels.length){showToast('Нет пикселей','error');return;}
-  showToast(`Применяю трафарет (${pixels.length} px)...`,'info');
-  // Send in chunks via binary
-  const CHUNK=500;
-  let idx2=0;
-  const sendNext=()=>{
-    if (idx2>=pixels.length){showToast('Трафарет применён!','success');return;}
-    const chunk=pixels.slice(idx2,idx2+CHUNK);
-    chunk.forEach(p=>{
-      sendPixel(p.x,p.y,p.c);
-      canvasData[p.y*canvasW+p.x]=p.c;
-      renderPixel(p.x,p.y,p.c);
-      sessionPixels++;
-    });
-    idx2+=CHUNK;
-    setTimeout(sendNext,80);
-  };
-  sendNext();
-  cancelStencil();
+  document.getElementById('stencil-panel').style.display='none';
+  renderOverlay();
 }
 
 function shareStencilToClan(){
@@ -1619,15 +1523,19 @@ function applySharedStencil(data){
     stencilRect=data.rect||{x:0,y:0,w:100,h:100};
     stencilOpacity=data.opacity||0.6;
     stencilActive=true;
-    // Re-compute imageData
+    stencilEditMode=false;
+    document.getElementById('stencil-edit-toggle').classList.remove('on');
+    
     const tmpC=document.getElementById('stencil-tmp-canvas');
     tmpC.width=img.width;tmpC.height=img.height;
     const tctx=tmpC.getContext('2d');
     tctx.drawImage(img,0,0);
     stencilImageData=tctx.getImageData(0,0,img.width,img.height);
-    setTool('stencil');
-    document.getElementById('stencil-floating-bar').style.display='flex';
-    document.getElementById('stencil-share-btn').style.display=currentClan?'':'none';
+    
+    document.getElementById('stencil-panel').style.display='block';
+    document.getElementById('stencil-clan-share-row').style.display=currentClan?'flex':'none';
+    document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
+    document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
     renderOverlay();
     showToast('Получен трафарет от клана!','success');
   };
@@ -1636,7 +1544,7 @@ function applySharedStencil(data){
 
 // ── STENCIL TOOL INTERACTION ──
 function handleStencilStart(clientX,clientY){
-  if (!stencilActive||!stencilImg) return false;
+  if (!stencilActive||!stencilImg||!stencilEditMode) return false;
   const ir=stencilRect;
   const sx=ir.x*camZoom+camX,sy=ir.y*camZoom+camY,sw=ir.w*camZoom,sh=ir.h*camZoom;
   const dist=(x1,y1)=>Math.hypot(clientX-x1,clientY-y1);
@@ -1653,7 +1561,7 @@ function handleStencilStart(clientX,clientY){
 }
 
 function handleStencilMove(clientX,clientY){
-  if (!stencilHandle) return false;
+  if (!stencilHandle || !stencilEditMode) return false;
   const ir=stencilRect;
   const p=getCanvasPos(clientX,clientY);
   const ratio=stencilImg?stencilImg.height/stencilImg.width:1;
@@ -1663,8 +1571,6 @@ function handleStencilMove(clientX,clientY){
   } else if (stencilHandle==='br'){
     ir.w=Math.max(10,Math.round(p.x-ir.x));
     ir.h=Math.round(ir.w*ratio);
-    document.getElementById('stencil-size-range').value=ir.w;
-    document.getElementById('stencil-size-val').textContent=ir.w+'px';
   } else if (stencilHandle==='tl'){
     const newX=Math.round(p.x),newY=Math.round(p.y);
     ir.w=Math.max(10,ir.x+ir.w-newX);ir.h=Math.round(ir.w*ratio);
@@ -1678,6 +1584,406 @@ function handleStencilMove(clientX,clientY){
   }
   renderOverlay();
   return true;
+}
+
+// ── ADMIN TOOLS INTERACTION ──
+function cancelAdminTool() {
+  document.getElementById('admin-floating-bar').style.display='none';
+  if (tool === 'admin_image') { adminImgObj = null; adminImageData = null; }
+  else if (tool === 'admin_move') { adminMoveState = 'idle'; adminMoveRect = null; adminMoveCanvas = null; }
+  setTool('pencil');
+  renderOverlay();
+}
+
+function applyAdminTool() {
+  adminShapeFilled = document.getElementById('admin-shape-fill') ? document.getElementById('admin-shape-fill').checked : true;
+
+  if (tool === 'admin_image') {
+    if (adminImgObj&&adminImgRect.w>0&&adminImgRect.h>0){
+      const tmpCanvas=document.getElementById('admin-image-canvas');
+      tmpCanvas.width=adminImgRect.w;tmpCanvas.height=adminImgRect.h;
+      const tctx=tmpCanvas.getContext('2d');
+      tctx.imageSmoothingEnabled=false;
+      tctx.drawImage(adminImgObj,0,0,adminImgRect.w,adminImgRect.h);
+      const imgData=tctx.getImageData(0,0,adminImgRect.w,adminImgRect.h);
+      const pixels=[];
+      for (let y=0;y<adminImgRect.h;y++) for (let x=0;x<adminImgRect.w;x++){
+        const idx=(y*adminImgRect.w+x)*4;
+        const r=imgData.data[idx],g=imgData.data[idx+1],b=imgData.data[idx+2],a=imgData.data[idx+3];
+        if (a<50) continue;
+        let bestIdx=0,bestDist=Infinity;
+        PALETTE.forEach((p,pi)=>{
+          const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb=parseInt(p.c.slice(5,7),16);
+          const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
+          if (dist<bestDist){bestDist=dist;bestIdx=pi;}
+        });
+        const cx=x+adminImgRect.x,cy=y+adminImgRect.y;
+        if (cx>=0&&cx<canvasW&&cy>=0&&cy<canvasH) pixels.push({x:cx,y:cy,c:bestIdx});
+      }
+      if (!pixels.length){showToast('Нет пикселей','error');return;}
+      showToast(`Размещаю ${pixels.length} пикселей...`,'info');
+      const CHUNK=2000;let pIndex=0;
+      const sendNextChunk=()=>{
+        if (pIndex>=pixels.length){showToast('Картинка успешно размещена!','success');return;}
+        const chunk=pixels.slice(pIndex,pIndex+CHUNK);
+        sendJSON({action:'admin_cmd',cmd:'place_image',params:{pixels:chunk}});
+        pIndex+=CHUNK;setTimeout(sendNextChunk,80);
+      };
+      sendNextChunk();
+    }
+    cancelAdminTool();
+  } else if (tool === 'admin_move') {
+    if (adminMoveRect) {
+      sendJSON({action: 'admin_cmd', cmd: 'move_area', params: adminMoveRect});
+      showToast('Перенос области отправлен серверу', 'info');
+      cancelAdminTool();
+    }
+  }
+}
+
+function handleToolInteractionStart(clientX,clientY){
+  if (tool==='admin_image'&&adminImgObj){
+    let ir=adminImgRect;
+    let sx=ir.x*camZoom+camX,sy=ir.y*camZoom+camY,sw=ir.w*camZoom,sh=ir.h*camZoom;
+    const dist=(x1,y1)=>Math.hypot(clientX-x1,clientY-y1);
+    const HIT=15;
+    if (dist(sx,sy)<=HIT) adminActiveHandle='tl';
+    else if (dist(sx+sw,sy)<=HIT) adminActiveHandle='tr';
+    else if (dist(sx,sy+sh)<=HIT) adminActiveHandle='bl';
+    else if (dist(sx+sw,sy+sh)<=HIT) adminActiveHandle='br';
+    else if (clientX>=sx&&clientX<=sx+sw&&clientY>=sy&&clientY<=sy+sh){
+      adminActiveHandle='move';adminDragOffset={x:(clientX-sx)/camZoom,y:(clientY-sy)/camZoom};
+    } else return false;
+    isDraggingTool=true;return true;
+  }
+  return false;
+}
+
+function handleToolInteractionMove(clientX,clientY){
+  if (tool==='admin_image'&&adminActiveHandle){
+    let ir=adminImgRect;
+    const p=getCanvasPos(clientX,clientY);
+    if (adminActiveHandle==='move'){ir.x=Math.round(p.x-adminDragOffset.x);ir.y=Math.round(p.y-adminDragOffset.y);}
+    else if (adminActiveHandle==='br'){ir.w=Math.max(1,Math.round(p.x-ir.x));ir.h=Math.max(1,Math.round(p.y-ir.y));}
+    else if (adminActiveHandle==='tr'){ir.w=Math.max(1,Math.round(p.x-ir.x));let ny=Math.round(p.y);ir.h=ir.y+ir.h-ny;ir.y=ny;}
+    else if (adminActiveHandle==='bl'){ir.h=Math.max(1,Math.round(p.y-ir.y));let nx=Math.round(p.x);ir.w=ir.x+ir.w-nx;ir.x=nx;}
+    else if (adminActiveHandle==='tl'){let nx=Math.round(p.x),ny=Math.round(p.y);ir.w=ir.x+ir.w-nx;ir.h=ir.y+ir.h-ny;ir.x=nx;ir.y=ny;}
+    renderOverlay();return true;
+  }
+  return false;
+}
+
+// ── INPUT ──
+const wrap = document.getElementById('canvas-wrap');
+
+wrap.addEventListener('mousedown',e=>{
+  if (e.button===1||e.button===2){
+    isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
+    wrap.style.cursor='grabbing';e.preventDefault();
+  } else if (e.button===0){
+    
+    if (tool==='admin_image'){
+      if (!handleToolInteractionStart(e.clientX,e.clientY)){
+        isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};wrap.style.cursor='grabbing';
+      }
+      return;
+    }
+
+    if (tool === 'admin_rect' || tool === 'admin_circle' || tool === 'admin_line') {
+      const p = getCanvasPos(e.clientX, e.clientY);
+      adminShapeStart = {x: Math.floor(p.x), y: Math.floor(p.y)};
+      adminShapeEnd = { ...adminShapeStart };
+      isDraggingAdminShape = true;
+      return;
+    }
+
+    if (tool === 'admin_move') {
+      const p = getCanvasPos(e.clientX, e.clientY);
+      let px = Math.floor(p.x), py = Math.floor(p.y);
+      if (adminMoveState === 'select') {
+        adminShapeStart = {x: px, y: py};
+        adminShapeEnd = {x: px, y: py};
+        isDraggingAdminShape = true;
+        return;
+      } else if (adminMoveState === 'selected' || adminMoveState === 'moving') {
+        if (adminMoveRect && px >= adminMoveRect.dx && px <= adminMoveRect.dx + adminMoveRect.w && py >= adminMoveRect.dy && py <= adminMoveRect.dy + adminMoveRect.h) {
+           adminMoveState = 'moving';
+           adminDragOffset = {x: px - adminMoveRect.dx, y: py - adminMoveRect.dy};
+           isDraggingAdminShape = true;
+           return;
+        } else {
+           // Clicked outside, reset
+           cancelAdminTool();
+           return;
+        }
+      }
+    }
+
+    if (stencilActive && stencilEditMode){
+      if (handleStencilStart(e.clientX,e.clientY)){isDraggingTool=true;return;}
+    }
+
+    const p=getCanvasPos(e.clientX,e.clientY);
+    let px=Math.floor(p.x),py=Math.floor(p.y);
+    if (tool==='pencil'||tool==='stencil') placePixel();
+    else if (tool==='eyedrop') eyedrop(px,py);
+  }
+});
+
+wrap.addEventListener('mousemove',e=>{
+  if (isDragging){
+    camX=camStart.x+(e.clientX-dragStart.x);
+    camY=camStart.y+(e.clientY-dragStart.y);
+    applyTransform();
+    updateAllCursorFlags();
+    return;
+  }
+  if (isDraggingTool){
+    if (adminActiveHandle) handleToolInteractionMove(e.clientX,e.clientY);
+    else if (stencilHandle) handleStencilMove(e.clientX,e.clientY);
+    return;
+  }
+  if (isDraggingAdminShape) {
+    const p = getCanvasPos(e.clientX, e.clientY);
+    if (tool === 'admin_move' && adminMoveState === 'moving') {
+        adminMoveRect.dx = Math.floor(p.x) - adminDragOffset.x;
+        adminMoveRect.dy = Math.floor(p.y) - adminDragOffset.y;
+    } else {
+        adminShapeEnd = {x: Math.floor(p.x), y: Math.floor(p.y)};
+    }
+    renderOverlay();
+    return;
+  }
+
+  const p=getCanvasPos(e.clientX,e.clientY);
+  const px=Math.floor(p.x),py=Math.floor(p.y);
+  if (px!==hoveredPixel.x||py!==hoveredPixel.y){
+    hoveredPixel={x:px,y:py};
+    renderOverlay();
+    updateInspector(e.clientX,e.clientY,px,py);
+    updateCoordsBar(px,py);
+    if (isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y)){
+      lastSentCursor={x:px,y:py};
+      sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
+    }
+  }
+});
+
+wrap.addEventListener('mouseup',e=>{
+  if (e.button===1||e.button===2||(e.button===0&&isDragging)){
+    isDragging=false;wrap.style.cursor='crosshair';
+  }
+  isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
+
+  if (isDraggingAdminShape) {
+    isDraggingAdminShape = false;
+    
+    if (tool === 'admin_rect' || tool === 'admin_circle' || tool === 'admin_line') {
+      adminShapeFilled = document.getElementById('admin-shape-fill') ? document.getElementById('admin-shape-fill').checked : true;
+      if (tool === 'admin_rect') {
+          let x = Math.min(adminShapeStart.x, adminShapeEnd.x);
+          let y = Math.min(adminShapeStart.y, adminShapeEnd.y);
+          let w = Math.abs(adminShapeStart.x - adminShapeEnd.x) + 1;
+          let h = Math.abs(adminShapeStart.y - adminShapeEnd.y) + 1;
+          sendJSON({action:'admin_cmd', cmd:'draw_shape', type:'rect', params:{x,y,w,h,filled:adminShapeFilled}, colorIdx:selectedColor});
+      } else if (tool === 'admin_circle') {
+          let r = Math.round(Math.hypot(adminShapeEnd.x - adminShapeStart.x, adminShapeEnd.y - adminShapeStart.y));
+          sendJSON({action:'admin_cmd', cmd:'draw_shape', type:'circle', params:{cx:adminShapeStart.x, cy:adminShapeStart.y, r, filled:adminShapeFilled}, colorIdx:selectedColor});
+      } else if (tool === 'admin_line') {
+          sendJSON({action:'admin_cmd', cmd:'draw_shape', type:'line', params:{x0:adminShapeStart.x, y0:adminShapeStart.y, x1:adminShapeEnd.x, y1:adminShapeEnd.y}, colorIdx:selectedColor});
+      }
+      renderOverlay();
+    }
+    else if (tool === 'admin_move') {
+      if (adminMoveState === 'select') {
+          let x = Math.min(adminShapeStart.x, adminShapeEnd.x);
+          let y = Math.min(adminShapeStart.y, adminShapeEnd.y);
+          let w = Math.abs(adminShapeStart.x - adminShapeEnd.x) + 1;
+          let h = Math.abs(adminShapeStart.y - adminShapeEnd.y) + 1;
+          
+          adminMoveRect = {sx: x, sy: y, w, h, dx: x, dy: y};
+          adminMoveState = 'selected';
+          
+          adminMoveCanvas = document.createElement('canvas');
+          adminMoveCanvas.width = w; adminMoveCanvas.height = h;
+          let ctx = adminMoveCanvas.getContext('2d');
+          let imgData = ctx.createImageData(w, h);
+          for(let py=0; py<h; py++){
+              for(let px=0; px<w; px++){
+                  let cx=x+px, cy=y+py;
+                  if(cx>=0&&cx<canvasW&&cy>=0&&cy<canvasH){
+                      let cidx = canvasData[cy*canvasW+cx];
+                      let hex = PALETTE[cidx].c;
+                      let idx = (py*w+px)*4;
+                      imgData.data[idx] = parseInt(hex.slice(1,3),16);
+                      imgData.data[idx+1] = parseInt(hex.slice(3,5),16);
+                      imgData.data[idx+2] = parseInt(hex.slice(5,7),16);
+                      imgData.data[idx+3] = 255;
+                  }
+              }
+          }
+          ctx.putImageData(imgData,0,0);
+          
+          document.getElementById('admin-floating-bar').style.display = 'flex';
+          document.getElementById('admin-shape-fill-container').style.display = 'none';
+          document.getElementById('admin-floating-bar-title').textContent = 'ПЕРЕТАЩИТЕ ВЫДЕЛЕНИЕ';
+          showToast('Область скопирована. Перетащи её мышью, затем нажми "Применить"', 'info');
+      } else if (adminMoveState === 'moving') {
+          adminMoveState = 'selected';
+      }
+      renderOverlay();
+    }
+  }
+});
+
+wrap.addEventListener('wheel',e=>{e.preventDefault();applyZoom(camZoom*(e.deltaY<0?1.12:1/1.12),e.clientX,e.clientY);},{passive:false});
+wrap.addEventListener('contextmenu',e=>e.preventDefault());
+wrap.addEventListener('mouseleave',()=>{hoveredPixel={x:-1,y:-1};renderOverlay();document.getElementById('inspector').style.display='none';updateCoordsBar(-1,-1);});
+
+// Touch
+let touches=[];
+wrap.addEventListener('touchstart',e=>{
+  e.preventDefault();
+  touches=Array.from(e.touches);
+  if (touches.length===1){
+    if (tool==='admin_image'){
+      if (handleToolInteractionStart(touches[0].clientX,touches[0].clientY)) return;
+    }
+    if (stencilActive && stencilEditMode){
+      if (handleStencilStart(touches[0].clientX,touches[0].clientY)){isDraggingTool=true;return;}
+    }
+    isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};camStart={x:camX,y:camY};
+  }
+},{passive:false});
+
+wrap.addEventListener('touchmove',e=>{
+  e.preventDefault();
+  const t=Array.from(e.touches);
+  if (t.length===1&&isDraggingTool){
+    if (adminActiveHandle) handleToolInteractionMove(t[0].clientX,t[0].clientY);
+    else if (stencilHandle) handleStencilMove(t[0].clientX,t[0].clientY);
+    return;
+  }
+  if (t.length===1&&isDragging){
+    camX=camStart.x+(t[0].clientX-dragStart.x);
+    camY=camStart.y+(t[0].clientY-dragStart.y);
+    applyTransform();updateAllCursorFlags();
+  } else if (t.length===2&&touches.length===2){
+    const d0=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
+    const d1=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
+    const cx=(t[0].clientX+t[1].clientX)/2,cy=(t[0].clientY+t[1].clientY)/2;
+    applyZoom(camZoom*(d1/d0),cx,cy);
+  }
+  touches=t;
+},{passive:false});
+
+wrap.addEventListener('touchend',e=>{
+  if (e.touches.length===0){
+    isDragging=false;isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
+    if (e.changedTouches.length===1){
+      const t=e.changedTouches[0];
+      const dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;
+      if (Math.hypot(dx,dy)<10&&(tool==='pencil'||(!stencilEditMode && tool==='stencil'))){
+        const p=getCanvasPos(t.clientX,t.clientY);
+        hoveredPixel={x:Math.floor(p.x),y:Math.floor(p.y)};placePixel();
+      }
+    }
+  }
+  touches=Array.from(e.touches);
+},{passive:false});
+
+const dropZone=document.getElementById('image-drop-zone');
+dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
+dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
+dropZone.addEventListener('drop',e=>{
+  e.preventDefault();dropZone.classList.remove('drag-over');
+  const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
+  const input=document.getElementById('admin-image-file');
+  const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
+  handleAdminImage({target:input});
+});
+
+function updateCoordsBar(x,y){document.getElementById('coords-badge').textContent=(x<0)?'— , —':`${x} , ${y}`;}
+
+function updateInspector(mx,my,px,py){
+  if (!inspectorEnabled||px<0||py<0||px>=canvasW||py>=canvasH){document.getElementById('inspector').style.display='none';return;}
+  const cidx=canvasData[py*canvasW+px];
+  const col=PALETTE[cidx]||{c:'#fff',n:'?'};
+  document.getElementById('inspector-color').style.background=col.c;
+  document.getElementById('inspector-text').textContent=`${px},${py} — ${col.n}`;
+  const el=document.getElementById('inspector');
+  el.style.display='flex';
+  let lx=mx+14,ly=my+14;
+  if (lx+200>window.innerWidth) lx=mx-190;
+  if (ly+38>window.innerHeight) ly=my-38;
+  el.style.left=lx+'px';el.style.top=ly+'px';
+}
+
+// ── KEYBOARD ──
+document.addEventListener('keydown',e=>{
+  if (['input','textarea'].includes(e.target.tagName.toLowerCase())) return;
+  if (e.key==='e'||e.key==='E') setTool(tool==='pencil'?'eyedrop':'pencil');
+  if (e.key==='g'||e.key==='G') toggleGrid();
+  if (e.key==='p'||e.key==='P') togglePalette();
+  if (e.key==='Escape'){hideAllPanels();cancelAdminTool();cancelStencil();}
+  if (e.key==='+'||e.key==='=') zoomIn();
+  if (e.key==='-') zoomOut();
+  if (e.key===' '){e.preventDefault();placePixel();}
+});
+
+// ── TOOLS ──
+function setTool(t){
+  tool=t;
+  document.getElementById('btn-tool-pencil').classList.toggle('active',t==='pencil');
+  document.getElementById('btn-tool-eyedrop').classList.toggle('active',t==='eyedrop');
+  
+  document.querySelectorAll('.admin-tool-btn').forEach(b => b.classList.toggle('admin-active', false));
+  
+  if (t === 'admin_rect') document.getElementById('btn-tool-rect').classList.add('admin-active');
+  if (t === 'admin_circle') document.getElementById('btn-tool-circle').classList.add('admin-active');
+  if (t === 'admin_line') document.getElementById('btn-tool-line').classList.add('admin-active');
+  if (t === 'admin_move') document.getElementById('btn-tool-move').classList.add('admin-active');
+
+  wrap.style.cursor='crosshair';
+  
+  if (t === 'admin_rect' || t === 'admin_circle' || t === 'admin_line') {
+     document.getElementById('admin-floating-bar').style.display = 'flex';
+     document.getElementById('admin-shape-fill-container').style.display = 'flex';
+     document.getElementById('admin-floating-bar-title').textContent = 'РИСОВАНИЕ ФИГУРЫ (Рисуй мышью)';
+  } else if (t === 'admin_move') {
+     adminMoveState = 'select';
+     adminMoveRect = null;
+     document.getElementById('admin-floating-bar').style.display = 'none';
+     showToast('Выдели область мышью', 'info');
+  } else if (t !== 'admin_image') {
+     document.getElementById('admin-floating-bar').style.display = 'none';
+  }
+}
+
+function toggleGrid(){
+  gridEnabled=!gridEnabled;
+  document.getElementById('btn-grid').classList.toggle('active',gridEnabled);
+  document.getElementById('toggle-grid').classList.toggle('on',gridEnabled);
+  applyTransform();
+}
+
+function togglePalette(){
+  const p=document.getElementById('palette-panel');
+  p.style.display=p.style.display==='none'?'block':'none';
+}
+
+function toggleSmoothCamera(){smoothCamera=!smoothCamera;document.getElementById('toggle-smooth').classList.toggle('on',smoothCamera);}
+function toggleCursors(){showCursors=!showCursors;document.getElementById('toggle-cursors').classList.toggle('on',showCursors);if(!showCursors)clearCursorFlags();}
+function toggleInspector(){inspectorEnabled=!inspectorEnabled;document.getElementById('toggle-inspector').classList.toggle('on',inspectorEnabled);}
+function toggleSound(){soundEnabled=!soundEnabled;document.getElementById('toggle-sound').classList.toggle('on',soundEnabled);}
+
+function playClick(){
+  try{
+    const ac=new AudioContext();const osc=ac.createOscillator();const g=ac.createGain();
+    osc.connect(g);g.connect(ac.destination);osc.frequency.value=880;
+    g.gain.setValueAtTime(0.08,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.07);
+    osc.start(ac.currentTime);osc.stop(ac.currentTime+0.07);
+  }catch(_){}
 }
 
 // ── CLAN UI ──
@@ -1724,9 +2030,10 @@ function renderClanView(clan){
     chip.textContent=(m===clan.leader?'👑 ':'')+m;
     ml.appendChild(chip);
   });
-  // Update stencil share button visibility
-  const sb=document.getElementById('stencil-share-btn');
-  if (sb) sb.style.display=currentClan?'':'none';
+  
+  if (document.getElementById('stencil-clan-share-row')) {
+      document.getElementById('stencil-clan-share-row').style.display=currentClan&&stencilActive?'flex':'none';
+  }
 }
 
 function renderNoClanView(){
@@ -1803,11 +2110,11 @@ function renderLeaderboardClans(data){
 
 // ── ADMIN ──
 function switchAdminTab(tab){
-  ['users','canvas','tools','shapes','broadcast','stats'].forEach(t=>{
+  ['users','canvas','broadcast','stats'].forEach(t=>{
     document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none';
   });
   document.querySelectorAll('.admin-tab').forEach((el,i)=>{
-    el.classList.toggle('active',['users','canvas','tools','shapes','broadcast','stats'][i]===tab);
+    el.classList.toggle('active',['users','canvas','broadcast','stats'][i]===tab);
   });
   if (tab==='stats') loadAdminStats();
 }
@@ -1891,70 +2198,6 @@ function loadAdminStats(){
   sendJSON({action:'admin_cmd',cmd:'admin_stats'});
 }
 
-// ── ADMIN TOOLS ──
-function buildAdminFillPalette(){
-  const g=document.getElementById('admin-fill-palette');if(!g)return;
-  g.innerHTML='';
-  PALETTE.forEach((p,i)=>{
-    const d=document.createElement('div');
-    d.className='admin-color-select'+(i===adminFillColorIdx?' selected':'');
-    d.style.background=p.c;d.title=p.n;
-    d.onclick=()=>{adminFillColorIdx=i;document.querySelectorAll('#admin-fill-palette .admin-color-select').forEach((c,j)=>c.classList.toggle('selected',j===i));};
-    g.appendChild(d);
-  });
-}
-
-function buildAdminShapePalette(){
-  const g=document.getElementById('admin-shape-palette');if(!g)return;
-  g.innerHTML='';
-  PALETTE.forEach((p,i)=>{
-    const d=document.createElement('div');
-    d.className='admin-color-select'+(i===adminShapeColorIdx?' selected':'');
-    d.style.background=p.c;d.title=p.n;
-    d.onclick=()=>{adminShapeColorIdx=i;document.querySelectorAll('#admin-shape-palette .admin-color-select').forEach((c,j)=>c.classList.toggle('selected',j===i));};
-    g.appendChild(d);
-  });
-}
-
-function selectShape(type){
-  activeShape=type;
-  ['circle','line','ellipse'].forEach(s=>{
-    document.getElementById(`shape-btn-${s}`)?.classList.toggle('active',s===type);
-    document.getElementById(`shape-params-${s}`)?.style&&(document.getElementById(`shape-params-${s}`).style.display=s===type?'':'none');
-  });
-}
-
-function drawAdminShape(){
-  const colorIdx=adminShapeColorIdx;
-  if (activeShape==='circle'){
-    const cx=parseInt(document.getElementById('shape-cx').value);
-    const cy=parseInt(document.getElementById('shape-cy').value);
-    const r=parseInt(document.getElementById('shape-r').value);
-    const filled=document.getElementById('shape-filled-toggle').classList.contains('on');
-    sendJSON({action:'admin_cmd',cmd:'draw_shape',type:'circle',params:{cx,cy,r,filled},colorIdx});
-  } else if (activeShape==='line'){
-    const x0=parseInt(document.getElementById('shape-x0').value);
-    const y0=parseInt(document.getElementById('shape-y0').value);
-    const x1=parseInt(document.getElementById('shape-x1').value);
-    const y1=parseInt(document.getElementById('shape-y1').value);
-    sendJSON({action:'admin_cmd',cmd:'draw_shape',type:'line',params:{x0,y0,x1,y1},colorIdx});
-  } else if (activeShape==='ellipse'){
-    const cx=parseInt(document.getElementById('shape-ecx').value);
-    const cy=parseInt(document.getElementById('shape-ecy').value);
-    const rx=parseInt(document.getElementById('shape-rx').value);
-    const ry=parseInt(document.getElementById('shape-ry').value);
-    sendJSON({action:'admin_cmd',cmd:'draw_shape',type:'ellipse',params:{cx,cy,rx,ry,filled:true},colorIdx});
-  }
-}
-
-function startAdminFill(){
-  hidePanel('admin-panel');
-  tool='admin_fill';adminFillStart=null;adminFillEnd=null;
-  document.getElementById('admin-floating-bar').style.display='flex';
-  document.getElementById('admin-floating-bar-title').textContent='ЗАЛИВКА (Выделите область)';
-  showToast('Выделите область на холсте','info');renderOverlay();
-}
-
 function handleAdminImage(e){
   const file=e.target.files[0];if(!file)return;
   const reader=new FileReader();
@@ -1981,6 +2224,7 @@ function startAdminImage(){
   let h=Math.floor(w*(adminImgObj.naturalHeight/adminImgObj.naturalWidth));
   adminImgRect={x:centerCanvasX-Math.floor(w/2),y:centerCanvasY-Math.floor(h/2),w,h};
   document.getElementById('admin-floating-bar').style.display='flex';
+  document.getElementById('admin-shape-fill-container').style.display='none';
   document.getElementById('admin-floating-bar-title').textContent='РАЗМЕЩЕНИЕ КАРТИНКИ';
   showToast('Измените размер и нажмите «Применить»','info');renderOverlay();
 }
@@ -1991,12 +2235,9 @@ function handleAdminGlobalStencil(e){
   reader.onload=ev=>{
     const img=new Image();
     img.onload=()=>{
-      // Set as shared stencil for all via clan_share_stencil – admin uses a special broadcast
       showToast('Глобальный трафарет загружен. Рассылаю...','info');
-      // We broadcast it as a "global stencil" – use admin broadcast mechanism
       const data={img:ev.target.result,rect:{x:0,y:0,w:Math.min(img.width,200),h:Math.min(img.height,200)},opacity:0.6};
       sendJSON({action:'admin_cmd',cmd:'broadcast',params:'__global_stencil__:'+JSON.stringify(data)});
-      // Also apply locally
       applySharedStencil(data);
     };
     img.src=ev.target.result;
@@ -2005,295 +2246,6 @@ function handleAdminGlobalStencil(e){
 }
 
 function clearGlobalStencil(){cancelStencil();showToast('Глобальный трафарет снят','info');}
-
-function cancelAdminTool(){
-  if (document.getElementById('admin-floating-bar').style.display==='none') return;
-  tool='pencil';
-  document.getElementById('admin-floating-bar').style.display='none';
-  adminFillStart=null;adminFillEnd=null;adminImgObj=null;renderOverlay();
-}
-
-function applyAdminTool(){
-  if (tool==='admin_fill'){
-    if (adminFillStart&&adminFillEnd){
-      let x=Math.min(adminFillStart.x,adminFillEnd.x);
-      let y=Math.min(adminFillStart.y,adminFillEnd.y);
-      let w=Math.abs(adminFillStart.x-adminFillEnd.x)+1;
-      let h=Math.abs(adminFillStart.y-adminFillEnd.y)+1;
-      sendJSON({action:'admin_cmd',cmd:'fill_rect',params:{x,y,w,h,colorIdx:adminFillColorIdx}});
-    } else {showToast('Область не выделена','error');return;}
-  } else if (tool==='admin_image'){
-    if (adminImgObj&&adminImgRect.w>0&&adminImgRect.h>0){
-      const tmpCanvas=document.getElementById('admin-image-canvas');
-      tmpCanvas.width=adminImgRect.w;tmpCanvas.height=adminImgRect.h;
-      const tctx=tmpCanvas.getContext('2d');
-      tctx.imageSmoothingEnabled=false;
-      tctx.drawImage(adminImgObj,0,0,adminImgRect.w,adminImgRect.h);
-      const imgData=tctx.getImageData(0,0,adminImgRect.w,adminImgRect.h);
-      const pixels=[];
-      for (let y=0;y<adminImgRect.h;y++) for (let x=0;x<adminImgRect.w;x++){
-        const idx=(y*adminImgRect.w+x)*4;
-        const r=imgData.data[idx],g=imgData.data[idx+1],b=imgData.data[idx+2],a=imgData.data[idx+3];
-        if (a<50) continue;
-        let bestIdx=0,bestDist=Infinity;
-        PALETTE.forEach((p,pi)=>{
-          const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb=parseInt(p.c.slice(5,7),16);
-          const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
-          if (dist<bestDist){bestDist=dist;bestIdx=pi;}
-        });
-        const cx=x+adminImgRect.x,cy=y+adminImgRect.y;
-        if (cx>=0&&cx<canvasW&&cy>=0&&cy<canvasH) pixels.push({x:cx,y:cy,c:bestIdx});
-      }
-      if (!pixels.length){showToast('Нет пикселей','error');return;}
-      showToast(`Размещаю ${pixels.length} пикселей...`,'info');
-      const CHUNK=2000;let pIndex=0;
-      const sendNextChunk=()=>{
-        if (pIndex>=pixels.length){showToast('Картинка успешно размещена!','success');return;}
-        const chunk=pixels.slice(pIndex,pIndex+CHUNK);
-        sendJSON({action:'admin_cmd',cmd:'place_image',params:{pixels:chunk}});
-        pIndex+=CHUNK;setTimeout(sendNextChunk,80);
-      };
-      sendNextChunk();
-    }
-  }
-  cancelAdminTool();
-}
-
-// ── ADMIN TOOL INTERACTION (fill/image) ──
-function handleToolInteractionStart(clientX,clientY){
-  if (tool==='admin_fill'){
-    const p=getCanvasPos(clientX,clientY);
-    isDraggingTool=true;adminActiveHandle='fill';
-    adminFillStart={x:Math.floor(p.x),y:Math.floor(p.y)};
-    adminFillEnd={x:Math.floor(p.x),y:Math.floor(p.y)};
-    renderOverlay();return true;
-  } else if (tool==='admin_image'&&adminImgObj){
-    let ir=adminImgRect;
-    let sx=ir.x*camZoom+camX,sy=ir.y*camZoom+camY,sw=ir.w*camZoom,sh=ir.h*camZoom;
-    const dist=(x1,y1)=>Math.hypot(clientX-x1,clientY-y1);
-    const HIT=15;
-    if (dist(sx,sy)<=HIT) adminActiveHandle='tl';
-    else if (dist(sx+sw,sy)<=HIT) adminActiveHandle='tr';
-    else if (dist(sx,sy+sh)<=HIT) adminActiveHandle='bl';
-    else if (dist(sx+sw,sy+sh)<=HIT) adminActiveHandle='br';
-    else if (clientX>=sx&&clientX<=sx+sw&&clientY>=sy&&clientY<=sy+sh){
-      adminActiveHandle='move';adminDragOffset={x:(clientX-sx)/camZoom,y:(clientY-sy)/camZoom};
-    } else return false;
-    isDraggingTool=true;return true;
-  }
-  return false;
-}
-
-function handleToolInteractionMove(clientX,clientY){
-  if (tool==='admin_fill'&&adminActiveHandle==='fill'){
-    const p=getCanvasPos(clientX,clientY);
-    adminFillEnd={x:Math.floor(p.x),y:Math.floor(p.y)};
-    renderOverlay();return true;
-  }
-  if (tool==='admin_image'&&adminActiveHandle){
-    let ir=adminImgRect;
-    const p=getCanvasPos(clientX,clientY);
-    if (adminActiveHandle==='move'){ir.x=Math.round(p.x-adminDragOffset.x);ir.y=Math.round(p.y-adminDragOffset.y);}
-    else if (adminActiveHandle==='br'){ir.w=Math.max(1,Math.round(p.x-ir.x));ir.h=Math.max(1,Math.round(p.y-ir.y));}
-    else if (adminActiveHandle==='tr'){ir.w=Math.max(1,Math.round(p.x-ir.x));let ny=Math.round(p.y);ir.h=ir.y+ir.h-ny;ir.y=ny;}
-    else if (adminActiveHandle==='bl'){ir.h=Math.max(1,Math.round(p.y-ir.y));let nx=Math.round(p.x);ir.w=ir.x+ir.w-nx;ir.x=nx;}
-    else if (adminActiveHandle==='tl'){let nx=Math.round(p.x),ny=Math.round(p.y);ir.w=ir.x+ir.w-nx;ir.h=ir.y+ir.h-ny;ir.x=nx;ir.y=ny;}
-    renderOverlay();return true;
-  }
-  return false;
-}
-
-// ── INPUT ──
-const wrap = document.getElementById('canvas-wrap');
-
-wrap.addEventListener('mousedown',e=>{
-  if (e.button===1||e.button===2){
-    isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
-    wrap.style.cursor='grabbing';e.preventDefault();
-  } else if (e.button===0){
-    if (tool==='admin_fill'||tool==='admin_image'){
-      if (!handleToolInteractionStart(e.clientX,e.clientY)){
-        isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};wrap.style.cursor='grabbing';
-      }
-      return;
-    }
-    if (tool==='stencil'&&stencilActive){
-      if (handleStencilStart(e.clientX,e.clientY)){isDraggingTool=true;return;}
-    }
-    const p=getCanvasPos(e.clientX,e.clientY);
-    let px=Math.floor(p.x),py=Math.floor(p.y);
-    if (tool==='pencil'||tool==='stencil') placePixel();
-    else if (tool==='eyedrop') eyedrop(px,py);
-  }
-});
-
-wrap.addEventListener('mousemove',e=>{
-  if (isDragging){
-    camX=camStart.x+(e.clientX-dragStart.x);
-    camY=camStart.y+(e.clientY-dragStart.y);
-    applyTransform();
-    // ── BUG FIX: update cursor flags even while panning ──
-    updateAllCursorFlags();
-    return;
-  }
-  if (isDraggingTool){
-    if (adminActiveHandle) handleToolInteractionMove(e.clientX,e.clientY);
-    else if (stencilHandle) handleStencilMove(e.clientX,e.clientY);
-    return;
-  }
-  const p=getCanvasPos(e.clientX,e.clientY);
-  const px=Math.floor(p.x),py=Math.floor(p.y);
-  if (px!==hoveredPixel.x||py!==hoveredPixel.y){
-    hoveredPixel={x:px,y:py};
-    renderOverlay();
-    updateInspector(e.clientX,e.clientY,px,py);
-    updateCoordsBar(px,py);
-    if (isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y)){
-      lastSentCursor={x:px,y:py};
-      sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
-    }
-  }
-});
-
-wrap.addEventListener('mouseup',e=>{
-  if (e.button===1||e.button===2||(e.button===0&&isDragging)){
-    isDragging=false;wrap.style.cursor='crosshair';
-  }
-  isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
-});
-
-wrap.addEventListener('wheel',e=>{e.preventDefault();applyZoom(camZoom*(e.deltaY<0?1.12:1/1.12),e.clientX,e.clientY);},{passive:false});
-wrap.addEventListener('contextmenu',e=>e.preventDefault());
-wrap.addEventListener('mouseleave',()=>{hoveredPixel={x:-1,y:-1};renderOverlay();document.getElementById('inspector').style.display='none';updateCoordsBar(-1,-1);});
-
-// Touch
-let touches=[];
-wrap.addEventListener('touchstart',e=>{
-  e.preventDefault();
-  touches=Array.from(e.touches);
-  if (touches.length===1){
-    if (tool==='admin_fill'||tool==='admin_image'){
-      if (handleToolInteractionStart(touches[0].clientX,touches[0].clientY)) return;
-    }
-    if (tool==='stencil'&&stencilActive){
-      if (handleStencilStart(touches[0].clientX,touches[0].clientY)){isDraggingTool=true;return;}
-    }
-    isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};camStart={x:camX,y:camY};
-  }
-},{passive:false});
-
-wrap.addEventListener('touchmove',e=>{
-  e.preventDefault();
-  const t=Array.from(e.touches);
-  if (t.length===1&&isDraggingTool){
-    if (adminActiveHandle) handleToolInteractionMove(t[0].clientX,t[0].clientY);
-    else if (stencilHandle) handleStencilMove(t[0].clientX,t[0].clientY);
-    return;
-  }
-  if (t.length===1&&isDragging){
-    camX=camStart.x+(t[0].clientX-dragStart.x);
-    camY=camStart.y+(t[0].clientY-dragStart.y);
-    applyTransform();updateAllCursorFlags();
-  } else if (t.length===2&&touches.length===2){
-    const d0=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
-    const d1=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
-    const cx=(t[0].clientX+t[1].clientX)/2,cy=(t[0].clientY+t[1].clientY)/2;
-    applyZoom(camZoom*(d1/d0),cx,cy);
-  }
-  touches=t;
-},{passive:false});
-
-wrap.addEventListener('touchend',e=>{
-  if (e.touches.length===0){
-    isDragging=false;isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
-    if (e.changedTouches.length===1){
-      const t=e.changedTouches[0];
-      const dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;
-      if (Math.hypot(dx,dy)<10&&(tool==='pencil'||tool==='stencil')){
-        const p=getCanvasPos(t.clientX,t.clientY);
-        hoveredPixel={x:Math.floor(p.x),y:Math.floor(p.y)};placePixel();
-      }
-    }
-  }
-  touches=Array.from(e.touches);
-},{passive:false});
-
-// Drag-over for admin image
-const dropZone=document.getElementById('image-drop-zone');
-dropZone.addEventListener('dragover',e=>{e.preventDefault();dropZone.classList.add('drag-over');});
-dropZone.addEventListener('dragleave',()=>dropZone.classList.remove('drag-over'));
-dropZone.addEventListener('drop',e=>{
-  e.preventDefault();dropZone.classList.remove('drag-over');
-  const file=e.dataTransfer.files[0];if(!file||!file.type.startsWith('image/'))return;
-  const input=document.getElementById('admin-image-file');
-  const dt=new DataTransfer();dt.items.add(file);input.files=dt.files;
-  handleAdminImage({target:input});
-});
-
-function updateCoordsBar(x,y){document.getElementById('coords-badge').textContent=(x<0)?'— , —':`${x} , ${y}`;}
-
-function updateInspector(mx,my,px,py){
-  if (!inspectorEnabled||px<0||py<0||px>=canvasW||py>=canvasH){document.getElementById('inspector').style.display='none';return;}
-  const cidx=canvasData[py*canvasW+px];
-  const col=PALETTE[cidx]||{c:'#fff',n:'?'};
-  document.getElementById('inspector-color').style.background=col.c;
-  document.getElementById('inspector-text').textContent=`${px},${py} — ${col.n}`;
-  const el=document.getElementById('inspector');
-  el.style.display='flex';
-  let lx=mx+14,ly=my+14;
-  if (lx+200>window.innerWidth) lx=mx-190;
-  if (ly+38>window.innerHeight) ly=my-38;
-  el.style.left=lx+'px';el.style.top=ly+'px';
-}
-
-// ── KEYBOARD ──
-document.addEventListener('keydown',e=>{
-  if (['input','textarea'].includes(e.target.tagName.toLowerCase())) return;
-  if (e.key==='e'||e.key==='E') setTool(tool==='pencil'?'eyedrop':'pencil');
-  if (e.key==='g'||e.key==='G') toggleGrid();
-  if (e.key==='p'||e.key==='P') togglePalette();
-  if (e.key==='Escape'){hideAllPanels();cancelAdminTool();cancelStencil();}
-  if (e.key==='+'||e.key==='=') zoomIn();
-  if (e.key==='-') zoomOut();
-  if (e.key===' '){e.preventDefault();placePixel();}
-});
-
-// ── TOOLS ──
-function setTool(t){
-  tool=t;
-  document.getElementById('btn-tool-pencil').classList.toggle('active',t==='pencil');
-  document.getElementById('btn-tool-eyedrop').classList.toggle('active',t==='eyedrop');
-  document.getElementById('btn-tool-stencil').classList.toggle('active',t==='stencil');
-  wrap.style.cursor='crosshair';
-  if (t!=='admin_fill'&&t!=='admin_image') { /* don't cancel if setting to admin */ }
-  if (t!=='stencil'&&t!=='pencil') cancelStencil();
-}
-
-function toggleGrid(){
-  gridEnabled=!gridEnabled;
-  document.getElementById('btn-grid').classList.toggle('active',gridEnabled);
-  document.getElementById('toggle-grid').classList.toggle('on',gridEnabled);
-  applyTransform();
-}
-
-function togglePalette(){
-  const p=document.getElementById('palette-panel');
-  p.style.display=p.style.display==='none'?'block':'none';
-}
-
-function toggleSmoothCamera(){smoothCamera=!smoothCamera;document.getElementById('toggle-smooth').classList.toggle('on',smoothCamera);}
-function toggleCursors(){showCursors=!showCursors;document.getElementById('toggle-cursors').classList.toggle('on',showCursors);if(!showCursors)clearCursorFlags();}
-function toggleInspector(){inspectorEnabled=!inspectorEnabled;document.getElementById('toggle-inspector').classList.toggle('on',inspectorEnabled);}
-function toggleSound(){soundEnabled=!soundEnabled;document.getElementById('toggle-sound').classList.toggle('on',soundEnabled);}
-
-function playClick(){
-  try{
-    const ac=new AudioContext();const osc=ac.createOscillator();const g=ac.createGain();
-    osc.connect(g);g.connect(ac.destination);osc.frequency.value=880;
-    g.gain.setValueAtTime(0.08,ac.currentTime);g.gain.exponentialRampToValueAtTime(0.001,ac.currentTime+0.07);
-    osc.start(ac.currentTime);osc.stop(ac.currentTime+0.07);
-  }catch(_){}
-}
 
 // ── PANELS ──
 function showPanel(id){

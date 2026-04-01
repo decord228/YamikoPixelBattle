@@ -50,12 +50,18 @@ function fullRender(data) {
 }
 
 function renderOverlay() {
-  octx.clearRect(0,0,overlayCanvas.width,overlayCanvas.height);
+  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
   const off = getRenderOffset();
 
+  // Применяем ту же матрицу трансформации, что и CSS, чтобы избежать субпиксельных сдвигов
+  octx.save();
+  octx.translate(off.x, off.y);
+  octx.scale(camZoom, camZoom);
+
+  // Сетка
   if (gridEnabled && camZoom >= 4) {
     octx.strokeStyle = 'rgba(0,0,0,0.3)';
-    octx.lineWidth = 1;
+    octx.lineWidth = 1 / camZoom; // Чтобы толщина линии всегда была 1 пиксель на экране
     octx.beginPath();
     
     const startX = Math.max(0, Math.floor(-off.x / camZoom));
@@ -64,38 +70,37 @@ function renderOverlay() {
     const endY = Math.min(canvasH, Math.ceil((overlayCanvas.height - off.y) / camZoom));
 
     for (let i = startX; i <= endX; i++) {
-      const x = Math.floor(i * camZoom) + off.x;
-      octx.moveTo(x + 0.5, Math.floor(startY * camZoom) + off.y);
-      octx.lineTo(x + 0.5, Math.floor(endY * camZoom) + off.y);
+      octx.moveTo(i, startY);
+      octx.lineTo(i, endY);
     }
     for (let j = startY; j <= endY; j++) {
-      const y = Math.floor(j * camZoom) + off.y;
-      octx.moveTo(Math.floor(startX * camZoom) + off.x, y + 0.5);
-      octx.lineTo(Math.floor(endX * camZoom) + off.x, y + 0.5);
+      octx.moveTo(startX, j);
+      octx.lineTo(endX, j);
     }
     octx.stroke();
   }
 
+  // Фигуры админа
   if (isDraggingAdminShape && (tool === 'admin_rect' || tool === 'admin_circle' || tool === 'admin_line')) {
       octx.strokeStyle = PALETTE[selectedColor].c;
       octx.fillStyle = PALETTE[selectedColor].c + '80';
-      octx.lineWidth = Math.max(1, Math.floor(camZoom));
+      octx.lineWidth = 1; 
       
       if (tool === 'admin_rect') {
-          let rx1 = Math.floor(Math.min(adminShapeStart.x, adminShapeEnd.x) * camZoom) + off.x;
-          let ry1 = Math.floor(Math.min(adminShapeStart.y, adminShapeEnd.y) * camZoom) + off.y;
-          let rx2 = Math.floor((Math.max(adminShapeStart.x, adminShapeEnd.x) + 1) * camZoom) + off.x;
-          let ry2 = Math.floor((Math.max(adminShapeStart.y, adminShapeEnd.y) + 1) * camZoom) + off.y;
-          if (adminShapeFilled) octx.fillRect(rx1, ry1, rx2-rx1, ry2-ry1);
-          octx.strokeRect(rx1, ry1, rx2-rx1, ry2-ry1);
+          let rx1 = Math.min(adminShapeStart.x, adminShapeEnd.x);
+          let ry1 = Math.min(adminShapeStart.y, adminShapeEnd.y);
+          let rw = Math.abs(adminShapeStart.x - adminShapeEnd.x) + 1;
+          let rh = Math.abs(adminShapeStart.y - adminShapeEnd.y) + 1;
+          if (adminShapeFilled) octx.fillRect(rx1, ry1, rw, rh);
+          octx.strokeRect(rx1, ry1, rw, rh);
       } else {
-          let cxStart = Math.floor((adminShapeStart.x + 0.5) * camZoom) + off.x;
-          let cyStart = Math.floor((adminShapeStart.y + 0.5) * camZoom) + off.y;
-          let cxEnd = Math.floor((adminShapeEnd.x + 0.5) * camZoom) + off.x;
-          let cyEnd = Math.floor((adminShapeEnd.y + 0.5) * camZoom) + off.y;
+          let cxStart = adminShapeStart.x + 0.5;
+          let cyStart = adminShapeStart.y + 0.5;
+          let cxEnd = adminShapeEnd.x + 0.5;
+          let cyEnd = adminShapeEnd.y + 0.5;
 
           if (tool === 'admin_circle') {
-             let r = Math.hypot(adminShapeEnd.x - adminShapeStart.x, adminShapeEnd.y - adminShapeStart.y) * camZoom;
+             let r = Math.hypot(adminShapeEnd.x - adminShapeStart.x, adminShapeEnd.y - adminShapeStart.y);
              octx.beginPath();
              octx.arc(cxStart, cyStart, r, 0, Math.PI*2);
              if(adminShapeFilled) octx.fill();
@@ -109,111 +114,95 @@ function renderOverlay() {
       }
   }
 
+  // Выделение админа
   if (tool === 'admin_move') {
       if (adminMoveState === 'select' && isDraggingAdminShape) {
-          let rx1 = Math.floor(Math.min(adminShapeStart.x, adminShapeEnd.x) * camZoom) + off.x;
-          let ry1 = Math.floor(Math.min(adminShapeStart.y, adminShapeEnd.y) * camZoom) + off.y;
-          let rx2 = Math.floor((Math.max(adminShapeStart.x, adminShapeEnd.x) + 1) * camZoom) + off.x;
-          let ry2 = Math.floor((Math.max(adminShapeStart.y, adminShapeEnd.y) + 1) * camZoom) + off.y;
+          let rx1 = Math.min(adminShapeStart.x, adminShapeEnd.x);
+          let ry1 = Math.min(adminShapeStart.y, adminShapeEnd.y);
+          let rw = Math.abs(adminShapeStart.x - adminShapeEnd.x) + 1;
+          let rh = Math.abs(adminShapeStart.y - adminShapeEnd.y) + 1;
           
-          octx.strokeStyle = '#ffffff'; octx.lineWidth = 2; octx.setLineDash([8,4]);
-          octx.strokeRect(rx1, ry1, rx2-rx1, ry2-ry1); octx.setLineDash([]);
+          octx.strokeStyle = '#ffffff'; octx.lineWidth = 2 / camZoom; 
+          octx.setLineDash([8 / camZoom, 4 / camZoom]);
+          octx.strokeRect(rx1, ry1, rw, rh); octx.setLineDash([]);
       } else if ((adminMoveState === 'selected' || adminMoveState === 'moving') && adminMoveRect && adminMoveCanvas) {
-          let rx = Math.floor(adminMoveRect.dx * camZoom) + off.x;
-          let ry = Math.floor(adminMoveRect.dy * camZoom) + off.y;
-          let rx2 = Math.floor((adminMoveRect.dx + adminMoveRect.w) * camZoom) + off.x;
-          let ry2 = Math.floor((adminMoveRect.dy + adminMoveRect.h) * camZoom) + off.y;
-          let rw = rx2 - rx; let rh = ry2 - ry;
-          
           octx.globalAlpha = 0.8; octx.imageSmoothingEnabled = false;
-          octx.drawImage(adminMoveCanvas, rx, ry, rw, rh); octx.globalAlpha = 1.0;
-          octx.strokeStyle = '#eab308'; octx.lineWidth = 2; octx.setLineDash([6,3]);
-          octx.strokeRect(rx, ry, rw, rh); octx.setLineDash([]);
+          octx.drawImage(adminMoveCanvas, adminMoveRect.dx, adminMoveRect.dy, adminMoveRect.w, adminMoveRect.h); 
+          octx.globalAlpha = 1.0;
+          octx.strokeStyle = '#eab308'; octx.lineWidth = 2 / camZoom; 
+          octx.setLineDash([6 / camZoom, 3 / camZoom]);
+          octx.strokeRect(adminMoveRect.dx, adminMoveRect.dy, adminMoveRect.w, adminMoveRect.h); 
+          octx.setLineDash([]);
       }
   }
 
+  // Инструмент загрузки картинок
   if ((tool==='admin_image' || adminImagePreviewMode) && adminImgObj) {
     let ir=adminImgRect;
-    let sx = Math.floor(ir.x * camZoom) + off.x;
-    let sy = Math.floor(ir.y * camZoom) + off.y;
-    let ex = Math.floor((ir.x + ir.w) * camZoom) + off.x;
-    let ey = Math.floor((ir.y + ir.h) * camZoom) + off.y;
-    let sw = ex - sx; let sh = ey - sy;
-    
-    octx.globalAlpha=0.75;octx.imageSmoothingEnabled=false;
-    octx.drawImage(adminImgObj,sx,sy,sw,sh);octx.globalAlpha=1.0;
-    octx.strokeStyle='#6366f1';octx.lineWidth=2;octx.strokeRect(sx,sy,sw,sh);
-    octx.fillStyle='#ffffff';octx.strokeStyle='#6366f1';octx.lineWidth=2.5;
-    [[sx,sy],[sx+sw,sy],[sx,sy+sh],[sx+sw,sy+sh]].forEach(([cx,cy])=>{
-      octx.beginPath();octx.arc(cx,cy,7,0,Math.PI*2);octx.fill();octx.stroke();
+    octx.globalAlpha=0.75; octx.imageSmoothingEnabled=false;
+    octx.drawImage(adminImgObj, ir.x, ir.y, ir.w, ir.h); 
+    octx.globalAlpha=1.0;
+    octx.strokeStyle='#6366f1'; octx.lineWidth=2 / camZoom; 
+    octx.strokeRect(ir.x, ir.y, ir.w, ir.h);
+    octx.fillStyle='#ffffff'; octx.strokeStyle='#6366f1'; octx.lineWidth=2.5 / camZoom;
+    const r = 7 / camZoom;
+    [[ir.x, ir.y], [ir.x+ir.w, ir.y], [ir.x, ir.y+ir.h], [ir.x+ir.w, ir.y+ir.h]].forEach(([cx,cy])=>{
+      octx.beginPath(); octx.arc(cx, cy, r, 0, Math.PI*2); octx.fill(); octx.stroke();
     });
   }
 
+  // Трафарет
   if (stencilActive && stencilImg) {
     let ir=stencilRect;
-    let sx = Math.floor(ir.x * camZoom) + off.x;
-    let sy = Math.floor(ir.y * camZoom) + off.y;
-    let ex = Math.floor((ir.x + ir.w) * camZoom) + off.x;
-    let ey = Math.floor((ir.y + ir.h) * camZoom) + off.y;
-    let sw = ex - sx; let sh = ey - sy;
-    
-    octx.globalAlpha=stencilOpacity;octx.imageSmoothingEnabled=false;
-    octx.drawImage(stencilImg,sx,sy,sw,sh);octx.globalAlpha=1;
+    octx.globalAlpha=stencilOpacity; octx.imageSmoothingEnabled=false;
+    octx.drawImage(stencilImg, ir.x, ir.y, ir.w, ir.h); 
+    octx.globalAlpha=1;
     
     if (stencilEditMode) {
-      octx.strokeStyle='#22c55e';octx.lineWidth=2;
-      octx.setLineDash([6,3]);octx.strokeRect(sx,sy,sw,sh);octx.setLineDash([]);
-    }
-
-    if (purchasedItems.includes('stencil_auto_2') && !stencilEditMode) {
-      renderStencilErrors();
+      octx.strokeStyle='#22c55e'; octx.lineWidth=2 / camZoom;
+      octx.setLineDash([6 / camZoom, 3 / camZoom]); 
+      octx.strokeRect(ir.x, ir.y, ir.w, ir.h); 
+      octx.setLineDash([]);
     }
   }
 
+  // Курсор / Пипетка
   if (tool==='pencil'||tool==='eyedrop'||(!stencilEditMode && stencilActive)) {
     if (hoveredPixel.x>=0&&hoveredPixel.x<canvasW&&hoveredPixel.y>=0&&hoveredPixel.y<canvasH) {
-      const sx = Math.floor(hoveredPixel.x * camZoom) + off.x;
-      const sy = Math.floor(hoveredPixel.y * camZoom) + off.y;
-      const ex = Math.floor((hoveredPixel.x + 1) * camZoom) + off.x;
-      const ey = Math.floor((hoveredPixel.y + 1) * camZoom) + off.y;
-      
       octx.fillStyle='rgba(255,255,255,0.35)';
-      octx.fillRect(sx, sy, ex-sx, ey-sy);
+      octx.fillRect(hoveredPixel.x, hoveredPixel.y, 1, 1);
       octx.strokeStyle='rgba(0,0,0,0.5)';
-      octx.lineWidth=1;
-      octx.strokeRect(sx + 0.5, sy + 0.5, ex-sx-1, ey-sy-1);
+      octx.lineWidth=1 / camZoom;
+      octx.strokeRect(hoveredPixel.x, hoveredPixel.y, 1, 1);
     }
   }
 
+  // Бомбочки / Расходники
   if (activeItem && hoveredPixel.x >= 0) {
-    renderItemPreview();
+    let size = 3;
+    if (activeItem === 'rainbow_5x5') size = 5;
+    else if (activeItem === 'eraser_10x10') size = 10;
+    else if (activeItem === 'mirror_stamp') size = 5;
+    const half = Math.floor(size / 2);
+    
+    octx.fillStyle = 'rgba(245,158,11,0.25)';
+    octx.fillRect(hoveredPixel.x - half, hoveredPixel.y - half, size, size);
+    octx.strokeStyle = '#f59e0b';
+    octx.lineWidth = 2 / camZoom;
+    octx.setLineDash([4 / camZoom, 2 / camZoom]);
+    octx.strokeRect(hoveredPixel.x - half, hoveredPixel.y - half, size, size);
+    octx.setLineDash([]);
   }
+
+  // Ошибки трафарета
+  if (stencilActive && stencilImg && purchasedItems.includes('stencil_auto_2') && !stencilEditMode) {
+    renderStencilErrors(octx);
+  }
+
+  octx.restore();
 }
 
-function renderItemPreview() {
-  const off = getRenderOffset();
-  const x = hoveredPixel.x, y = hoveredPixel.y;
-  let size = 3;
-  if (activeItem === 'rainbow_5x5') size = 5;
-  else if (activeItem === 'eraser_10x10') size = 10;
-  else if (activeItem === 'mirror_stamp') size = 5;
-  const half = Math.floor(size / 2);
-  
-  const sx = Math.floor((x - half) * camZoom) + off.x;
-  const sy = Math.floor((y - half) * camZoom) + off.y;
-  const ex = Math.floor((x - half + size) * camZoom) + off.x;
-  const ey = Math.floor((y - half + size) * camZoom) + off.y;
-  
-  octx.fillStyle = 'rgba(245,158,11,0.25)';
-  octx.fillRect(sx, sy, ex-sx, ey-sy);
-  octx.strokeStyle = '#f59e0b';
-  octx.lineWidth = 2;
-  octx.setLineDash([4, 2]);
-  octx.strokeRect(sx, sy, ex-sx, ey-sy);
-  octx.setLineDash([]);
-}
-
-function renderStencilErrors() {
+function renderStencilErrors(ctx) {
   if (!stencilImageData || !stencilActive) return;
   const ir = stencilRect;
   const off = getRenderOffset();
@@ -223,9 +212,9 @@ function renderStencilErrors() {
   const endX = Math.min(canvasW, Math.min(ir.x + ir.w, Math.ceil((overlayCanvas.width - off.x) / camZoom)));
   const endY = Math.min(canvasH, Math.min(ir.y + ir.h, Math.ceil((overlayCanvas.height - off.y) / camZoom)));
 
-  octx.fillStyle = 'rgba(239, 68, 68, 0.4)';
-  octx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
-  octx.lineWidth = 1.5;
+  ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
+  ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';
+  ctx.lineWidth = 1.5 / camZoom;
 
   for (let y = startY; y < endY; y++) {
     for (let x = startX; x < endX; x++) {
@@ -251,20 +240,16 @@ function renderStencilErrors() {
         const pb = parseInt(palHex.slice(5,7), 16);
         
         if (Math.abs(pr - sr) > 10 || Math.abs(pg - sg) > 10 || Math.abs(pb - sb) > 10) {
-          const rectSx = Math.floor(x * camZoom) + off.x;
-          const rectSy = Math.floor(y * camZoom) + off.y;
-          const rectEx = Math.floor((x + 1) * camZoom) + off.x;
-          const rectEy = Math.floor((y + 1) * camZoom) + off.y;
-          
-          octx.fillRect(rectSx, rectSy, rectEx - rectSx, rectEy - rectSy);
+          ctx.fillRect(x, y, 1, 1);
           
           if (camZoom >= 3) {
-             octx.beginPath();
-             octx.moveTo(rectSx + 2.5, rectSy + 2.5);
-             octx.lineTo(rectEx - 2.5, rectEy - 2.5);
-             octx.moveTo(rectEx - 2.5, rectSy + 2.5);
-             octx.lineTo(rectSx + 2.5, rectEy - 2.5);
-             octx.stroke();
+             const m = 2 / camZoom;
+             ctx.beginPath();
+             ctx.moveTo(x + m, y + m);
+             ctx.lineTo(x + 1 - m, y + 1 - m);
+             ctx.moveTo(x + 1 - m, y + m);
+             ctx.lineTo(x + m, y + 1 - m);
+             ctx.stroke();
           }
         }
       }
@@ -276,8 +261,8 @@ function renderStencilErrors() {
 function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
   if (!showCursors||(!serverCursorsEnabled&&!clanShareCursor)) return;
   const off = getRenderOffset();
-  const sx = Math.floor(canvasX * camZoom) + off.x;
-  const sy = Math.floor(canvasY * camZoom) + off.y;
+  const sx = canvasX * camZoom + off.x; 
+  const sy = canvasY * camZoom + off.y; 
   const col = PALETTE[colorIdx] || PALETTE[0];
   const color = col.c;
 
@@ -379,7 +364,7 @@ function resizeCanvas(w,h) {
 
 function canvasToScreen(cx,cy) {
   const off = getRenderOffset();
-  return {x: Math.floor(cx * camZoom) + off.x, y: Math.floor(cy * camZoom) + off.y};
+  return {x: cx * camZoom + off.x, y: cy * camZoom + off.y};
 }
 function screenToCanvas(sx,sy) {
   const off = getRenderOffset();

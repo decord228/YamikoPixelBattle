@@ -477,8 +477,10 @@ function handleStencilStart(clientX,clientY){
   if (!stencilActive||!stencilImg||!stencilEditMode) return false;
   const off = getRenderOffset();
   const ir=stencilRect;
-  const sx=Math.floor(ir.x*camZoom)+off.x, sy=Math.floor(ir.y*camZoom)+off.y;
-  const sw=Math.floor(ir.w*camZoom), sh=Math.floor(ir.h*camZoom);
+  const sx = ir.x * camZoom + off.x; 
+  const sy = ir.y * camZoom + off.y;
+  const sw = ir.w * camZoom;
+  const sh = ir.h * camZoom;
   if (clientX>=sx&&clientX<=sx+sw&&clientY>=sy&&clientY<=sy+sh){
     stencilHandle='move';
     stencilDragOffset={x:(clientX-sx)/camZoom,y:(clientY-sy)/camZoom};
@@ -864,7 +866,10 @@ function handleToolInteractionStart(clientX,clientY){
   if ((tool==='admin_image' || adminImagePreviewMode)&&adminImgObj){
     const off = getRenderOffset();
     let ir=adminImgRect;
-    let sx=Math.floor(ir.x*camZoom)+off.x,sy=Math.floor(ir.y*camZoom)+off.y,sw=Math.floor(ir.w*camZoom),sh=Math.floor(ir.h*camZoom);
+    let sx = ir.x * camZoom + off.x; 
+    let sy = ir.y * camZoom + off.y;
+    let sw = ir.w * camZoom; 
+    let sh = ir.h * camZoom;
     const dist=(x1,y1)=>Math.hypot(clientX-x1,clientY-y1);
     const HIT=15;
     if (dist(sx,sy)<=HIT) adminActiveHandle='tl';

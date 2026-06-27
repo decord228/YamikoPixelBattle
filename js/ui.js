@@ -823,7 +823,7 @@ function applyAdminTool() {
         let bestIdx=0,bestDist=Infinity;
         PALETTE.forEach((p,pi)=>{
           const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb=parseInt(p.c.slice(5,7),16);
-          const dist=(r-pr)**2+(g2-pg)**2+(b-pb)**2;
+          const dist=(r-pr)**2+(g-pg)**2+(b-pb)**2;
           if (dist<bestDist){bestDist=dist;bestIdx=pi;}
         });
         const cx=x+adminImgRect.x,cy=y+adminImgRect.y;

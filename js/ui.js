@@ -698,10 +698,10 @@ function buildShopUI(){
     html += `<div class="shop-item">
       <div class="shop-header">
         <div class="shop-item-title">${item.icon} ${item.title}</div>
-        ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg> ${item.cost}</span>`}
+        ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price">🪙 ${item.cost}</span>`}
       </div>
       <div class="shop-item-desc">${item.desc}</div>
-      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>)</button>` : ''}
+      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
       ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Требуется: ${item.requires}</div>` : ''}
     </div>`;
   });
@@ -714,11 +714,11 @@ function buildShopUI(){
       html += `<div class="shop-item vip-item">
         <div class="shop-header">
           <div class="shop-item-title">${item.icon} ${item.title}</div>
-          <span class="shop-price"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg> ${item.cost}</span>
+          <span class="shop-price">🪙 ${item.cost}</span>
         </div>
         <div class="shop-item-desc">${item.desc}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-vip btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>)</button>
+          <button class="btn btn-vip btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
           ${count > 0 ? `<button class="btn btn-secondary btn-sm" onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
         </div>
       </div>`;
@@ -910,7 +910,7 @@ function renderAdminUsers(users){
   c.innerHTML=users.map(u=>`
     <div class="user-card">
       <div class="user-card-top">
-        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>${u.coins||0})</span></div>
+        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px · 🪙${u.coins||0})</span></div>
         <span class="user-badge ${u.role==='admin'?'badge-admin':u.role==='vip'?'badge-vip':'badge-user'}">${(u.role||'user').toUpperCase()}</span>
         ${u.banned?'<span class="user-badge badge-banned">BANNED</span>':''}
       </div>
@@ -921,7 +921,7 @@ function renderAdminUsers(users){
         <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
         <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
         <button class="action-btn ab-msg" onclick="prefillDM('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></button>
-        <button class="action-btn ab-role" onclick="promptGiveCoins('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>+</button>
+        <button class="action-btn ab-role" onclick="promptGiveCoins('${esc(u.username)}')">🪙+</button>
       </div>
     </div>`).join('');
 }

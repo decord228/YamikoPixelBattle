@@ -42,6 +42,11 @@
     stroke-linejoin: round;
 }
 
+.icon-fill {
+    fill: currentColor;
+    stroke: none;
+}
+
 .icon-arrow {
     stroke-width: 2.4;
 }

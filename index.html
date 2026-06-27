@@ -1,454 +1,456 @@
 ﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Pixel Battle · d3cord</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Pixel Battle · d3cord</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="connecting-screen">
-  <div class="connecting-logo">PIXEL<br>BATTLE</div>
-  <div class="spinner"></div>
-  <div class="connecting-sub">Подключение к серверу...</div>
-  <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">made by <span style="color:#818cf8">d3cord</span></div>
-</div>
-
-<div id="game-root">
-  <div id="canvas-wrap">
-    <div id="canvas-shadow"></div>
-    <canvas id="main-canvas"></canvas>
-    <div id="cursors-layer"></div>
-  </div>
-</div>
-
-<canvas id="overlay-canvas"></canvas>
-
-<div id="backdrop"></div>
-
-<div id="ui">
-
-  <div id="top-bar">
-    <div id="logo">PIXEL BATTLE</div>
-    <div class="top-divider"></div>
-    <div id="online-badge"><div id="online-dot"></div><span id="online-count">0</span>&nbsp;<span style="color:var(--text3)">онлайн</span></div>
-    <div class="top-divider"></div>
-    <div id="coords-badge">— , —</div>
-    <div class="top-divider"></div>
-    <div id="conn-status">⬤ Отключён</div>
-    <div class="top-divider"></div>
-    <div id="made-by">made by <span>d3cord</span></div>
-  </div>
-
-  <div id="profile-hud">
-    <div id="phud-avatar" onclick="showPanel('profile-panel')">
-      <canvas id="phud-avatar-canvas" width="48" height="48"></canvas>
+    <div id="connecting-screen">
+        <div class="connecting-logo">PIXEL<br>BATTLE</div>
+        <div class="spinner"></div>
+        <div class="connecting-sub">Подключение к серверу...</div>
+        <div style="font-size:10px;color:var(--text3);font-family:'Space Mono',monospace;">made by <span style="color:#818cf8">d3cord</span></div>
     </div>
-    <div id="phud-info">
-      <div id="phud-name">—</div>
-      <div id="phud-role" class="phud-role-user">Пользователь</div>
-      <div id="phud-coins">🪙 0</div>
-    </div>
-    <div id="phud-actions">
-      <div class="phud-btn" onclick="showPanel('clan-panel')" title="Кланы">🏴</div>
-      <div class="phud-btn" onclick="showPanel('shop-panel')" title="Магазин">🛒</div>
-    </div>
-  </div>
 
-  <div id="sidebar">
-    <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')">✏️<span class="tip">Карандаш [E]</span></div>
-    <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')">🔍<span class="tip">Пипетка</span></div>
-    <div class="sidebar-btn" id="btn-tool-stencil" onclick="toggleStencilPanel()">📐<span class="tip">Трафарет</span></div>
-    <div class="sidebar-btn" id="btn-palette" onclick="togglePalette()">🎨<span class="tip">Палитра [P]</span></div>
-    <div class="sidebar-divider"></div>
-    
-    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-rect" onclick="setTool('admin_rect')">▭<span class="tip">Прямоугольник (Админ)</span></div>
-    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-circle" onclick="setTool('admin_circle')">◯<span class="tip">Круг (Админ)</span></div>
-    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-line" onclick="setTool('admin_line')">╱<span class="tip">Линия (Админ)</span></div>
-    <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-move" onclick="setTool('admin_move')">⇱<span class="tip">Перемещение (Админ)</span></div>
-    <div class="sidebar-divider admin-tool-btn" style="display:none"></div>
-    
-    <div class="sidebar-btn" id="btn-grid" onclick="toggleGrid()">▦<span class="tip">Сетка [G]</span></div>
-    <div class="sidebar-btn" onclick="resetCamera()">⌖<span class="tip">Сбросить камеру</span></div>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-btn" onclick="showLeaderboard()">🏆<span class="tip">Лидерборд</span></div>
-    <div class="sidebar-btn" onclick="showPanel('settings-panel')">⚙️<span class="tip">Настройки</span></div>
-    <div class="sidebar-divider"></div>
-    <div class="sidebar-btn" id="btn-admin" style="display:none" onclick="showPanel('admin-panel');loadAdminUsers()">🛡️<span class="tip">Админ</span></div>
-  </div>
-
-  <div id="palette-panel" class="panel" style="display:none;">
-    <div id="color-name-bar">Белый</div>
-    <div id="color-grid"></div>
-    <div id="place-btn-wrap">
-      <div id="place-btn-bg"></div>
-      <div id="place-btn-fill" style="transform:scaleX(1)"></div>
-      <button id="place-btn" onclick="placePixel()">ПОСТАВИТЬ</button>
-      <div class="place-border"></div>
-    </div>
-  </div>
-
-  <div id="stencil-panel" class="panel" style="display:none;">
-    <div style="font-family:'Unbounded',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;">📐 Трафарет</div>
-    <button class="btn btn-secondary btn-sm" onclick="document.getElementById('stencil-file-input').click()" style="margin-bottom:14px; font-weight:600;">📁 ЗАГРУЗИТЬ КАРТИНКУ</button>
-    <div class="setting-row" style="padding:8px 0;">
-       <div><div class="setting-label">Режим редактирования</div><div class="setting-desc">Блокирует рисование</div></div>
-       <div class="toggle on" id="stencil-edit-toggle" onclick="toggleStencilEdit()"></div>
-    </div>
-    <div class="form-group" style="margin-top:14px">
-       <label class="form-label" style="display:flex;justify-content:space-between"><span>ПРОЗРАЧНОСТЬ</span> <span id="stencil-opacity-val">60%</span></label>
-       <input type="range" id="stencil-panel-opacity" min="10" max="100" value="60" oninput="updateStencilOpacity(this.value)" style="width:100%; margin-top:6px;">
-    </div>
-    <div class="setting-row" id="stencil-scale-row" style="padding:8px 0;">
-       <div><div class="setting-label">Размер (пикс.)</div><div class="setting-desc">Масштаб = пиксели на холсте</div></div>
-       <div style="display:flex;gap:4px;">
-         <button class="btn btn-secondary btn-sm" onclick="scaleStencil(0.5)">÷2</button>
-         <button class="btn btn-secondary btn-sm" onclick="scaleStencil(2)">×2</button>
-       </div>
-    </div>
-    <div class="setting-row" id="stencil-clan-share-row" style="padding:12px 0 0 0; border-top:1px solid var(--border); margin-top:12px;">
-       <div><div class="setting-label" style="line-height:1.3;">Поделиться с<br>кланом</div></div>
-       <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto; background:var(--accent2);">ОТПРАВИТЬ</button>
-    </div>
-    
-    <div class="section-sep"></div>
-    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;">Мои шаблоны</div>
-    <button class="btn btn-secondary btn-sm" onclick="promptSaveStencil()" style="margin-bottom:8px; width:100%;">💾 Сохранить текущий</button>
-    <div id="saved-stencils-list" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;"></div>
-
-    <button class="btn btn-danger btn-sm" onclick="cancelStencil()" style="margin-top:16px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); font-weight:600;">✕ СКРЫТЬ ТРАФАРЕТ</button>
-  </div>
-
-  <div id="chat-btn" onclick="toggleChat()">💬<div id="chat-unread"></div></div>
-
-  <div id="chat-panel">
-    <div id="chat-header">
-      <div id="chat-header-title">💬 Чат</div>
-      <div id="chat-close" onclick="toggleChat()">✕</div>
-    </div>
-    <div id="chat-messages"></div>
-    <div id="chat-input-row">
-      <input id="chat-input" placeholder="Введите сообщение..." maxlength="150" onkeydown="if(event.key==='Enter')sendChat()">
-      <button id="chat-send" onclick="sendChat()">↑</button>
-    </div>
-  </div>
-
-  <div id="admin-floating-bar">
-    <div id="admin-floating-bar-title">Действие</div>
-    <label id="admin-shape-fill-container" style="color:#fff;font-size:11px;margin-right:10px;display:flex;align-items:center;cursor:pointer;">
-      <input type="checkbox" id="admin-shape-fill" checked style="margin-right:4px;"> Заливка
-    </label>
-    <button class="btn btn-secondary btn-sm" onclick="cancelAdminTool()">Отмена</button>
-    <button class="btn btn-primary btn-sm" onclick="applyAdminTool()" id="admin-floating-apply">Применить</button>
-  </div>
-
-  <div id="use-item-overlay">
-    <span id="use-item-label">Выберите точку на холсте</span>
-    <button class="btn btn-secondary btn-sm" onclick="cancelUseItem()">Отмена</button>
-  </div>
-
-  <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
-  <div id="toast-wrap"></div>
-</div>
-
-<div id="auth-panel" class="overlay-panel panel show">
-  <div class="auth-logo">
-    <div class="auth-logo-text">PIXEL<br>BATTLE</div>
-    <div class="auth-logo-sub">Захвати каждый пиксель</div>
-    <div class="auth-by">made by <span>d3cord</span></div>
-  </div>
-  <div class="auth-tabs">
-    <div class="auth-tab active" onclick="switchAuthTab('login')">Войти</div>
-    <div class="auth-tab" onclick="switchAuthTab('register')">Регистрация</div>
-  </div>
-  <div class="panel-body">
-    <div id="auth-login-form">
-      <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="auth-username" type="text" placeholder="введите ник" autocomplete="username"></div>
-      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
-      <button class="btn btn-primary" onclick="doAuth(false)">Войти</button>
-    </div>
-    <div id="auth-register-form" style="display:none">
-      <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="reg-username" type="text" placeholder="придумайте ник" autocomplete="username"></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="reg-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
-      <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password"></div>
-      <button class="btn btn-primary" onclick="doAuth(true)">Создать аккаунт</button>
-    </div>
-  </div>
-</div>
-
-<div id="profile-panel" class="overlay-panel panel">
-  <div class="panel-header"><div class="panel-title">👤 Профиль</div><div class="panel-close" onclick="hidePanel('profile-panel')">✕</div></div>
-  <div class="panel-body">
-    <div class="profile-header">
-      <div id="profile-avatar-ring">
-        <canvas id="avatar-canvas" width="78" height="78"></canvas>
-        <div class="avatar-overlay">😊</div>
-      </div>
-      <div class="profile-info">
-        <div class="profile-name" id="prof-name">—</div>
-        <div class="profile-role role-user" id="prof-role">Пользователь</div>
-        <div style="margin-top:6px;font-size:10px;color:var(--text3)">Выберите эмодзи-аватар ниже</div>
-      </div>
-    </div>
-    <div class="rank-badge"><div class="rank-icon" id="prof-rank-icon">🌱</div><div><div class="rank-title">Звание</div><div class="rank-name" id="prof-rank">Новичок</div></div></div>
-    <div class="stat-grid-3">
-      <div class="stat-card"><div class="stat-val" id="prof-pixels">0</div><div class="stat-lbl">Пикселей</div></div>
-      <div class="stat-card"><div class="stat-val" id="prof-session">0</div><div class="stat-lbl">Сессия</div></div>
-      <div class="stat-card"><div class="stat-val coins-val" id="prof-coins">0</div><div class="stat-lbl">🪙 Монет</div></div>
-    </div>
-    <div class="sub-tabs">
-      <div class="sub-tab active" onclick="switchProfileTab('avatar')">Аватар</div>
-      <div class="sub-tab" onclick="switchProfileTab('account')">Аккаунт</div>
-    </div>
-    <div id="prof-tab-avatar">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Выбрать аватар</div>
-      <div class="avatar-options" id="emoji-avatars"></div>
-    </div>
-    <div id="prof-tab-account" style="display:none">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сменить пароль</div>
-      <div class="form-group"><input class="form-input" id="new-pass" type="password" placeholder="Новый пароль"></div>
-      <div class="form-group"><input class="form-input" id="new-pass-confirm" type="password" placeholder="Подтвердите пароль"></div>
-      <button class="btn btn-secondary" style="margin-bottom:10px" onclick="changePassword()">Сменить пароль</button>
-      <div class="section-sep"></div>
-      <button class="btn btn-danger" onclick="doLogout()">Выйти из аккаунта</button>
-    </div>
-  </div>
-</div>
-
-<div id="leaderboard-panel" class="panel">
-  <div class="panel-header"><div class="panel-title">🏆 Лидерборд</div><div class="panel-close" onclick="hideLeaderboard()">✕</div></div>
-  <div class="panel-body">
-    <div class="sub-tabs">
-      <div class="sub-tab active" onclick="switchLbTab('players')">Игроки</div>
-      <div class="sub-tab" onclick="switchLbTab('clans')">Кланы</div>
-    </div>
-    <div id="lb-players-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
-    <div id="lb-clans-list" style="display:none"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
-  </div>
-</div>
-
-<div id="settings-panel" class="overlay-panel panel">
-  <div class="panel-header"><div class="panel-title">⚙️ Настройки</div><div class="panel-close" onclick="hidePanel('settings-panel')">✕</div></div>
-  <div class="panel-body">
-    <div class="setting-row"><div><div class="setting-label">Сетка</div><div class="setting-desc">Пиксельная сетка (1 ячейка = 1 пиксель)</div></div><div class="toggle" id="toggle-grid" onclick="toggleGrid()"></div></div>
-    <div class="setting-row"><div><div class="setting-label">Плавная камера</div><div class="setting-desc">Инерция при перемещении (ease-out)</div></div><div class="toggle on" id="toggle-smooth" onclick="toggleSmoothCamera()"></div></div>
-    <div class="setting-row"><div><div class="setting-label">Курсоры игроков</div><div class="setting-desc">Показывать флажки других игроков</div></div><div class="toggle on" id="toggle-cursors" onclick="toggleCursors()"></div></div>
-    <div class="setting-row"><div><div class="setting-label">Инспектор пикселей</div><div class="setting-desc">Всплывающая инфо при наведении</div></div><div class="toggle on" id="toggle-inspector" onclick="toggleInspector()"></div></div>
-    <div class="setting-row"><div><div class="setting-label">Звуки</div><div class="setting-desc">Звук при установке пикселя</div></div><div class="toggle" id="toggle-sound" onclick="toggleSound()"></div></div>
-    <div class="section-sep"></div>
-    <button class="btn btn-secondary" onclick="reconnectWS()">🔄 Переподключиться</button>
-  </div>
-</div>
-
-<div id="clan-panel" class="overlay-panel panel">
-  <div class="panel-header"><div class="panel-title">🏴 Кланы</div><div class="panel-close" onclick="hidePanel('clan-panel')">✕</div></div>
-  <div class="panel-body">
-    <div id="clan-view-no-clan">
-      <div class="sub-tabs">
-        <div class="sub-tab active" onclick="switchClanSubTab('browse')">Обзор</div>
-        <div class="sub-tab" onclick="switchClanSubTab('create')">Создать</div>
-        <div class="sub-tab" onclick="switchClanSubTab('join')">Вступить</div>
-      </div>
-      <div id="clan-sub-browse">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Топ кланов</div>
-        <div id="clan-browse-list" style="max-height:320px;overflow-y:auto"></div>
-      </div>
-      <div id="clan-sub-create" style="display:none">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Создать клан (50 🪙)</div>
-        <div class="form-group"><label class="form-label">Название клана</label><input class="form-input" id="clan-create-name" placeholder="2–24 символа"></div>
-        <div class="form-group"><label class="form-label">Тег (до 4 букв)</label><input class="form-input" id="clan-create-tag" placeholder="PXL" maxlength="4"></div>
-        <div class="form-group"><label class="form-label">Описание</label><input class="form-input" id="clan-create-desc" placeholder="Описание клана..."></div>
-        <button class="btn btn-primary" onclick="createClan()">🏴 Создать клан (50 🪙)</button>
-      </div>
-      <div id="clan-sub-join" style="display:none">
-        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Вступить по названию</div>
-        <div style="display:flex;gap:8px">
-          <input class="form-input" id="clan-join-name" placeholder="Название клана" style="flex:1">
-          <button class="btn btn-secondary btn-sm" onclick="joinClan()" style="flex-shrink:0">Вступить</button>
+    <div id="game-root">
+        <div id="canvas-wrap">
+            <div id="canvas-shadow"></div>
+            <canvas id="main-canvas"></canvas>
+            <div id="cursors-layer"></div>
         </div>
-      </div>
     </div>
 
-    <div id="clan-view-in-clan" style="display:none">
-      <div class="clan-card">
-        <div class="clan-name"><span id="clan-disp-name">—</span><span class="clan-tag" id="clan-disp-tag">—</span></div>
-        <div class="clan-meta" id="clan-disp-desc"></div>
-        <div class="clan-meta" style="margin-top:8px;">👑 Лидер: <strong id="clan-disp-leader">—</strong> · 👥 <span id="clan-disp-members">0</span> участников</div>
-      </div>
+    <canvas id="overlay-canvas"></canvas>
 
-      <div class="clan-motd">
-        <div class="clan-motd-label">💬 Сообщение дня</div>
-        <div id="clan-motd-text">Добро пожаловать в клан!</div>
-      </div>
+    <div id="backdrop"></div>
 
-      <div class="sub-tabs">
-        <div class="sub-tab active" onclick="switchClanInnerTab('members')">Участники</div>
-        <div class="sub-tab" onclick="switchClanInnerTab('chat')">Чат</div>
-        <div class="sub-tab" onclick="switchClanInnerTab('requests')">Заявки</div>
-        <div class="sub-tab" id="clan-settings-tab" onclick="switchClanInnerTab('settings')" style="display:none">Настройки</div>
-      </div>
+    <div id="ui">
 
-      <div id="clan-inner-members">
-        <div class="member-list" id="clan-member-list"></div>
-      </div>
-
-      <div id="clan-inner-chat" style="display:none">
-        <div id="clan-chat-messages" style="height:200px;overflow-y:auto;margin-bottom:8px;"></div>
-        <div style="display:flex;gap:6px;">
-          <input class="form-input" id="clan-chat-input" placeholder="Сообщение клану..." style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')sendClanChat()">
-          <button class="btn btn-primary btn-sm" onclick="sendClanChat()">↑</button>
+        <div id="top-bar">
+            <div id="logo">PIXEL BATTLE</div>
+            <div class="top-divider"></div>
+            <div id="online-badge"><div id="online-dot"></div><span id="online-count">0</span>&nbsp;<span style="color:var(--text3)">онлайн</span></div>
+            <div class="top-divider"></div>
+            <div id="coords-badge">— , —</div>
+            <div class="top-divider"></div>
+            <div id="conn-status"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="7" fill="currentColor" stroke="none" /></svg> Отключён</div>
+            <div class="top-divider"></div>
+            <div id="made-by">made by <span>d3cord</span></div>
         </div>
-      </div>
 
-      <div id="clan-inner-requests" style="display:none">
-        <div id="clan-requests-list" style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">Заявок нет</div>
-      </div>
-
-      <div id="clan-inner-settings" style="display:none">
-        <div class="form-group"><label class="form-label">Значок клана (Эмодзи)</label><input class="form-input" id="cs-icon" maxlength="2"></div>
-        <div class="form-group"><label class="form-label">Цвет тега (HEX)</label>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <input type="color" id="cs-tag-color" style="height:38px; width:50px; border:none; border-radius:8px; cursor:pointer; background:var(--surface2);">
-            <div style="font-size:11px;color:var(--text2);">Выберите цвет</div>
-          </div>
+        <div id="profile-hud">
+            <div id="phud-avatar" onclick="showPanel('profile-panel')">
+                <canvas id="phud-avatar-canvas" width="48" height="48"></canvas>
+            </div>
+            <div id="phud-info">
+                <div id="phud-name">—</div>
+                <div id="phud-role" class="phud-role-user">Пользователь</div>
+                <div id="phud-coins"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5.2" /></svg> 0</div>
+            </div>
+            <div id="phud-actions">
+                <div class="phud-btn" onclick="showPanel('clan-panel')" title="Кланы"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V3" /><path d="M5 4h14l-3.2 4L19 12H5" /></svg></div>
+                <div class="phud-btn" onclick="showPanel('shop-panel')" title="Магазин"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><path d="M2.5 3h2l2.6 12.6a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.5L21 8H6" /></svg></div>
+            </div>
         </div>
-        <div class="form-group"><label class="form-label">Тип вступления</label>
-          <select class="form-input" id="cs-join-type">
-            <option value="open">Открытый (Вступают все)</option>
-            <option value="request">По заявкам</option>
-            <option value="closed">Закрытый</option>
-          </select>
+
+        <div id="sidebar">
+            <div class="sidebar-btn active" id="btn-tool-pencil" onclick="setTool('pencil')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 4.5l3.5 3.5L7 19l-4 1 1-4z" /><path d="M13 6l3 3" /></svg><span class="tip">Карандаш [E]</span></div>
+            <div class="sidebar-btn" id="btn-tool-eyedrop" onclick="setTool('eyedrop')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.7-4.7" /></svg><span class="tip">Пипетка</span></div>
+            <div class="sidebar-btn" id="btn-tool-stencil" onclick="toggleStencilPanel()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 19h16" /><path d="M5 19L13 5l7 14" /><path d="M9.2 13h7.4" /></svg><span class="tip">Трафарет</span></div>
+            <div class="sidebar-btn" id="btn-palette" onclick="togglePalette()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C7 3 3 6.8 3 11.4c0 3.6 2.7 5.4 5.4 5.4h1c.6 0 1 .5 1 1.1 0 .9-.8 1.4-.8 2.3 0 .8.7 1.4 1.7 1.4 4.5 0 8.7-3.8 8.7-9.2C21.9 7.3 17.6 3 12 3z" /><circle cx="7.5" cy="11" r="1.1" fill="currentColor" stroke="none" /><circle cx="11" cy="7.7" r="1.1" fill="currentColor" stroke="none" /><circle cx="15.3" cy="8.3" r="1.1" fill="currentColor" stroke="none" /><circle cx="17" cy="12.3" r="1.1" fill="currentColor" stroke="none" /></svg><span class="tip">Палитра [P]</span></div>
+            <div class="sidebar-divider"></div>
+
+            <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-rect" onclick="setTool('admin_rect')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="6" width="16" height="12" rx="1" /></svg><span class="tip">Прямоугольник (Админ)</span></div>
+            <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-circle" onclick="setTool('admin_circle')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8" /></svg><span class="tip">Круг (Админ)</span></div>
+            <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-line" onclick="setTool('admin_line')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 19L19 5" /></svg><span class="tip">Линия (Админ)</span></div>
+            <div class="sidebar-btn admin-tool-btn" style="display:none" id="btn-tool-move" onclick="setTool('admin_move')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 4H5a1 1 0 0 0-1 1v4" /><path d="M15 4h4a1 1 0 0 1 1 1v4" /><path d="M20 15v4a1 1 0 0 1-1 1h-4" /><path d="M4 15v4a1 1 0 0 0 1 1h4" /></svg><span class="tip">Перемещение (Админ)</span></div>
+            <div class="sidebar-divider admin-tool-btn" style="display:none"></div>
+
+            <div class="sidebar-btn" id="btn-grid" onclick="toggleGrid()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7" rx="0.5" /><rect x="14" y="3" width="7" height="7" rx="0.5" /><rect x="3" y="14" width="7" height="7" rx="0.5" /><rect x="14" y="14" width="7" height="7" rx="0.5" /></svg><span class="tip">Сетка [G]</span></div>
+            <div class="sidebar-btn" onclick="resetCamera()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="1.6" fill="currentColor" stroke="none" /><path d="M12 3v3" /><path d="M12 18v3" /><path d="M3 12h3" /><path d="M18 12h3" /></svg><span class="tip">Сбросить камеру</span></div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-btn" onclick="showLeaderboard()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 4h10v5a5 5 0 0 1-10 0V4z" /><path d="M7 6H4a3 3 0 0 0 3 5" /><path d="M17 6h3a3 3 0 0 1-3 5" /><path d="M10 16.5h4" /><path d="M9 21h6" /><path d="M12 16.5V21" /></svg><span class="tip">Лидерборд</span></div>
+            <div class="sidebar-btn" onclick="showPanel('settings-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" /><path d="M19.4 13.5a7.4 7.4 0 0 0 0-3l1.8-1.4-2-3.4-2.1.7a7.4 7.4 0 0 0-2.6-1.5L14 2h-4l-.5 2.4a7.4 7.4 0 0 0-2.6 1.5l-2.1-.7-2 3.4 1.8 1.4a7.4 7.4 0 0 0 0 3L2.8 14.9l2 3.4 2.1-.7c.75.66 1.62 1.18 2.6 1.5L10 22h4l.5-2.4a7.4 7.4 0 0 0 2.6-1.5l2.1.7 2-3.4-1.8-1.4z" /></svg><span class="tip">Настройки</span></div>
+            <div class="sidebar-divider"></div>
+            <div class="sidebar-btn" id="btn-admin" style="display:none" onclick="showPanel('admin-panel');loadAdminUsers()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z" /></svg><span class="tip">Админ</span></div>
         </div>
-        <div class="form-group"><label class="form-label">Мин. пикселей для входа</label><input type="number" class="form-input" id="cs-min-pixels" min="0"></div>
-        <div class="form-group"><label class="form-label">Внешняя ссылка (Discord/Сайт)</label><input type="text" class="form-input" id="cs-social" placeholder="https://..."></div>
-        
-        <div class="setting-row"><div><div class="setting-label">Публичный клан</div><div class="setting-desc">Показывать в списке и топе кланов</div></div><div class="toggle" id="cs-public-toggle" onclick="this.classList.toggle('on')"></div></div>
-        <div class="setting-row"><div><div class="setting-label">Общий курсор</div><div class="setting-desc">Участники видят курсоры друг друга</div></div><div class="toggle" id="cs-cursor-toggle" onclick="this.classList.toggle('on')"></div></div>
-        
-        <div class="form-group" style="margin-top:14px;"><label class="form-label">Сообщение дня (MOTD)</label><textarea class="form-input" id="cs-motd" rows="3" placeholder="Отображается в профиле клана"></textarea></div>
-        
-        <button class="btn btn-primary" style="margin-top:8px;" onclick="saveClanSettings()">💾 Сохранить настройки</button>
-      </div>
 
-      <div class="section-sep"></div>
-      <button class="btn btn-danger" onclick="leaveClan()">🚪 Покинуть клан</button>
-    </div>
-  </div>
-</div>
+        <div id="palette-panel" class="panel" style="display:none;">
+            <div id="color-name-bar">Белый</div>
+            <div id="color-grid"></div>
+            <div id="place-btn-wrap">
+                <div id="place-btn-bg"></div>
+                <div id="place-btn-fill" style="transform:scaleX(1)"></div>
+                <button id="place-btn" onclick="placePixel()">ПОСТАВИТЬ</button>
+                <div class="place-border"></div>
+            </div>
+        </div>
 
-<div id="shop-panel" class="overlay-panel panel">
-  <div class="panel-header"><div class="panel-title">🛒 Магазин</div><div class="panel-close" onclick="hidePanel('shop-panel')">✕</div></div>
-  <div class="panel-body" id="shop-body">
-    <div style="color:var(--text3);text-align:center;padding:20px;">Войдите в аккаунт</div>
-  </div>
-</div>
+        <div id="stencil-panel" class="panel" style="display:none;">
+            <div style="font-family:'Unbounded',sans-serif; font-size:14px; font-weight:700; margin-bottom:14px; display:flex; align-items:center; gap:8px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 19h16" /><path d="M5 19L13 5l7 14" /><path d="M9.2 13h7.4" /></svg> Трафарет</div>
+            <button class="btn btn-secondary btn-sm" onclick="document.getElementById('stencil-file-input').click()" style="margin-bottom:14px; font-weight:600;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6a1 1 0 0 1 1-1h5l2 2h9a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6z" /></svg> ЗАГРУЗИТЬ КАРТИНКУ</button>
+            <div class="setting-row" style="padding:8px 0;">
+                <div><div class="setting-label">Режим редактирования</div><div class="setting-desc">Блокирует рисование</div></div>
+                <div class="toggle on" id="stencil-edit-toggle" onclick="toggleStencilEdit()"></div>
+            </div>
+            <div class="form-group" style="margin-top:14px">
+                <label class="form-label" style="display:flex;justify-content:space-between"><span>ПРОЗРАЧНОСТЬ</span> <span id="stencil-opacity-val">60%</span></label>
+                <input type="range" id="stencil-panel-opacity" min="10" max="100" value="60" oninput="updateStencilOpacity(this.value)" style="width:100%; margin-top:6px;">
+            </div>
+            <div class="setting-row" id="stencil-scale-row" style="padding:8px 0;">
+                <div><div class="setting-label">Размер (пикс.)</div><div class="setting-desc">Масштаб = пиксели на холсте</div></div>
+                <div style="display:flex;gap:4px;">
+                    <button class="btn btn-secondary btn-sm" onclick="scaleStencil(0.5)">÷2</button>
+                    <button class="btn btn-secondary btn-sm" onclick="scaleStencil(2)">×2</button>
+                </div>
+            </div>
+            <div class="setting-row" id="stencil-clan-share-row" style="padding:12px 0 0 0; border-top:1px solid var(--border); margin-top:12px;">
+                <div><div class="setting-label" style="line-height:1.3;">Поделиться с<br>кланом</div></div>
+                <button class="btn btn-primary btn-sm" onclick="shareStencilToClan()" style="width:auto; background:var(--accent2);">ОТПРАВИТЬ</button>
+            </div>
 
-<div id="admin-panel" class="overlay-panel panel">
-  <div class="panel-header"><div class="panel-title">🛡️ Панель администратора</div><div class="panel-close" onclick="hidePanel('admin-panel')">✕</div></div>
-  <div class="panel-body">
-    <div class="admin-tabs">
-      <div class="admin-tab active" onclick="switchAdminTab('users')">Игроки</div>
-      <div class="admin-tab" onclick="switchAdminTab('canvas')">Холст</div>
-      <div class="admin-tab" onclick="switchAdminTab('broadcast')">Сообщение</div>
-      <div class="admin-tab" onclick="switchAdminTab('stats')">Статистика</div>
-    </div>
+            <div class="section-sep"></div>
+            <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;">Мои шаблоны</div>
+            <button class="btn btn-secondary btn-sm" onclick="promptSaveStencil()" style="margin-bottom:8px; width:100%;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" /><path d="M7 4v5h8V4" /><rect x="7" y="14" width="10" height="6" /></svg> Сохранить текущий</button>
+            <div id="saved-stencils-list" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;"></div>
 
-    <div id="admin-tab-users">
-      <input class="search-box" id="admin-search" placeholder="🔍 Поиск..." oninput="filterAdminUsers()">
-      <div id="admin-users-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
-      <div class="pagination">
-        <button class="page-btn" onclick="adminPageNav(-1)">‹ Пред</button>
-        <span class="page-info" id="admin-page-info">1 / 1</span>
-        <button class="page-btn" onclick="adminPageNav(1)">След ›</button>
-      </div>
-    </div>
+            <button class="btn btn-danger btn-sm" onclick="cancelStencil()" style="margin-top:16px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); font-weight:600;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg> СКРЫТЬ ТРАФАРЕТ</button>
+        </div>
 
-    <div id="admin-tab-canvas" style="display:none">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
-      <div class="resize-form">
-        <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
-        <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
-      </div>
-      <div style="margin-bottom:12px;font-size:11px;color:var(--red);">⚠️ Изменение сохранит пиксели в пределах нового размера.</div>
-      <button class="btn btn-primary" onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
-      <div class="section-sep"></div>
+        <div id="chat-btn" onclick="toggleChat()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 14a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8z" /></svg><div id="chat-unread"></div></div>
 
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">⏱️ Задержка пикселей (Кулдаун)</div>
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-        <input type="range" class="admin-range" id="admin-cooldown-slider" min="0" max="30000" step="500" value="3000" oninput="updateCooldownLabel(this.value)">
-        <span id="admin-cooldown-label" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);min-width:50px;">3.0с</span>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="adminSetCooldown()" style="margin-bottom:10px;">Применить</button>
-      <div class="section-sep"></div>
+        <div id="chat-panel">
+            <div id="chat-header">
+                <div id="chat-header-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 14a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8z" /></svg> Чат</div>
+                <div id="chat-close" onclick="toggleChat()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+            </div>
+            <div id="chat-messages"></div>
+            <div id="chat-input-row">
+                <input id="chat-input" placeholder="Введите сообщение..." maxlength="150" onkeydown="if(event.key==='Enter')sendChat()">
+                <button id="chat-send" onclick="sendChat()"><svg class="icon icon-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg></button>
+            </div>
+        </div>
 
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → превью → холст)</div>
-      <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
-        <div style="font-size:28px">🖼️</div>
-        <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите или перетащите изображение</p>
-        <p style="font-size:10px;color:var(--text3);margin-top:2px">Сначала откроется превью для позиционирования</p>
-      </div>
-      <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
-      <img id="image-preview" alt="Preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
-      <button class="btn btn-primary" id="btn-place-image" onclick="startAdminImagePreview()" disabled style="margin-bottom:10px;">🔍 Открыть превью</button>
-      
-      <div class="section-sep"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🌍 Глобальный трафарет (для всех)</div>
-      <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" onclick="document.getElementById('admin-stencil-file').click()">
-        <div style="font-size:22px">📐</div>
-        <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
-      </div>
-      <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" onchange="handleAdminGlobalStencil(event)">
-      <button class="btn btn-secondary" id="btn-clear-global-stencil" onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
+        <div id="admin-floating-bar">
+            <div id="admin-floating-bar-title">Действие</div>
+            <label id="admin-shape-fill-container" style="color:#fff;font-size:11px;margin-right:10px;display:flex;align-items:center;cursor:pointer;">
+                <input type="checkbox" id="admin-shape-fill" checked style="margin-right:4px;"> Заливка
+            </label>
+            <button class="btn btn-secondary btn-sm" onclick="cancelAdminTool()">Отмена</button>
+            <button class="btn btn-primary btn-sm" onclick="applyAdminTool()" id="admin-floating-apply">Применить</button>
+        </div>
 
-      <div class="section-sep"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
-      <div class="setting-row" style="padding-top:0">
-        <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
-        <div class="toggle" id="admin-toggle-cursors" onclick="adminToggleCursors()"></div>
-      </div>
-      <div class="section-sep"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
-      <button class="btn btn-danger" onclick="adminClearCanvas()">🗑️ Очистить весь холст</button>
+        <div id="use-item-overlay">
+            <span id="use-item-label">Выберите точку на холсте</span>
+            <button class="btn btn-secondary btn-sm" onclick="cancelUseItem()">Отмена</button>
+        </div>
+
+        <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
+        <div id="toast-wrap"></div>
     </div>
 
-    <div id="admin-tab-broadcast" style="display:none">
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
-      <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
-      <button class="btn btn-primary" onclick="adminBroadcast()" style="margin-bottom:14px">📢 Отправить всем</button>
-      <div class="section-sep"></div>
-      <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
-      <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
-      <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
-      <button class="btn btn-secondary" onclick="adminSendDM()">Отправить</button>
+    <div id="auth-panel" class="overlay-panel panel show">
+        <div class="auth-logo">
+            <div class="auth-logo-text">PIXEL<br>BATTLE</div>
+            <div class="auth-logo-sub">Захвати каждый пиксель</div>
+            <div class="auth-by">made by <span>d3cord</span></div>
+        </div>
+        <div class="auth-tabs">
+            <div class="auth-tab active" onclick="switchAuthTab('login')">Войти</div>
+            <div class="auth-tab" onclick="switchAuthTab('register')">Регистрация</div>
+        </div>
+        <div class="panel-body">
+            <div id="auth-login-form">
+                <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="auth-username" type="text" placeholder="введите ник" autocomplete="username"></div>
+                <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+                <button class="btn btn-primary" onclick="doAuth(false)">Войти</button>
+            </div>
+            <div id="auth-register-form" style="display:none">
+                <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="reg-username" type="text" placeholder="придумайте ник" autocomplete="username"></div>
+                <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="reg-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
+                <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password"></div>
+                <button class="btn btn-primary" onclick="doAuth(true)">Создать аккаунт</button>
+            </div>
+        </div>
     </div>
 
-    <div id="admin-tab-stats" style="display:none">
-      <div class="admin-stats-grid">
-        <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
-        <div class="admin-stat"><div class="admin-stat-val" id="stat-online">—</div><div class="admin-stat-lbl">Онлайн</div></div>
-        <div class="admin-stat"><div class="admin-stat-val" id="stat-banned">—</div><div class="admin-stat-lbl">Забанено</div></div>
-      </div>
-      <div class="admin-stat" style="margin-bottom:9px;"><div class="admin-stat-val" id="stat-canvas-size">256×256</div><div class="admin-stat-lbl">Размер холста</div></div>
-      <div class="admin-stat"><div class="admin-stat-val" id="stat-total-pixels">—</div><div class="admin-stat-lbl">Пикселей поставлено</div></div>
-      <div class="section-sep"></div>
-      <button class="btn btn-secondary" onclick="loadAdminStats()">🔄 Обновить</button>
+    <div id="profile-panel" class="overlay-panel panel">
+        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5" /></svg> Профиль</div><div class="panel-close" onclick="hidePanel('profile-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-body">
+            <div class="profile-header">
+                <div id="profile-avatar-ring">
+                    <canvas id="avatar-canvas" width="78" height="78"></canvas>
+                    <div class="avatar-overlay"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none" /><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none" /><path d="M8 14.5c1.2 1.4 2.6 2 4 2s2.8-.6 4-2" /></svg></div>
+                </div>
+                <div class="profile-info">
+                    <div class="profile-name" id="prof-name">—</div>
+                    <div class="profile-role role-user" id="prof-role">Пользователь</div>
+                    <div style="margin-top:6px;font-size:10px;color:var(--text3)">Выберите эмодзи-аватар ниже</div>
+                </div>
+            </div>
+            <div class="rank-badge"><div class="rank-icon" id="prof-rank-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V11" /><path d="M12 12c0-4 -3-6-7-6 0 4.5 2.7 7 7 7z" /><path d="M12 9c0-3.5 2.5-5 6-5 0 3.7-2.3 6-6 6z" /></svg></div><div><div class="rank-title">Звание</div><div class="rank-name" id="prof-rank">Новичок</div></div></div>
+            <div class="stat-grid-3">
+                <div class="stat-card"><div class="stat-val" id="prof-pixels">0</div><div class="stat-lbl">Пикселей</div></div>
+                <div class="stat-card"><div class="stat-val" id="prof-session">0</div><div class="stat-lbl">Сессия</div></div>
+                <div class="stat-card"><div class="stat-val coins-val" id="prof-coins">0</div><div class="stat-lbl"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5.2" /></svg> Монет</div></div>
+            </div>
+            <div class="sub-tabs">
+                <div class="sub-tab active" onclick="switchProfileTab('avatar')">Аватар</div>
+                <div class="sub-tab" onclick="switchProfileTab('account')">Аккаунт</div>
+            </div>
+            <div id="prof-tab-avatar">
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Выбрать аватар</div>
+                <div class="avatar-options" id="emoji-avatars"></div>
+            </div>
+            <div id="prof-tab-account" style="display:none">
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сменить пароль</div>
+                <div class="form-group"><input class="form-input" id="new-pass" type="password" placeholder="Новый пароль"></div>
+                <div class="form-group"><input class="form-input" id="new-pass-confirm" type="password" placeholder="Подтвердите пароль"></div>
+                <button class="btn btn-secondary" style="margin-bottom:10px" onclick="changePassword()">Сменить пароль</button>
+                <div class="section-sep"></div>
+                <button class="btn btn-danger" onclick="doLogout()">Выйти из аккаунта</button>
+            </div>
+        </div>
     </div>
-  </div>
-</div>
 
-<canvas id="admin-image-canvas" style="display:none"></canvas>
-<canvas id="stencil-tmp-canvas" style="display:none"></canvas>
-<input type="file" id="stencil-file-input" accept="image/*" style="display:none">
+    <div id="leaderboard-panel" class="panel">
+        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M7 4h10v5a5 5 0 0 1-10 0V4z" /><path d="M7 6H4a3 3 0 0 0 3 5" /><path d="M17 6h3a3 3 0 0 1-3 5" /><path d="M10 16.5h4" /><path d="M9 21h6" /><path d="M12 16.5V21" /></svg> Лидерборд</div><div class="panel-close" onclick="hideLeaderboard()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-body">
+            <div class="sub-tabs">
+                <div class="sub-tab active" onclick="switchLbTab('players')">Игроки</div>
+                <div class="sub-tab" onclick="switchLbTab('clans')">Кланы</div>
+            </div>
+            <div id="lb-players-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+            <div id="lb-clans-list" style="display:none"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+        </div>
+    </div>
 
-<script src="js/config.js" defer></script>
-<script src="js/state.js" defer></script>
-<script src="js/canvas.js" defer></script>
-<script src="js/network.js" defer></script>
-<script src="js/ui.js" defer></script>
-<script src="js/input.js" defer></script>
-<script src="js/main.js" defer></script>
+    <div id="settings-panel" class="overlay-panel panel">
+        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="3" /><path d="M19.4 13.5a7.4 7.4 0 0 0 0-3l1.8-1.4-2-3.4-2.1.7a7.4 7.4 0 0 0-2.6-1.5L14 2h-4l-.5 2.4a7.4 7.4 0 0 0-2.6 1.5l-2.1-.7-2 3.4 1.8 1.4a7.4 7.4 0 0 0 0 3L2.8 14.9l2 3.4 2.1-.7c.75.66 1.62 1.18 2.6 1.5L10 22h4l.5-2.4a7.4 7.4 0 0 0 2.6-1.5l2.1.7 2-3.4-1.8-1.4z" /></svg> Настройки</div><div class="panel-close" onclick="hidePanel('settings-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-body">
+            <div class="setting-row"><div><div class="setting-label">Сетка</div><div class="setting-desc">Пиксельная сетка (1 ячейка = 1 пиксель)</div></div><div class="toggle" id="toggle-grid" onclick="toggleGrid()"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Плавная камера</div><div class="setting-desc">Инерция при перемещении (ease-out)</div></div><div class="toggle on" id="toggle-smooth" onclick="toggleSmoothCamera()"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Курсоры игроков</div><div class="setting-desc">Показывать флажки других игроков</div></div><div class="toggle on" id="toggle-cursors" onclick="toggleCursors()"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Инспектор пикселей</div><div class="setting-desc">Всплывающая инфо при наведении</div></div><div class="toggle on" id="toggle-inspector" onclick="toggleInspector()"></div></div>
+            <div class="setting-row"><div><div class="setting-label">Звуки</div><div class="setting-desc">Звук при установке пикселя</div></div><div class="toggle" id="toggle-sound" onclick="toggleSound()"></div></div>
+            <div class="section-sep"></div>
+            <button class="btn btn-secondary" onclick="reconnectWS()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg> Переподключиться</button>
+        </div>
+    </div>
+
+    <div id="clan-panel" class="overlay-panel panel">
+        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V3" /><path d="M5 4h14l-3.2 4L19 12H5" /></svg> Кланы</div><div class="panel-close" onclick="hidePanel('clan-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-body">
+            <div id="clan-view-no-clan">
+                <div class="sub-tabs">
+                    <div class="sub-tab active" onclick="switchClanSubTab('browse')">Обзор</div>
+                    <div class="sub-tab" onclick="switchClanSubTab('create')">Создать</div>
+                    <div class="sub-tab" onclick="switchClanSubTab('join')">Вступить</div>
+                </div>
+                <div id="clan-sub-browse">
+                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Топ кланов</div>
+                    <div id="clan-browse-list" style="max-height:320px;overflow-y:auto"></div>
+                </div>
+                <div id="clan-sub-create" style="display:none">
+                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Создать клан (50 <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5.2" /></svg>)</div>
+                    <div class="form-group"><label class="form-label">Название клана</label><input class="form-input" id="clan-create-name" placeholder="2–24 символа"></div>
+                    <div class="form-group"><label class="form-label">Тег (до 4 букв)</label><input class="form-input" id="clan-create-tag" placeholder="PXL" maxlength="4"></div>
+                    <div class="form-group"><label class="form-label">Описание</label><input class="form-input" id="clan-create-desc" placeholder="Описание клана..."></div>
+                    <button class="btn btn-primary" onclick="createClan()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V3" /><path d="M5 4h14l-3.2 4L19 12H5" /></svg> Создать клан (50 <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="12" cy="12" r="5.2" /></svg>)</button>
+                </div>
+                <div id="clan-sub-join" style="display:none">
+                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Вступить по названию</div>
+                    <div style="display:flex;gap:8px">
+                        <input class="form-input" id="clan-join-name" placeholder="Название клана" style="flex:1">
+                        <button class="btn btn-secondary btn-sm" onclick="joinClan()" style="flex-shrink:0">Вступить</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="clan-view-in-clan" style="display:none">
+                <div class="clan-card">
+                    <div class="clan-name"><span id="clan-disp-name">—</span><span class="clan-tag" id="clan-disp-tag">—</span></div>
+                    <div class="clan-meta" id="clan-disp-desc"></div>
+                    <div class="clan-meta" style="margin-top:8px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.6-7.2-3.6 4-2.8-6.4-2.8 6.4-3.6-4L3 18z" /><path d="M5 21h14" /></svg> Лидер: <strong id="clan-disp-leader">—</strong> · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5" /><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1" /><path d="M16 14c2.4 0 4.5 1.8 4.5 5" /></svg> <span id="clan-disp-members">0</span> участников</div>
+                </div>
+
+                <div class="clan-motd">
+                    <div class="clan-motd-label"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 14a2 2 0 0 1-2 2H8l-5 4V6a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v8z" /></svg> Сообщение дня</div>
+                    <div id="clan-motd-text">Добро пожаловать в клан!</div>
+                </div>
+
+                <div class="sub-tabs">
+                    <div class="sub-tab active" onclick="switchClanInnerTab('members')">Участники</div>
+                    <div class="sub-tab" onclick="switchClanInnerTab('chat')">Чат</div>
+                    <div class="sub-tab" onclick="switchClanInnerTab('requests')">Заявки</div>
+                    <div class="sub-tab" id="clan-settings-tab" onclick="switchClanInnerTab('settings')" style="display:none">Настройки</div>
+                </div>
+
+                <div id="clan-inner-members">
+                    <div class="member-list" id="clan-member-list"></div>
+                </div>
+
+                <div id="clan-inner-chat" style="display:none">
+                    <div id="clan-chat-messages" style="height:200px;overflow-y:auto;margin-bottom:8px;"></div>
+                    <div style="display:flex;gap:6px;">
+                        <input class="form-input" id="clan-chat-input" placeholder="Сообщение клану..." style="flex:1;font-size:12px;" onkeydown="if(event.key==='Enter')sendClanChat()">
+                        <button class="btn btn-primary btn-sm" onclick="sendClanChat()"><svg class="icon icon-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg></button>
+                    </div>
+                </div>
+
+                <div id="clan-inner-requests" style="display:none">
+                    <div id="clan-requests-list" style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">Заявок нет</div>
+                </div>
+
+                <div id="clan-inner-settings" style="display:none">
+                    <div class="form-group"><label class="form-label">Значок клана (Эмодзи)</label><input class="form-input" id="cs-icon" maxlength="2"></div>
+                    <div class="form-group">
+                        <label class="form-label">Цвет тега (HEX)</label>
+                        <div style="display:flex; align-items:center; gap:8px;">
+                            <input type="color" id="cs-tag-color" style="height:38px; width:50px; border:none; border-radius:8px; cursor:pointer; background:var(--surface2);">
+                            <div style="font-size:11px;color:var(--text2);">Выберите цвет</div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Тип вступления</label>
+                        <select class="form-input" id="cs-join-type">
+                            <option value="open">Открытый (Вступают все)</option>
+                            <option value="request">По заявкам</option>
+                            <option value="closed">Закрытый</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label class="form-label">Мин. пикселей для входа</label><input type="number" class="form-input" id="cs-min-pixels" min="0"></div>
+                    <div class="form-group"><label class="form-label">Внешняя ссылка (Discord/Сайт)</label><input type="text" class="form-input" id="cs-social" placeholder="https://..."></div>
+
+                    <div class="setting-row"><div><div class="setting-label">Публичный клан</div><div class="setting-desc">Показывать в списке и топе кланов</div></div><div class="toggle" id="cs-public-toggle" onclick="this.classList.toggle('on')"></div></div>
+                    <div class="setting-row"><div><div class="setting-label">Общий курсор</div><div class="setting-desc">Участники видят курсоры друг друга</div></div><div class="toggle" id="cs-cursor-toggle" onclick="this.classList.toggle('on')"></div></div>
+
+                    <div class="form-group" style="margin-top:14px;"><label class="form-label">Сообщение дня (MOTD)</label><textarea class="form-input" id="cs-motd" rows="3" placeholder="Отображается в профиле клана"></textarea></div>
+
+                    <button class="btn btn-primary" style="margin-top:8px;" onclick="saveClanSettings()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" /><path d="M7 4v5h8V4" /><rect x="7" y="14" width="10" height="6" /></svg> Сохранить настройки</button>
+                </div>
+
+                <div class="section-sep"></div>
+                <button class="btn btn-danger" onclick="leaveClan()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="6" y="2.5" width="11" height="19" rx="0.6" /><circle cx="14.2" cy="12" r="0.9" fill="currentColor" stroke="none" /></svg> Покинуть клан</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="shop-panel" class="overlay-panel panel">
+        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><path d="M2.5 3h2l2.6 12.6a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.5L21 8H6" /></svg> Магазин</div><div class="panel-close" onclick="hidePanel('shop-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-body" id="shop-body">
+            <div style="color:var(--text3);text-align:center;padding:20px;">Войдите в аккаунт</div>
+        </div>
+    </div>
+
+    <div id="admin-panel" class="overlay-panel panel">
+        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z" /></svg> Панель администратора</div><div class="panel-close" onclick="hidePanel('admin-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-body">
+            <div class="admin-tabs">
+                <div class="admin-tab active" onclick="switchAdminTab('users')">Игроки</div>
+                <div class="admin-tab" onclick="switchAdminTab('canvas')">Холст</div>
+                <div class="admin-tab" onclick="switchAdminTab('broadcast')">Сообщение</div>
+                <div class="admin-tab" onclick="switchAdminTab('stats')">Статистика</div>
+            </div>
+
+            <div id="admin-tab-users">
+                <input class="search-box" id="admin-search" placeholder="Поиск..." oninput="filterAdminUsers()">
+                <div id="admin-users-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+                <div class="pagination">
+                    <button class="page-btn" onclick="adminPageNav(-1)">‹ Пред</button>
+                    <span class="page-info" id="admin-page-info">1 / 1</span>
+                    <button class="page-btn" onclick="adminPageNav(1)">След ›</button>
+                </div>
+            </div>
+
+            <div id="admin-tab-canvas" style="display:none">
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
+                <div class="resize-form">
+                    <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
+                    <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
+                </div>
+                <div style="margin-bottom:12px;font-size:11px;color:var(--red);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L2 20h20L12 3z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none" /></svg> Изменение сохранит пиксели в пределах нового размера.</div>
+                <button class="btn btn-primary" onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
+                <div class="section-sep"></div>
+
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg> Задержка пикселей (Кулдаун)</div>
+                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                    <input type="range" class="admin-range" id="admin-cooldown-slider" min="0" max="30000" step="500" value="3000" oninput="updateCooldownLabel(this.value)">
+                    <span id="admin-cooldown-label" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);min-width:50px;">3.0с</span>
+                </div>
+                <button class="btn btn-secondary btn-sm" onclick="adminSetCooldown()" style="margin-bottom:10px;">Применить</button>
+                <div class="section-sep"></div>
+
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → превью → холст)</div>
+                <div id="image-drop-zone" onclick="document.getElementById('admin-image-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
+                    <div style="font-size:28px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
+                    <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите или перетащите изображение</p>
+                    <p style="font-size:10px;color:var(--text3);margin-top:2px">Сначала откроется превью для позиционирования</p>
+                </div>
+                <input type="file" id="admin-image-file" accept="image/*" style="display:none" onchange="handleAdminImage(event)">
+                <img id="image-preview" alt="Preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
+                <button class="btn btn-primary" id="btn-place-image" onclick="startAdminImagePreview()" disabled style="margin-bottom:10px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.7-4.7" /></svg> Открыть превью</button>
+
+                <div class="section-sep"></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" /></svg> Глобальный трафарет (для всех)</div>
+                <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" onclick="document.getElementById('admin-stencil-file').click()">
+                    <div style="font-size:22px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 19h16" /><path d="M5 19L13 5l7 14" /><path d="M9.2 13h7.4" /></svg></div>
+                    <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
+                </div>
+                <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" onchange="handleAdminGlobalStencil(event)">
+                <button class="btn btn-secondary" id="btn-clear-global-stencil" onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
+
+                <div class="section-sep"></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
+                <div class="setting-row" style="padding-top:0">
+                    <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
+                    <div class="toggle" id="admin-toggle-cursors" onclick="adminToggleCursors()"></div>
+                </div>
+                <div class="section-sep"></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
+                <button class="btn btn-danger" onclick="adminClearCanvas()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" /><path d="M10 11v6" /><path d="M14 11v6" /></svg> Очистить весь холст</button>
+            </div>
+
+            <div id="admin-tab-broadcast" style="display:none">
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
+                <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
+                <button class="btn btn-primary" onclick="adminBroadcast()" style="margin-bottom:14px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg> Отправить всем</button>
+                <div class="section-sep"></div>
+                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
+                <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
+                <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
+                <button class="btn btn-secondary" onclick="adminSendDM()">Отправить</button>
+            </div>
+
+            <div id="admin-tab-stats" style="display:none">
+                <div class="admin-stats-grid">
+                    <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
+                    <div class="admin-stat"><div class="admin-stat-val" id="stat-online">—</div><div class="admin-stat-lbl">Онлайн</div></div>
+                    <div class="admin-stat"><div class="admin-stat-val" id="stat-banned">—</div><div class="admin-stat-lbl">Забанено</div></div>
+                </div>
+                <div class="admin-stat" style="margin-bottom:9px;"><div class="admin-stat-val" id="stat-canvas-size">256×256</div><div class="admin-stat-lbl">Размер холста</div></div>
+                <div class="admin-stat"><div class="admin-stat-val" id="stat-total-pixels">—</div><div class="admin-stat-lbl">Пикселей поставлено</div></div>
+                <div class="section-sep"></div>
+                <button class="btn btn-secondary" onclick="loadAdminStats()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg> Обновить</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="admin-image-canvas" style="display:none"></canvas>
+    <canvas id="stencil-tmp-canvas" style="display:none"></canvas>
+    <input type="file" id="stencil-file-input" accept="image/*" style="display:none">
+
+    <script src="js/config.js" defer></script>
+    <script src="js/state.js" defer></script>
+    <script src="js/canvas.js" defer></script>
+    <script src="js/network.js" defer></script>
+    <script src="js/ui.js" defer></script>
+    <script src="js/input.js" defer></script>
+    <script src="js/main.js" defer></script>
 </body>
 </html>

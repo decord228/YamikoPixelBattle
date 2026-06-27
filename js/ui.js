@@ -234,7 +234,7 @@ function spawnPixelFlash(x,y) {
   document.getElementById('game-root').appendChild(el);
   setTimeout(()=>el.remove(),450);
   for (let i=0;i<3;i++){
-    const sp=document.createElement('div');sp.className='sparkle';sp.textContent='✦';
+    const sp=document.createElement('div');sp.className='sparkle';sp.innerHTML='<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l1.3 6.7L20 10l-6.7 1.3L12 18l-1.3-6.7L4 10l6.7-1.3L12 2z" fill="currentColor" stroke="none"/></svg>';
     sp.style.cssText=`left:${screen.x+(Math.random()-0.5)*30}px;top:${screen.y+(Math.random()-0.5)*30}px;color:${PALETTE[selectedColor]?.c||'#fff'};animation-delay:${i*0.08}s;`;
     document.getElementById('game-root').appendChild(sp);
     setTimeout(()=>sp.remove(),600);
@@ -263,12 +263,12 @@ function cancelUseItem() {
 function activateItem(itemId) {
   activeItem = itemId;
   const names = {
-    bomb_3x3: '💣 Бомбочка 3×3 — кликни на холст',
-    rainbow_5x5: '🌈 Радужный взрыв 5×5 — кликни на холст',
-    eraser_10x10: '🧹 Ластик 10×10 — кликни на холст',
-    mirror_stamp: '🪞 Зеркальный штамп — кликни на холст',
+    bomb_3x3: '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="14" r="7"/><path d="M15.5 8.5L18 6"/><path d="M17 4l3 1-1 3"/></svg> Бомбочка 3×3 — кликни на холст',
+    rainbow_5x5: '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18a9 9 0 0 1 18 0"/><path d="M6.5 18a5.5 5.5 0 0 1 11 0"/></svg> Радужный взрыв 5×5 — кликни на холст',
+    eraser_10x10: '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 3l6 6-7.5 7.5"/><path d="M9 17l-5.5 3.5"/><path d="M5.5 14.5L13 7l4 4-7.5 7.5-6-2z"/></svg> Ластик 10×10 — кликни на холст',
+    mirror_stamp: '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><ellipse cx="12" cy="9.5" rx="6" ry="7"/><path d="M9 19h6"/><path d="M12 16.5V19"/></svg> Зеркальный штамп — кликни на холст',
   };
-  document.getElementById('use-item-label').textContent = names[itemId] || 'Кликни на холст';
+  document.getElementById('use-item-label').innerHTML = names[itemId] || 'Кликни на холст';
   document.getElementById('use-item-overlay').classList.add('active');
   hidePanel('shop-panel');
 }
@@ -626,8 +626,8 @@ function renderClanRequests(requests) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:12px;font-weight:600;">${esc(r)}</span>
       <div style="display:flex;gap:5px;">
-        <button class="action-btn ab-unban" onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})">✓ Принять</button>
-        <button class="action-btn ab-ban" onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})">✕ Отказать</button>
+        <button class="action-btn ab-unban" onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Принять</button>
+        <button class="action-btn ab-ban" onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg> Отказать</button>
       </div>
     </div>`).join('');
 }
@@ -655,9 +655,9 @@ function renderClanView(clan){
     const chip=document.createElement('div');
     chip.className='member-chip'+(m===clan.leader?' leader':'');
     if (isLeader && m !== currentUser) {
-      chip.innerHTML = `${m===clan.leader?'👑 ':''}${esc(m)} <button onclick="kickClanMember('${esc(m)}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:10px;margin-left:4px;">✕</button>`;
+      chip.innerHTML = `${m===clan.leader?'<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.6-7.2-3.6 4-2.8-6.4-2.8 6.4-3.6-4L3 18z"/><path d="M5 21h14"/></svg> ':''}${esc(m)} <button onclick="kickClanMember('${esc(m)}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:10px;margin-left:4px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>`;
     } else {
-      chip.textContent=(m===clan.leader?'👑 ':'')+m;
+      chip.innerHTML = `${m===clan.leader?'<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.6-7.2-3.6 4-2.8-6.4-2.8 6.4-3.6-4L3 18z"/><path d="M5 21h14"/></svg> ':''}${esc(m)}`;
     }
     ml.appendChild(chip);
   });
@@ -681,7 +681,7 @@ function renderClanBrowseList(clans){
   c.innerHTML=clans.slice(0,10).map(cl=>`
     <div class="clan-card" style="cursor:pointer" onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}';switchClanSubTab('join')">
       <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag">${esc(cl.tag||'')}</span></div>
-      <div class="clan-meta">👥 ${cl.members} · 🖼 ${(cl.pixels||0).toLocaleString()} пикс.</div>
+      <div class="clan-meta"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg> ${cl.members} · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg> ${(cl.pixels||0).toLocaleString()} пикс.</div>
       ${cl.description?`<div class="clan-meta">${esc(cl.description)}</div>`:''}
     </div>`).join('');
 }
@@ -698,42 +698,42 @@ function buildShopUI(){
     html += `<div class="shop-item">
       <div class="shop-header">
         <div class="shop-item-title">${item.icon} ${item.title}</div>
-        ${owned ? '<span class="shop-owned">✓ Куплено</span>' : `<span class="shop-price">🪙 ${item.cost}</span>`}
+        ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg> ${item.cost}</span>`}
       </div>
       <div class="shop-item-desc">${item.desc}</div>
-      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
-      ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);">🔒 Требуется: ${item.requires}</div>` : ''}
+      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>)</button>` : ''}
+      ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Требуется: ${item.requires}</div>` : ''}
     </div>`;
   });
   html += '</div>';
 
   if (isVip || isAdmin) {
-    html += `<div class="shop-section"><div class="shop-section-title">⭐ VIP Расходники</div>`;
+    html += `<div class="shop-section"><div class="shop-section-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6L12 3z"/></svg> VIP Расходники</div>`;
     SHOP_ITEMS_VIP.forEach(item => {
       const count = getItemCount(item.id);
       html += `<div class="shop-item vip-item">
         <div class="shop-header">
           <div class="shop-item-title">${item.icon} ${item.title}</div>
-          <span class="shop-price">🪙 ${item.cost}</span>
+          <span class="shop-price"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg> ${item.cost}</span>
         </div>
         <div class="shop-item-desc">${item.desc}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-vip btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" onclick="activateItem('${item.id}')">🎯 Использовать (${count})</button>` : ''}
+          <button class="btn btn-vip btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>)</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
         </div>
       </div>`;
     });
     html += '</div>';
   } else {
-    html += `<div class="shop-section"><div class="shop-section-title">⭐ VIP Расходники</div>
+    html += `<div class="shop-section"><div class="shop-section-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6L12 3z"/></svg> VIP Расходники</div>
       <div class="shop-item" style="opacity:.5">
-        <div class="shop-lock">🔒</div><div class="shop-item-title">Расходники для VIP</div>
+        <div class="shop-lock"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><div class="shop-item-title">Расходники для VIP</div>
         <div class="shop-item-desc">Получите VIP-статус чтобы разблокировать взрывчатку, ластики, зеркала и многое другое!</div>
       </div></div>`;
   }
 
   if (isAdmin) {
-    html += `<div class="shop-section"><div class="shop-section-title">🛡️ Админ-читы</div>`;
+    html += `<div class="shop-section"><div class="shop-section-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z"/></svg> Админ-читы</div>`;
     SHOP_ITEMS_ADMIN.forEach(item => {
       html += `<div class="shop-item admin-item">
         <div class="shop-header"><div class="shop-item-title">${item.icon} ${item.title}</div><span style="font-size:10px;color:var(--text3);">БЕСПЛАТНО</span></div>
@@ -751,7 +751,7 @@ function buyItem(itemId) { sendJSON({action:'shop_buy', itemId: itemId}); }
 
 function useAdminShopItem(itemId) {
   if (itemId === 'admin_nuke') {
-    if (!confirm('☢️ Очистить весь холст?')) return;
+    if (!confirm('Очистить весь холст?')) return;
     sendJSON({action:'admin_cmd', cmd:'clear_canvas'});
   } else if (itemId === 'admin_rainbow') {
     sendJSON({action:'admin_cmd', cmd:'rainbow_storm'});
@@ -777,7 +777,7 @@ function renderLeaderboardPlayers(data){
   if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
   c.innerHTML=data.map((u,i)=>`
     <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
-      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       <div style="font-size:16px">${u.emoji||'👾'}</div>
       <div class="lb-name">${esc(u.username)}</div>
       <div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div>
@@ -789,10 +789,10 @@ function renderLeaderboardClans(data){
   if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Кланов пока нет</div>';return;}
   c.innerHTML=data.map((cl,i)=>`
     <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
-      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['🥇','🥈','🥉'][i]:i+1}</div>
+      <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       <span class="clan-tag">${esc(cl.tag||'')}</span>
       <div class="lb-name">${esc(cl.name)}</div>
-      <div style="font-size:11px;color:var(--text3)">👥${cl.members}</div>
+      <div style="font-size:11px;color:var(--text3)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</div>
       <div class="lb-pixels">${(cl.pixels||0).toLocaleString()} px</div>
     </div>`).join('');
 }
@@ -910,7 +910,7 @@ function renderAdminUsers(users){
   c.innerHTML=users.map(u=>`
     <div class="user-card">
       <div class="user-card-top">
-        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px · 🪙${u.coins||0})</span></div>
+        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>${u.coins||0})</span></div>
         <span class="user-badge ${u.role==='admin'?'badge-admin':u.role==='vip'?'badge-vip':'badge-user'}">${(u.role||'user').toUpperCase()}</span>
         ${u.banned?'<span class="user-badge badge-banned">BANNED</span>':''}
       </div>
@@ -920,8 +920,8 @@ function renderAdminUsers(users){
         <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',300)">5м</button>
         <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
         <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
-        <button class="action-btn ab-msg" onclick="prefillDM('${esc(u.username)}')">✉</button>
-        <button class="action-btn ab-role" onclick="promptGiveCoins('${esc(u.username)}')">🪙+</button>
+        <button class="action-btn ab-msg" onclick="prefillDM('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></button>
+        <button class="action-btn ab-role" onclick="promptGiveCoins('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.2"/></svg>+</button>
       </div>
     </div>`).join('');
 }

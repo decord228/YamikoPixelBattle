@@ -93,6 +93,9 @@ function handleJSON(d) {
     renderAdminUsers(allAdminUsers);
     document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
   }
+  else if (a==='admin_clans_list') {
+    if (typeof renderAdminClans === 'function') renderAdminClans(d.clans||[]);
+  }
   else if (a==='resize') {
     resizeCanvas(d.w,d.h||canvasH);
     sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});

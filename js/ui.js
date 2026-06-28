@@ -672,11 +672,22 @@ function saveClanSettings() {
     settings: { icon, tag_color, join_type, min_pixels, is_public, share_cursor, message_of_day }
   });
 
-  // Update MOTD display immediately
+  // Update display immediately (optimistic)
+  const dispTag = document.getElementById('clan-disp-tag');
+  if (dispTag) {
+    const rawTag = dispTag.dataset.tag || dispTag.textContent.replace(/^\S+\s+/, '');
+    dispTag.textContent = icon + ' ' + rawTag;
+    dispTag.style.color = tag_color;
+    dispTag.style.background = tag_color + '22';
+    dispTag.style.borderColor = tag_color + '55';
+  }
+  const iconPreview = document.getElementById('cs-icon-preview');
+  if (iconPreview) iconPreview.textContent = icon;
   if (message_of_day) {
     const motdEl = document.getElementById('clan-motd-text');
     if (motdEl) motdEl.textContent = message_of_day;
   }
+  showToast('\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u043a\u043b\u0430\u043d\u0430 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b \u2713', 'success');
 }
 
 function renderClanRequests(requests) {
@@ -700,7 +711,12 @@ function renderClanView(clan){
   document.getElementById('clan-view-no-clan').style.display='none';
   document.getElementById('clan-view-in-clan').style.display='';
   document.getElementById('clan-disp-name').textContent=clan.name||'';
-  document.getElementById('clan-disp-tag').textContent=clan.tag||'';
+  const dispTag = document.getElementById('clan-disp-tag');
+  dispTag.textContent = (clan.icon ? clan.icon + ' ' : '') + (clan.tag||'');
+  const tc = clan.tag_color || '#818cf8';
+  dispTag.style.color = tc;
+  dispTag.style.background = tc + '22';
+  dispTag.style.borderColor = tc + '55';
   document.getElementById('clan-disp-desc').textContent=clan.description||'';
   document.getElementById('clan-disp-leader').textContent=clan.leader||'';
   document.getElementById('clan-disp-members').textContent=(clan.members||[]).length;
@@ -786,7 +802,7 @@ function renderClanBrowseList(clans){
   if (!clans.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:10px;">Кланов пока нет</div>';return;}
   c.innerHTML=clans.slice(0,10).map(cl=>`
     <div class="clan-card" style="cursor:pointer" onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}';switchClanSubTab('join')">
-      <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag">${esc(cl.tag||'')}</span></div>
+      <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+ '22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+ esc(cl.tag||'')}</span></div>
       <div class="clan-meta"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg> ${cl.members} · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg> ${(cl.pixels||0).toLocaleString()} пикс.</div>
       ${cl.description?`<div class="clan-meta">${esc(cl.description)}</div>`:''}
     </div>`).join('');
@@ -896,7 +912,7 @@ function renderLeaderboardClans(data){
   c.innerHTML=data.map((cl,i)=>`
     <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
-      <span class="clan-tag">${esc(cl.tag||'')}</span>
+      <span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+'22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+esc(cl.tag||'')}</span>
       <div class="lb-name">${esc(cl.name)}</div>
       <div style="font-size:11px;color:var(--text3)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</div>
       <div class="lb-pixels">${(cl.pixels||0).toLocaleString()} px</div>
@@ -1162,9 +1178,10 @@ function playClick(){
 }
 
 function switchAdminTab(tab){
-  ['users','canvas','broadcast','stats'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
-  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats'][i]===tab); });
+  ['users','canvas','broadcast','stats','clans'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats','clans'][i]===tab); });
   if (tab==='stats') loadAdminStats();
+  if (tab==='clans') loadAdminClans();
 }
 function showPanel(id){
   hideAllPanels();
@@ -1205,3 +1222,67 @@ function updateInspector(mx,my,px,py){
 }
 
 document.getElementById('backdrop').onclick=()=>{ if(document.getElementById('auth-panel').classList.contains('show'))return; hideAllPanels(); };
+
+// ── ADMIN CLAN MANAGEMENT ──
+let adminClansData = [];
+
+function loadAdminClans() {
+  sendJSON({action:'admin_cmd', cmd:'get_clans'});
+}
+
+function renderAdminClans(clans) {
+  adminClansData = clans || [];
+  const c = document.getElementById('admin-clans-list');
+  if (!c) return;
+  if (!adminClansData.length) {
+    c.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;">\u041a\u043b\u0430\u043d\u043e\u0432 \u043d\u0435\u0442</div>';
+    return;
+  }
+  c.innerHTML = adminClansData.map(cl => {
+    const tc = cl.tag_color || '#818cf8';
+    return `<div class="user-card">
+      <div class="user-card-top">
+        <div class="user-card-name">
+          <span style="font-size:16px">${esc(cl.icon||'\u{1F3F4}')}</span>
+          ${esc(cl.name)}
+          <span class="clan-tag" style="color:${tc};background:${tc}22;border-color:${tc}55">${esc(cl.tag||'')}</span>
+        </div>
+        <span style="font-size:11px;color:var(--text3);">${(cl.pixels||0).toLocaleString()}\u00a0px</span>
+      </div>
+      <div style="font-size:11px;color:var(--text3);margin:4px 0 6px;">
+        \u041b\u0438\u0434\u0435\u0440: <b style="color:var(--text2)">${esc(cl.leader||'?')}</b> &middot;
+        \u0423\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u043e\u0432: <b style="color:var(--text2)">${(cl.members||[]).length}</b>
+        ${cl.description ? '&middot; ' + esc(cl.description.slice(0,50)) : ''}
+      </div>
+      <div class="user-actions">
+        <button class="action-btn ab-ban" onclick="adminDeleteClan('${esc(cl.name)}')">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+          \u0423\u0434\u0430\u043b\u0438\u0442\u044c
+        </button>
+        <button class="action-btn ab-msg" onclick="adminBroadcastToClan('${esc(cl.name)}')">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg>
+          \u0421\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function adminDeleteClan(name) {
+  if (!confirm('\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u043a\u043b\u0430\u043d \u00ab' + name + '\u00bb? \u0412\u0441\u0435 \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0438 \u0431\u0443\u0434\u0443\u0442 \u0438\u0441\u043a\u043b\u044e\u0447\u0435\u043d\u044b.')) return;
+  sendJSON({action:'admin_cmd', cmd:'delete_clan', params:{name}});
+  setTimeout(() => loadAdminClans(), 400);
+}
+
+function adminBroadcastToClan(name) {
+  const msg = prompt('\u0421\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0434\u043b\u044f \u043a\u043b\u0430\u043d\u0430 \u00ab' + name + '\u00bb:');
+  if (!msg) return;
+  sendJSON({action:'admin_cmd', cmd:'clan_broadcast', params:{name, message: msg}});
+  showToast('\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e', 'success');
+}
+
+function filterAdminClans() {
+  const q = document.getElementById('admin-clans-search').value.toLowerCase();
+  const filtered = q ? adminClansData.filter(cl => cl.name.toLowerCase().includes(q) || (cl.tag||'').toLowerCase().includes(q)) : adminClansData;
+  renderAdminClans(filtered);
+}

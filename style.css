@@ -541,18 +541,33 @@ html, body {
 /* ── SIDEBAR ── */
 #sidebar {
     position: absolute;
-    top: 50%;
+    /* Сверху: под profile-hud (~76px высота) + 14px отступ = 90px */
+    top: 90px;
+    /* Снизу: над chat-btn (bottom:14px, height:48px) + 14px отступ = 76px */
+    bottom: 76px;
     left: 14px;
-    transform: translateY(-50%);
     display: flex;
     flex-direction: column;
     gap: 7px;
     align-items: center;
+    justify-content: center;
+    /* Скролл когда кнопки не влезают */
+    overflow-y: auto;
+    overflow-x: visible;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    padding: 4px 0;
 }
+
+    #sidebar::-webkit-scrollbar {
+        display: none;
+    }
 
 .sidebar-btn {
     width: 44px;
     height: 44px;
+    min-height: 44px;
+    flex-shrink: 0;
     border-radius: 13px;
     display: flex;
     align-items: center;
@@ -621,6 +636,7 @@ html, body {
 .sidebar-divider {
     width: 20px;
     height: 1px;
+    flex-shrink: 0;
     background: var(--border2);
     margin: 3px 0;
 }

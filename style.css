@@ -2442,6 +2442,21 @@ html, body {
             display: none;
         }
 
+    /* sidebar-inner на мобиле — прозрачный враппер, повторяет горизонтальный flex родителя */
+    #sidebar-inner {
+        flex-direction: row;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overflow-x: clip;
+        max-height: none;
+        width: 100%;
+        padding: 0;
+        gap: 6px;
+        align-items: center;
+        justify-content: flex-start;
+    }
+
     .sidebar-btn {
         width: 40px;
         height: 40px;

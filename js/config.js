@@ -38,4 +38,9 @@ const SHOP_ITEMS_ADMIN = [
   {id:'admin_rainbow',title:'🌈 Радужный шторм',desc:'Заливает весь холст случайными цветами.',icon:'🌈',cost:0,type:'admin_tool'},
 ];
 
-const WS_URL = 'wss://yamikopixelbattleserver.onrender.com';
+const DISCORD_CLIENT_ID = '1520836216818503762';
+const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');
+
+const WS_URL = IS_DISCORD_ACTIVITY
+  ? `wss://${window.location.host}/api-ws`
+  : 'wss://yamikopixelbattleserver.onrender.com';

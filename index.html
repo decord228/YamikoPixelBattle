@@ -506,6 +506,12 @@
     <canvas id="stencil-tmp-canvas" style="display:none"></canvas>
     <input type="file" id="stencil-file-input" accept="image/*" style="display:none">
 
+    <!-- Discord Embedded App SDK (загружается только в Activity, на обычном сайте не мешает) -->
+    <script type="module">
+        import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk/+esm';
+        window.DiscordSDK = DiscordSDK;
+    </script>
+
     <script src="js/config.js" defer></script>
     <script src="js/state.js" defer></script>
     <script src="js/canvas.js" defer></script>

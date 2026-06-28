@@ -1279,7 +1279,7 @@ function renderAdminClans(clans) {
         <div class="user-card-name">
           <span style="font-size:16px">${esc(cl.icon||'\u{1F3F4}')}</span>
           ${esc(cl.name)}
-          <span class="clan-tag" style="color:${tc};background:${tc}22;border-color:${tc}55">${esc(cl.tag||'')}</span>
+          <span class="clan-tag" style="color:${tc};background:${tc}22;border-color:${tc}55">${(cl.icon?cl.icon+' ':'')+esc(cl.tag||'')}</span>
         </div>
         <span style="font-size:11px;color:var(--text3);">${(cl.pixels||0).toLocaleString()}\u00a0px</span>
       </div>

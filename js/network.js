@@ -4,7 +4,7 @@
 function connect() {
   if (ws&&ws.readyState===WebSocket.OPEN) ws.close();
   updateConnStatus(false);
-  ws = new WebSocket(WS_URL);
+  ws = new WebSocket(typeof getWsUrl === 'function' ? getWsUrl() : WS_URL);
   ws.binaryType = 'arraybuffer';
 
   ws.onopen = () => {

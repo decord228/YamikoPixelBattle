@@ -615,14 +615,11 @@ html, body {
 /* ── PALETTE PANEL — bottom right ── */
 #palette-panel {
     position: absolute;
-    bottom: 0;
-    right: 0;
-    width: 248px;
+    bottom: 14px;
+    right: 14px;
+    width: 260px;
     padding: 14px;
-    border-radius: var(--radius) 0 0 0;
-    border-right: none;
-    border-bottom: none;
-    border-bottom-right-radius: 0;
+    border-radius: var(--radius);
 }
 
 #color-name-bar {
@@ -638,7 +635,7 @@ html, body {
 
 #color-grid {
     display: grid;
-    grid-template-columns: repeat(8,1fr);
+    grid-template-columns: repeat(6,1fr);
     gap: 4px;
     margin-bottom: 12px;
 }
@@ -2271,9 +2268,9 @@ html, body {
     }
 
     #palette-panel {
-        right: 0;
-        bottom: 0;
-        border-radius: var(--radius) 0 0 0;
+        right: 10px;
+        bottom: 10px;
+        border-radius: var(--radius);
         width: calc(100vw - 24px);
         max-width: 280px;
     }

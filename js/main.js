@@ -38,16 +38,13 @@ async function initDiscordActivity() {
 
   try {
     // Авторизуем пользователя через Discord OAuth2
-    // client_id обязателен для Discord Activity SDK v2
-    // redirect_uri для Discord Activity — всегда домен вида <APP_ID>.discordsays.com
-    const redirectUri = `https://${DISCORD_CLIENT_ID}.discordsays.com`;
-
+    // ВАЖНО: redirect_uri нельзя передавать в authorize() — это запрещено
+    // Discord Activity SDK (ошибка 5000). Сервер сам знает нужный URI.
     const authorizeResult = await sdk.commands.authorize({
       client_id:     DISCORD_CLIENT_ID,
       response_type: 'code',
       prompt:        'none',
       scope:         ['identify'],
-      redirect_uri:  redirectUri,
     });
 
     console.log('[Discord] authorize result:', JSON.stringify(authorizeResult));
@@ -57,12 +54,13 @@ async function initDiscordActivity() {
       throw new Error('authorize() не вернул code: ' + JSON.stringify(authorizeResult));
     }
 
-    // Меняем code на access_token через наш бэкенд
+    // Меняем code на access_token через наш бэкенд.
+    // redirect_uri не передаём — сервер сам подставит правильный из env.
     // /api проксируется Discord'ом, поэтому fetch работает внутри Activity
     const tokenRes = await fetch('/api/discord-token', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ code, redirect_uri: redirectUri }),
+      body:    JSON.stringify({ code }),
     });
 
     if (!tokenRes.ok) {

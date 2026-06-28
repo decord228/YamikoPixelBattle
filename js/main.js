@@ -29,12 +29,13 @@ async function initDiscordActivity() {
     const sdk = new window.DiscordSDK(DISCORD_CLIENT_ID);
     await sdk.ready();
 
-    await sdk.patchUrlMappings([
-      { prefix: '/api-ws', target: 'yamikopixelbattleserver.onrender.com' },
-      { prefix: '/api',    target: 'yamikopixelbattleserver.onrender.com' },
-    ]);
-
-    // ← ДОБАВЬ ЭТИ ДВЕ СТРОКИ
+    // sdk.patchUrlMappings НЕ существует как метод инстанса SDK — этот вызов
+    // всегда бросал TypeError и обрывал авторизацию (catch ниже откатывался
+    // на обычный connect() без discord_token, поэтому игра просила
+    // залогиниться вручную). Проксирование уже работает через getWsUrl()
+    // (location.host) и относительный fetch('/api/discord-token') — для этого
+    // в Developer Portal → Activities → URL Mappings должны быть прописаны
+    // ОБА префикса: "/api-ws" и "/api" (см. чек-лист).
     console.log('Discord WS URL будет:', getWsUrl());
     console.log('hostname:', window.location.host);
 
@@ -69,6 +70,9 @@ async function initDiscordActivity() {
 
   } catch (e) {
     console.error('Discord Activity init failed:', e);
+    if (typeof showToast === 'function') {
+      showToast('Не удалось войти через Discord, нужно авторизоваться вручную', 'error');
+    }
     connect();
   }
 }

@@ -541,17 +541,16 @@ html, body {
 /* ── SIDEBAR ── */
 #sidebar {
     position: absolute;
-    /* Сверху: под profile-hud (~76px высота) + 14px отступ = 90px */
-    top: 90px;
-    /* Снизу: над chat-btn (bottom:14px, height:48px) + 14px отступ = 76px */
-    bottom: 76px;
+    /* Сверху: profile-hud top(14) + высота hud с кнопками(~130) + зазор(10) */
+    top: 154px;
+    /* Снизу: chat-btn height(48) + bottom(14) + зазор(10) */
+    bottom: 72px;
     left: 14px;
     display: flex;
     flex-direction: column;
     gap: 7px;
     align-items: center;
-    justify-content: center;
-    /* Скролл когда кнопки не влезают */
+    justify-content: flex-start;
     overflow-y: auto;
     overflow-x: visible;
     scrollbar-width: none;
@@ -561,6 +560,15 @@ html, body {
 
     #sidebar::-webkit-scrollbar {
         display: none;
+    }
+
+    /* Спейсер перед кнопками — центрирует содержимое когда влезает,
+   схлопывается при переполнении */
+    #sidebar::before,
+    #sidebar::after {
+        content: '';
+        flex: 1 0 0;
+        min-height: 0;
     }
 
 .sidebar-btn {
@@ -2329,68 +2337,170 @@ html, body {
 
 /* ── MOBILE ── */
 @media(max-width:640px) {
+    /* Верхняя панель — компактнее */
     #top-bar {
-        padding: 7px 12px;
-        gap: 8px;
-        top: 10px;
+        padding: 6px 10px;
+        gap: 6px;
+        top: 8px;
+        left: 50%;
+        transform: translateX(-50%);
+        white-space: nowrap;
     }
 
     #logo {
-        font-size: 11px;
+        font-size: 10px;
     }
 
     #made-by, #coords-badge, .top-divider:last-of-type {
         display: none;
     }
 
+    /* Profile HUD — компактный, только аватар + имя + монеты */
+    #profile-hud {
+        top: 8px;
+        left: 8px;
+        min-width: 0;
+        padding: 8px 12px;
+        gap: 10px;
+        border-radius: 14px;
+    }
+
+    #phud-avatar {
+        width: 36px;
+        height: 36px;
+    }
+
+    .phud-info {
+        gap: 2px;
+    }
+
+    .phud-name {
+        font-size: 11px;
+    }
+
+    .phud-role {
+        font-size: 9px;
+    }
+
+    .phud-coins {
+        font-size: 10px;
+    }
+
+    .phud-btn {
+        padding: 5px 10px;
+        font-size: 9px;
+        border-radius: 8px;
+        gap: 4px;
+    }
+
+    /* ── SIDEBAR — горизонтальный скроллируемый тулбар снизу ── */
     #sidebar {
-        bottom: 76px;
+        /* Сброс desktop-стилей */
+        position: fixed;
         top: auto;
+        bottom: 0;
         left: 0;
         right: 0;
         transform: none;
+        overflow-y: visible;
+        justify-content: flex-start;
+        padding: 0;
+        /* Горизонтальная полоса */
         flex-direction: row;
-        justify-content: center;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
         gap: 6px;
-        background: rgba(15,15,17,.88);
+        padding: 8px 10px;
+        padding-bottom: calc(8px + env(safe-area-inset-bottom));
+        background: rgba(15,15,17,0.95);
         backdrop-filter: blur(20px);
         border-top: 1px solid var(--border2);
-        padding: 8px;
         border-radius: 0;
-        z-index: 20;
+        z-index: 50;
+        align-items: center;
     }
 
-    .sidebar-btn .tip {
-        display: none;
+        #sidebar::-webkit-scrollbar {
+            display: none;
+        }
+
+    .sidebar-btn {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        min-height: 40px;
+        flex-shrink: 0;
+        border-radius: 11px;
+        font-size: 15px;
     }
+
+        .sidebar-btn .tip {
+            display: none;
+        }
 
     .sidebar-divider {
-        display: none;
+        width: 1px;
+        height: 24px;
+        flex-shrink: 0;
+        margin: 0 2px;
     }
 
+    /* Chat btn — над тулбаром слева */
+    #chat-btn {
+        position: fixed;
+        bottom: calc(64px + env(safe-area-inset-bottom));
+        left: 10px;
+        width: 42px;
+        height: 42px;
+        z-index: 51;
+    }
+
+    /* Палитра — снизу справа, над тулбаром */
     #palette-panel {
-        right: 10px;
-        bottom: 10px;
-        border-radius: var(--radius);
-        width: calc(100vw - 24px);
+        position: fixed;
+        right: 8px;
+        bottom: calc(64px + env(safe-area-inset-bottom));
+        left: auto;
+        width: calc(100vw - 70px);
         max-width: 280px;
+        max-height: calc(100vh - 160px);
+        overflow-y: auto;
+        border-radius: var(--radius);
+        padding: 10px;
     }
 
+    #color-grid {
+        grid-template-columns: repeat(8, 1fr);
+        gap: 3px;
+        margin-bottom: 8px;
+    }
+
+    #color-name-bar {
+        margin-bottom: 6px;
+        font-size: 10px;
+    }
+
+    #place-btn-wrap {
+        height: 36px;
+    }
+
+    #place-btn {
+        font-size: 10px;
+        letter-spacing: 1px;
+    }
+
+    /* Панели — на весь экран */
     .overlay-panel {
         width: calc(100vw - 16px);
         max-height: calc(100vh - 80px);
+        left: 8px !important;
+        right: 8px !important;
     }
 
-    #admin-panel {
-        width: calc(100vw - 16px);
-    }
-
-    #clan-panel {
-        width: calc(100vw - 16px);
-    }
-
-    #shop-panel {
+    #admin-panel, #clan-panel, #shop-panel {
         width: calc(100vw - 16px);
     }
 
@@ -2406,26 +2516,19 @@ html, body {
 
     #leaderboard-panel {
         top: auto;
-        bottom: 140px;
+        bottom: calc(130px + env(safe-area-inset-bottom));
         right: 8px;
         width: calc(100vw - 80px);
         max-height: 50vh;
     }
 
-    #profile-hud {
-        top: 10px;
-        left: 10px;
-        min-width: 180px;
-    }
-
-    #chat-btn {
-        bottom: 140px;
-        left: 10px;
-    }
-
+    /* Чат — над тулбаром */
     #chat-panel {
+        position: fixed;
         left: 4px;
-        bottom: 140px;
-        width: calc(100vw - 8px);
+        right: 4px;
+        bottom: calc(64px + env(safe-area-inset-bottom));
+        width: auto;
+        max-height: 55vh;
     }
 }

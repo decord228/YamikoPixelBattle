@@ -25,58 +25,87 @@ async function init() {
 }
 
 async function initDiscordActivity() {
+  let sdk;
   try {
-    const sdk = new window.DiscordSDK(DISCORD_CLIENT_ID);
+    sdk = new window.DiscordSDK(DISCORD_CLIENT_ID);
     await sdk.ready();
+    console.log('[Discord] SDK ready, instanceId:', sdk.instanceId);
+  } catch (e) {
+    console.error('[Discord] SDK init/ready failed:', JSON.stringify(e), e);
+    connect();
+    return;
+  }
 
-    // sdk.patchUrlMappings НЕ существует как метод инстанса SDK — этот вызов
-    // всегда бросал TypeError и обрывал авторизацию (catch ниже откатывался
-    // на обычный connect() без discord_token, поэтому игра просила
-    // залогиниться вручную). Проксирование уже работает через getWsUrl()
-    // (location.host) и относительный fetch('/api/discord-token') — для этого
-    // в Developer Portal → Activities → URL Mappings должны быть прописаны
-    // ОБА префикса: "/api-ws" и "/api" (см. чек-лист).
-    console.log('Discord WS URL будет:', getWsUrl());
-    console.log('hostname:', window.location.host);
-
-    const { code } = await sdk.commands.authorize({
+  try {
+    // Авторизуем пользователя через Discord OAuth2
+    // client_id обязателен для Discord Activity SDK v2
+    const authorizeResult = await sdk.commands.authorize({
+      client_id:     DISCORD_CLIENT_ID,
       response_type: 'code',
-      prompt: 'none',
-      scope: ['identify'],
+      prompt:        'none',
+      scope:         ['identify'],
     });
 
-    // Меняем code на access_token (теперь /api проксируется через Discord)
+    console.log('[Discord] authorize result:', JSON.stringify(authorizeResult));
+    const code = authorizeResult?.code;
+
+    if (!code) {
+      throw new Error('authorize() не вернул code: ' + JSON.stringify(authorizeResult));
+    }
+
+    // Меняем code на access_token через наш бэкенд
+    // /api проксируется Discord'ом, поэтому fetch работает внутри Activity
     const tokenRes = await fetch('/api/discord-token', {
-      method: 'POST',
+      method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code }),
+      body:    JSON.stringify({ code }),
     });
-    const { access_token } = await tokenRes.json();
 
-    // Скрываем форму логина
+    if (!tokenRes.ok) {
+      const errText = await tokenRes.text();
+      throw new Error(`/api/discord-token вернул ${tokenRes.status}: ${errText}`);
+    }
+
+    const tokenData = await tokenRes.json();
+    const access_token = tokenData?.access_token;
+
+    if (!access_token) {
+      throw new Error('Сервер не вернул access_token: ' + JSON.stringify(tokenData));
+    }
+
+    console.log('[Discord] Got access_token, connecting...');
+
+    // Скрываем форму логина ДО подключения WS
     document.getElementById('auth-panel').style.display = 'none';
     document.getElementById('backdrop').classList.remove('show');
 
-    // Подключаем WebSocket — теперь WS_URL ведёт на /api-ws через прокси
+    // Подключаем WebSocket (url через getWsUrl() → /api-ws проксируется Discord)
     connect();
 
-    // Ждём открытия WS и авторизуемся через Discord токен
+    // Ждём открытия WS и авторизуемся Discord-токеном
+    let wsWaitAttempts = 0;
     const waitForWS = setInterval(() => {
+      wsWaitAttempts++;
       if (ws && ws.readyState === WebSocket.OPEN) {
         clearInterval(waitForWS);
+        console.log('[Discord] WS open, sending discord auth');
         sendJSON({ action: 'auth', discord_token: access_token });
+      } else if (wsWaitAttempts > 100) {
+        // 10 секунд без WS — что-то пошло не так
+        clearInterval(waitForWS);
+        console.error('[Discord] WS не открылся за 10 сек');
+        showToast('Не удалось подключиться к серверу', 'error');
       }
     }, 100);
 
   } catch (e) {
-    console.error('Discord Activity init failed:', e);
-    if (typeof showToast === 'function') {
-      showToast('Не удалось войти через Discord, нужно авторизоваться вручную', 'error');
-    }
+    // Детально логируем ошибку — Discord SDK бросает объекты, а не Error
+    console.error('[Discord] Activity auth failed:', JSON.stringify(e), e);
+    // НЕ показываем тост — просто продолжаем в обычном режиме
+    // Форма входа уже видна пользователю
     connect();
   }
 }
-
 document.getElementById('auth-password').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth(false);});
 document.getElementById('reg-password').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth(true);});
 

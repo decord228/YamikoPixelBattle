@@ -421,6 +421,49 @@ function cancelStencil(){
   renderOverlay();
 }
 
+function promptSaveStencil() {
+  if (!stencilImg) { showToast('Сначала загрузите трафарет', 'error'); return; }
+  const name = prompt('Название шаблона (макс. 30 символов):');
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim().slice(0, 30);
+  if (!personalStencilUrl) {
+    showToast('Трафарет ещё загружается в облако, попробуйте снова через секунду', 'error');
+    return;
+  }
+  sendJSON({ action: 'save_stencil_preset', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity, name: trimmed } });
+}
+
+function renderSavedStencils() {
+  const c = document.getElementById('saved-stencils-list');
+  if (!c) return;
+  if (!savedStencils || !savedStencils.length) {
+    c.innerHTML = '<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px 0;">Сохранённых шаблонов нет</div>';
+    return;
+  }
+  c.innerHTML = savedStencils.map((s, i) => `
+    <div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name||'Шаблон '+(i+1))}</div>
+        <div style="font-size:10px;color:var(--text3);">${s.rect?s.rect.w+'×'+s.rect.h+' пикс.':''}</div>
+      </div>
+      <button class="btn btn-secondary btn-sm" style="padding:2px 7px;font-size:10px;" data-onclick="loadSavedStencil(${i})">Загр.</button>
+      <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;" data-onclick="deleteSavedStencil(${i})">✕</button>
+    </div>`).join('');
+}
+
+function loadSavedStencil(i) {
+  const s = savedStencils[i];
+  if (!s || !s.img) { showToast('Шаблон повреждён', 'error'); return; }
+  applySharedStencil(s);
+}
+
+function deleteSavedStencil(i) {
+  const s = savedStencils[i];
+  if (!s) return;
+  if (!confirm(`Удалить шаблон «${s.name||'Шаблон '+(i+1)}»?`)) return;
+  sendJSON({ action: 'delete_stencil_preset', index: i });
+}
+
 async function shareStencilToClan(){
   if (!currentClan){showToast('Вы не в клане','error');return;}
   if (!stencilImg) {showToast('Сначала загрузите трафарет','error');return;}
@@ -444,6 +487,41 @@ async function shareStencilToClan(){
       showToast('Трафарет отправлен соклановцам!', 'success');
     } else { showToast('Ошибка загрузки', 'error'); }
   } catch (e) { showToast('Ошибка сети', 'error'); }
+}
+
+// ── CLAN STENCILS LIST ──
+let clanSharedStencils = []; // [{username, emoji, stencil}]
+
+function requestClanStencils() {
+  if (!currentClan) return;
+  sendJSON({ action: 'clan_get_stencils' });
+}
+
+function renderClanStencilsList() {
+  const c = document.getElementById('clan-stencils-list');
+  if (!c) return;
+  if (!clanSharedStencils.length) {
+    c.innerHTML = '<div style="color:var(--text3);font-size:10px;text-align:center;padding:6px 0;">Никто не поделился трафаретом</div>';
+    return;
+  }
+  c.innerHTML = clanSharedStencils.map((entry, i) => `
+    <div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:.15s;"
+         data-onclick="loadClanMemberStencil(${i})"
+         onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
+      <span style="font-size:15px;">${esc(entry.emoji||'👾')}</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(entry.username)}</div>
+        <div style="font-size:10px;color:var(--text3);">${entry.stencil&&entry.stencil.rect?entry.stencil.rect.w+'×'+entry.stencil.rect.h+' пикс.':''}</div>
+      </div>
+      <span style="font-size:10px;color:var(--accent);font-weight:600;">ВЗЯТЬ</span>
+    </div>`).join('');
+}
+
+function loadClanMemberStencil(i) {
+  const entry = clanSharedStencils[i];
+  if (!entry || !entry.stencil || !entry.stencil.img) { showToast('Трафарет недоступен', 'error'); return; }
+  applySharedStencil(entry.stencil);
+  showToast(`Загружен трафарет от ${entry.username}`, 'success');
 }
 
 function applySharedStencil(data){

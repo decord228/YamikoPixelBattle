@@ -136,6 +136,12 @@ function handleJSON(d) {
   }
   else if (a==='clan_stencil_update') {
     if (d.stencil) applySharedStencil(d.stencil);
+    // Refresh the clan stencils list since someone shared
+    if (currentClan) sendJSON({ action: 'clan_get_stencils' });
+  }
+  else if (a==='clan_stencils_list') {
+    clanSharedStencils = d.stencils || [];
+    if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
   }
   else if (a==='clan_chat_message') {
     if (d.msg) addClanChatMessage(d.msg.username, d.msg.text, d.msg.emoji);

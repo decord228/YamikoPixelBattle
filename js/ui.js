@@ -616,6 +616,64 @@ function saveClanMotdFromSettings() {
   showToast('Сообщение дня обновлено','success');
 }
 
+function buildClanIconPicker(current) {
+  const grid = document.getElementById('cs-icon-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  EMOJI_AVATARS.forEach(em => {
+    const d = document.createElement('div');
+    d.className = 'av-opt' + (em === current ? ' selected' : '');
+    d.textContent = em;
+    d.onclick = () => {
+      document.getElementById('cs-icon').value = em;
+      document.getElementById('cs-icon-preview').textContent = em;
+      grid.querySelectorAll('.av-opt').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    grid.appendChild(d);
+  });
+}
+
+function buildClanColorPicker(current) {
+  const grid = document.getElementById('cs-tag-color-grid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  PALETTE.forEach(p => {
+    const d = document.createElement('div');
+    d.className = 'color-cell' + (p.c === current ? ' selected' : '');
+    d.style.background = p.c;
+    d.title = p.n;
+    d.onclick = () => {
+      document.getElementById('cs-tag-color').value = p.c;
+      document.getElementById('cs-tag-color-preview').style.background = p.c;
+      grid.querySelectorAll('.color-cell').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    grid.appendChild(d);
+  });
+}
+
+function saveClanSettings() {
+  const icon       = document.getElementById('cs-icon').value || '🏴';
+  const tag_color  = document.getElementById('cs-tag-color').value || '#818cf8';
+  const join_type  = document.getElementById('cs-join-type').value || 'open';
+  const min_pixels = parseInt(document.getElementById('cs-min-pixels').value) || 0;
+  const is_public  = document.getElementById('cs-public-toggle').classList.contains('on');
+  const share_cursor = document.getElementById('cs-cursor-toggle').classList.contains('on');
+  const message_of_day = (document.getElementById('cs-motd').value || '').trim().slice(0, 200);
+
+  sendJSON({
+    action: 'clan_update_settings',
+    settings: { icon, tag_color, join_type, min_pixels, is_public, share_cursor, message_of_day }
+  });
+
+  // Update MOTD display immediately
+  if (message_of_day) {
+    const motdEl = document.getElementById('clan-motd-text');
+    if (motdEl) motdEl.textContent = message_of_day;
+  }
+}
+
 function renderClanRequests(requests) {
   const c = document.getElementById('clan-requests-list');
   if (!requests.length) {
@@ -641,7 +699,7 @@ function renderClanView(clan){
   document.getElementById('clan-disp-desc').textContent=clan.description||'';
   document.getElementById('clan-disp-leader').textContent=clan.leader||'';
   document.getElementById('clan-disp-members').textContent=(clan.members||[]).length;
-  if (clan.motd) document.getElementById('clan-motd-text').textContent = clan.motd;
+  if (clan.motd||clan.message_of_day) document.getElementById('clan-motd-text').textContent = clan.motd||clan.message_of_day;
   
   const isLeader=currentUser===clan.leader;
   const settingsTab = document.getElementById('clan-settings-tab');
@@ -649,6 +707,41 @@ function renderClanView(clan){
   
   const tog=document.getElementById('clan-cursor-toggle');
   if (tog){clanShareCursor=!!clan.share_cursor;tog.classList.toggle('on',clanShareCursor);}
+
+  // Populate settings form for leader
+  if (isLeader) {
+    const icon = clan.icon || '🏴';
+    const tagColor = clan.tag_color || '#818cf8';
+    const minPx = clan.min_pixels || 0;
+
+    const iconInput = document.getElementById('cs-icon');
+    if (iconInput) iconInput.value = icon;
+    const iconPreview = document.getElementById('cs-icon-preview');
+    if (iconPreview) iconPreview.textContent = icon;
+    buildClanIconPicker(icon);
+
+    const colorInput = document.getElementById('cs-tag-color');
+    if (colorInput) colorInput.value = tagColor;
+    const colorPreview = document.getElementById('cs-tag-color-preview');
+    if (colorPreview) colorPreview.style.background = tagColor;
+    buildClanColorPicker(tagColor);
+
+    const joinSel = document.getElementById('cs-join-type');
+    if (joinSel) joinSel.value = clan.join_type || 'open';
+
+    const minSlider = document.getElementById('cs-min-pixels');
+    if (minSlider) { minSlider.value = minPx; }
+    const minLabel = document.getElementById('cs-min-pixels-label');
+    if (minLabel) minLabel.textContent = minPx === 0 ? 'без ограничений' : minPx + ' пикс.';
+
+    const pubTog = document.getElementById('cs-public-toggle');
+    if (pubTog) pubTog.classList.toggle('on', clan.is_public !== false);
+    const curTog = document.getElementById('cs-cursor-toggle');
+    if (curTog) curTog.classList.toggle('on', !!clan.share_cursor);
+
+    const motdInput = document.getElementById('cs-motd');
+    if (motdInput) motdInput.value = clan.message_of_day || clan.motd || '';
+  }
   
   const ml=document.getElementById('clan-member-list'); ml.innerHTML='';
   (clan.members||[]).forEach(m=>{

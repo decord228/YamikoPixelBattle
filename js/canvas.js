@@ -354,6 +354,23 @@ function smoothTick() {
   updateAllCursorFlags();
 }
 
+// ── RAF RENDER LOOP (keeps overlay + cursors in sync during panning) ──
+let _rafLoopId = null;
+
+function _rafLoop() {
+  if (typeof isDragging !== 'undefined' && isDragging) {
+    renderOverlay();
+    updateAllCursorFlags();
+    _rafLoopId = requestAnimationFrame(_rafLoop);
+  } else {
+    _rafLoopId = null;
+  }
+}
+
+function startDragRaf() {
+  if (!_rafLoopId) _rafLoopId = requestAnimationFrame(_rafLoop);
+}
+
 function resizeCanvas(w,h) {
   canvasW=w; canvasH=h; canvasData=new Uint8Array(w*h);
   initCanvases();

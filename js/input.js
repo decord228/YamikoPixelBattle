@@ -6,12 +6,14 @@ wrap.addEventListener('mousedown',e=>{
     isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
     targetCamX=camX;targetCamY=camY;
     wrap.style.cursor='grabbing';e.preventDefault();
+    if (typeof startDragRaf === 'function') startDragRaf();
   } else if (e.button===0){
     if (stencilActive && stencilEditMode){ if (handleStencilStart(e.clientX,e.clientY)){isDraggingTool=true;} return; }
     if (tool==='admin_image'||adminImagePreviewMode){
       if (!handleToolInteractionStart(e.clientX,e.clientY)){
         isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
         targetCamX=camX;targetCamY=camY; wrap.style.cursor='grabbing';
+        if (typeof startDragRaf === 'function') startDragRaf();
       }
       return;
     }
@@ -138,6 +140,7 @@ wrap.addEventListener('touchstart',e=>{
     if (tool==='admin_image'||adminImagePreviewMode){ if (handleToolInteractionStart(touches[0].clientX,touches[0].clientY)) return; }
     isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};
     camStart={x:camX,y:camY};targetCamX=camX;targetCamY=camY;
+    if (typeof startDragRaf === 'function') startDragRaf();
   }
 },{passive:false});
 

@@ -581,6 +581,11 @@ function leaveClan(){
   sendJSON({action:'clan_leave'});
 }
 
+function disbandClan(){
+  if (!confirm('Распустить клан? Все участники будут исключены, это действие необратимо.')) return;
+  sendJSON({action:'clan_disband'});
+}
+
 function toggleClanCursor(){ sendJSON({action:'clan_toggle_cursor'}); }
 
 function sendClanChat() {
@@ -707,6 +712,14 @@ function renderClanView(clan){
   
   const tog=document.getElementById('clan-cursor-toggle');
   if (tog){clanShareCursor=!!clan.share_cursor;tog.classList.toggle('on',clanShareCursor);}
+
+  // Show disband button only for leader
+  const disbandBtn = document.getElementById('clan-disband-btn');
+  const leaveBtn = document.getElementById('clan-leave-btn');
+  if (disbandBtn && leaveBtn) {
+    disbandBtn.style.display = isLeader ? '' : 'none';
+    leaveBtn.style.display = isLeader ? 'none' : '';
+  }
 
   // Populate settings form for leader
   if (isLeader) {

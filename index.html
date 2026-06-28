@@ -506,18 +506,23 @@
     <canvas id="stencil-tmp-canvas" style="display:none"></canvas>
     <input type="file" id="stencil-file-input" accept="image/*" style="display:none">
 
-    <!-- Discord Embedded App SDK (загружается только в Activity, на обычном сайте не мешает) -->
+    <!-- Discord Embedded App SDK + запуск игры -->
     <script type="module">
         import { DiscordSDK } from 'https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk/+esm';
         window.DiscordSDK = DiscordSDK;
-    </script>
 
-    <script src="js/config.js" defer></script>
-    <script src="js/state.js" defer></script>
-    <script src="js/canvas.js" defer></script>
-    <script src="js/network.js" defer></script>
-    <script src="js/ui.js" defer></script>
-    <script src="js/input.js" defer></script>
-    <script src="js/main.js" defer></script>
+        // Динамически грузим скрипты после того как SDK готов в window
+        const scripts = [
+        'js/config.js', 'js/state.js', 'js/canvas.js',
+        'js/network.js', 'js/ui.js', 'js/input.js', 'js/main.js'
+        ];
+        for (const src of scripts) {
+        await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = src; s.onload = resolve; s.onerror = reject;
+        document.body.appendChild(s);
+        });
+        }
+    </script>
 </body>
 </html>

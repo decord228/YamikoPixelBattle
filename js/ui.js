@@ -772,17 +772,50 @@ function renderClanView(clan){
     if (motdInput) motdInput.value = clan.message_of_day || clan.motd || '';
   }
   
-  const ml=document.getElementById('clan-member-list'); ml.innerHTML='';
-  (clan.members||[]).forEach(m=>{
-    const chip=document.createElement('div');
-    chip.className='member-chip'+(m===clan.leader?' leader':'');
-    if (isLeader && m !== currentUser) {
-      chip.innerHTML = `${m===clan.leader?'<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.6-7.2-3.6 4-2.8-6.4-2.8 6.4-3.6-4L3 18z"/><path d="M5 21h14"/></svg> ':''}${esc(m)} <button onclick="kickClanMember('${esc(m)}')" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:10px;margin-left:4px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg></button>`;
-    } else {
-      chip.innerHTML = `${m===clan.leader?'<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.6-7.2-3.6 4-2.8-6.4-2.8 6.4-3.6-4L3 18z"/><path d="M5 21h14"/></svg> ':''}${esc(m)}`;
-    }
-    ml.appendChild(chip);
-  });
+  // Store members + leader for paginated rendering
+  _clanMembers = clan.members || [];
+  _clanLeader = clan.leader || '';
+  _clanIsLeader = isLeader;
+  _clanMemberPage = 1;
+  renderClanMemberPage();
+
+// ── CLAN MEMBER PAGINATION ──
+let _clanMembers = [], _clanLeader = '', _clanIsLeader = false, _clanMemberPage = 1;
+const CLAN_PAGE_SIZE = 10;
+
+function renderClanMemberPage() {
+  const ml = document.getElementById('clan-member-list');
+  const pg = document.getElementById('clan-member-pagination');
+  if (!ml) return;
+
+  const total = _clanMembers.length;
+  const totalPages = Math.max(1, Math.ceil(total / CLAN_PAGE_SIZE));
+  _clanMemberPage = Math.max(1, Math.min(_clanMemberPage, totalPages));
+  const start = (_clanMemberPage - 1) * CLAN_PAGE_SIZE;
+  const page = _clanMembers.slice(start, start + CLAN_PAGE_SIZE);
+
+  ml.innerHTML = page.map(m => {
+    const isLdr = m === _clanLeader;
+    const canKick = _clanIsLeader && m !== currentUser && !isLdr;
+    return `<div class="member-row">
+      <div class="member-row-info">
+        <span class="member-row-emoji">${isLdr ? '\u{1F451}' : '\u{1F464}'}</span>
+        <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}</span>
+        ${isLdr ? '<span class="member-leader-badge">\u041b\u0438\u0434\u0435\u0440</span>' : ''}
+      </div>
+      ${canKick ? `<button class="member-kick-btn" onclick="kickClanMember('${esc(m)}')" title="\u041a\u0438\u043a\u043d\u0443\u0442\u044c">
+        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+      </button>` : ''}
+    </div>`;
+  }).join('');
+
+  if (!pg) return;
+  if (totalPages <= 1) { pg.style.display = 'none'; return; }
+  pg.style.display = 'flex';
+  pg.innerHTML = `
+    <button class="page-btn" onclick="_clanMemberPage--;renderClanMemberPage()" ${_clanMemberPage<=1?'disabled':''}>&#8249; \u041f\u0440\u0435\u0434</button>
+    <span class="page-info">${_clanMemberPage} / ${totalPages}</span>
+    <button class="page-btn" onclick="_clanMemberPage++;renderClanMemberPage()" ${_clanMemberPage>=totalPages?'disabled':''}>\u0421\u043b\u0435\u0434 &#8250;</button>`;
 }
 
 function kickClanMember(username) {

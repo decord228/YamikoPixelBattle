@@ -39,11 +39,15 @@ async function initDiscordActivity() {
   try {
     // Авторизуем пользователя через Discord OAuth2
     // client_id обязателен для Discord Activity SDK v2
+    // redirect_uri для Discord Activity — всегда домен вида <APP_ID>.discordsays.com
+    const redirectUri = `https://${DISCORD_CLIENT_ID}.discordsays.com`;
+
     const authorizeResult = await sdk.commands.authorize({
       client_id:     DISCORD_CLIENT_ID,
       response_type: 'code',
       prompt:        'none',
       scope:         ['identify'],
+      redirect_uri:  redirectUri,
     });
 
     console.log('[Discord] authorize result:', JSON.stringify(authorizeResult));
@@ -58,7 +62,7 @@ async function initDiscordActivity() {
     const tokenRes = await fetch('/api/discord-token', {
       method:  'POST',
       headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ code }),
+      body:    JSON.stringify({ code, redirect_uri: redirectUri }),
     });
 
     if (!tokenRes.ok) {

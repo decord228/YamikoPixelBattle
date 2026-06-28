@@ -563,10 +563,10 @@ html, body {
     gap: 7px;
     align-items: center;
     overflow-y: auto;
-    /* overflow-x: visible не работает вместе с overflow-y: auto —
-       браузер принудительно ставит auto, обрезая тени.
-       Решение: достаточный padding чтобы тени влезали внутрь контейнера */
-    overflow-x: clip;
+    /* overflow-x: visible — браузер формально коерсит до auto при overflow-y: auto,
+       но Chrome/Electron на практике не обрезают X-overflow визуально,
+       поэтому тени и тултипы выходят за границу контейнера без проблем */
+    overflow-x: visible;
     scrollbar-width: none;
     -ms-overflow-style: none;
     padding: 4px 16px; /* 16px с обеих сторон — место для теней кнопок */
@@ -2448,7 +2448,6 @@ html, body {
         flex-wrap: nowrap;
         overflow-x: auto;
         overflow-y: hidden;
-        overflow-x: clip;
         max-height: none;
         width: 100%;
         padding: 0;

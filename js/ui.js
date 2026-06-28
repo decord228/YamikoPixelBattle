@@ -415,24 +415,26 @@ function updateStencilOpacity(v){
 }
 
 function cancelStencil(){
-  stencilActive=false;stencilImg=null;stencilImageData=null;stencilOrigImg=null;personalStencilUrl=null;
+  // Сбрасываем весь стейт трафарета
+  stencilActive=false; stencilImg=null; stencilImageData=null; stencilOrigImg=null; personalStencilUrl=null;
+  stencilHandle=null; isDraggingTool=false; adminActiveHandle=null;
   document.getElementById('stencil-panel').style.display='none';
   sendJSON({ action: 'save_personal_stencil', stencil: null });
   renderOverlay();
 }
 
-function promptSaveStencil() {
+// Сохранение через inline-инпут (без prompt — работает в Discord)
+function doSaveStencil() {
   if (!stencilImg) { showToast('Сначала загрузите трафарет', 'error'); return; }
-  if (!personalStencilUrl) {
-    showToast('Трафарет ещё загружается в облако, попробуйте снова через секунду', 'error');
-    return;
-  }
-  const name = prompt('Название шаблона (макс. 30 символов):');
-  if (!name || !name.trim()) return;
-  const trimmed = name.trim().slice(0, 30);
-  // Сервер ждёт data.name и data.stencil раздельно
-  sendJSON({ action: 'save_stencil_preset', name: trimmed, stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+  if (!personalStencilUrl) { showToast('Трафарет ещё загружается, подождите...', 'error'); return; }
+  const inp = document.getElementById('stencil-save-name');
+  const name = (inp ? inp.value : '').trim().slice(0, 30) || ('Шаблон ' + (savedStencils.length + 1));
+  sendJSON({ action: 'save_stencil_preset', name, stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+  if (inp) inp.value = '';
 }
+
+// Оставляем алиас для совместимости
+function promptSaveStencil() { doSaveStencil(); }
 
 function renderSavedStencils() {
   const c = document.getElementById('saved-stencils-list');
@@ -441,13 +443,14 @@ function renderSavedStencils() {
     c.innerHTML = '<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px 0;">Сохранённых шаблонов нет</div>';
     return;
   }
-  // Сервер хранит { name, stencil: { img, rect, opacity } }
+  // Сервер хранит массив { name, stencil: { img, rect, opacity } }
   c.innerHTML = savedStencils.map((s, i) => {
     const r = s.stencil && s.stencil.rect;
+    const safeN = esc(s.name || ('Шаблон ' + (i + 1)));
     return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
       <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(s.name||'Шаблон '+(i+1))}</div>
-        <div style="font-size:10px;color:var(--text3);">${r?r.w+'×'+r.h+' пикс.':''}</div>
+        <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeN}</div>
+        <div style="font-size:10px;color:var(--text3);">${r ? r.w + '×' + r.h + ' пикс.' : ''}</div>
       </div>
       <button class="btn btn-secondary btn-sm" style="padding:2px 7px;font-size:10px;" data-onclick="loadSavedStencil(${i})">Загр.</button>
       <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;" data-onclick="deleteSavedStencil(${i})">✕</button>
@@ -459,15 +462,16 @@ function loadSavedStencil(i) {
   const s = savedStencils[i];
   if (!s || !s.stencil || !s.stencil.img) { showToast('Трафарет повреждён', 'error'); return; }
   const cp = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2);
-  const w = s.stencil.rect ? s.stencil.rect.w : 64;
-  const h = s.stencil.rect ? s.stencil.rect.h : 64;
+  const w = (s.stencil.rect && s.stencil.rect.w) || 64;
+  const h = (s.stencil.rect && s.stencil.rect.h) || 64;
   applySharedStencil({ img: s.stencil.img, opacity: s.stencil.opacity || 0.6, rect: { x: Math.floor(cp.x - w/2), y: Math.floor(cp.y - h/2), w, h } });
 }
 
 function deleteSavedStencil(i) {
-  const s = savedStencils[i];
-  if (!s) return;
-  if (!confirm(`Удалить шаблон «${s.name||'Шаблон '+(i+1)}»?`)) return;
+  // Без confirm() — сразу удаляем и оптимистично убираем из локального массива
+  if (i < 0 || i >= savedStencils.length) return;
+  savedStencils.splice(i, 1);
+  renderSavedStencils();
   sendJSON({ action: 'delete_stencil_preset', index: i });
 }
 

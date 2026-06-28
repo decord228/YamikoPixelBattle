@@ -138,8 +138,11 @@
 
             <div class="section-sep"></div>
             <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;">Мои шаблоны</div>
-            <button class="btn btn-secondary btn-sm" data-onclick="promptSaveStencil()" style="margin-bottom:8px; width:100%;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" /><path d="M7 4v5h8V4" /><rect x="7" y="14" width="10" height="6" /></svg> Сохранить текущий</button>
-            <div id="saved-stencils-list" style="display:flex;flex-direction:column;gap:5px;max-height:150px;overflow-y:auto;"></div>
+            <div style="display:flex;gap:6px;margin-bottom:8px;">
+                <input type="text" id="stencil-save-name" placeholder="Название шаблона..." maxlength="30" style="flex:1;padding:5px 9px;font-size:11px;background:var(--bg3);border:1px solid var(--border2);border-radius:8px;color:var(--text1);outline:none;" data-onkeydown="if(event.key==='Enter')doSaveStencil()">
+                <button class="btn btn-secondary btn-sm" style="padding:4px 9px;white-space:nowrap;" data-onclick="doSaveStencil()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" /><path d="M7 4v5h8V4" /><rect x="7" y="14" width="10" height="6" /></svg> Сохранить</button>
+            </div>
+            <div id="saved-stencils-list" style="display:flex;flex-direction:column;gap:5px;max-height:180px;overflow-y:auto;"></div>
 
             <button class="btn btn-danger btn-sm" data-onclick="cancelStencil()" style="margin-top:16px; border:1px solid rgba(239,68,68,0.3); background:rgba(239,68,68,0.1); font-weight:600;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg> СКРЫТЬ ТРАФАРЕТ</button>
         </div>
@@ -523,7 +526,7 @@
         window.DiscordSDK = DiscordSDK;
 
         // Динамически грузим скрипты после того как SDK готов в window
-        const v = '20260703'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
+        const v = '20260710'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
         const scripts = [
         'js/config.js', 'js/state.js', 'js/canvas.js',
         'js/network.js', 'js/ui.js', 'js/input.js', 'js/events.js', 'js/main.js'

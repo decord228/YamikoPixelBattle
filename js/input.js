@@ -73,6 +73,8 @@ wrap.addEventListener('mousemove',e=>{
 
 wrap.addEventListener('mouseup',e=>{
   if (e.button===1||e.button===2||(e.button===0&&isDragging)){ isDragging=false;wrap.style.cursor='crosshair'; }
+  // Всегда сбрасываем, даже если событие потерялось
+  if (e.button===0) { isDragging=false; wrap.style.cursor='crosshair'; }
   
   let wasDraggingStencil = !!stencilHandle;
   isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;

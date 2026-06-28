@@ -29,13 +29,15 @@ async function initDiscordActivity() {
     const sdk = new window.DiscordSDK(DISCORD_CLIENT_ID);
     await sdk.ready();
 
-    // Патчим URL ПЕРВЫМ делом — до любых fetch/WS запросов
     await sdk.patchUrlMappings([
       { prefix: '/api-ws', target: 'yamikopixelbattleserver.onrender.com' },
       { prefix: '/api',    target: 'yamikopixelbattleserver.onrender.com' },
     ]);
 
-    // Запрашиваем авторизацию
+    // ← ДОБАВЬ ЭТИ ДВЕ СТРОКИ
+    console.log('Discord WS URL будет:', getWsUrl());
+    console.log('hostname:', window.location.host);
+
     const { code } = await sdk.commands.authorize({
       response_type: 'code',
       prompt: 'none',

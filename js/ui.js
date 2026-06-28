@@ -778,6 +778,7 @@ function renderClanView(clan){
   _clanIsLeader = isLeader;
   _clanMemberPage = 1;
   renderClanMemberPage();
+}
 
 // ── CLAN MEMBER PAGINATION ──
 let _clanMembers = [], _clanLeader = '', _clanIsLeader = false, _clanMemberPage = 1;

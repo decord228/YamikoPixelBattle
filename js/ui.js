@@ -700,8 +700,8 @@ function renderClanRequests(requests) {
     <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
       <span style="font-size:12px;font-weight:600;">${esc(r)}</span>
       <div style="display:flex;gap:5px;">
-        <button class="action-btn ab-unban" onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Принять</button>
-        <button class="action-btn ab-ban" onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg> Отказать</button>
+        <button class="action-btn ab-unban" data-onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Принять</button>
+        <button class="action-btn ab-ban" data-onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg> Отказать</button>
       </div>
     </div>`).join('');
 }
@@ -804,7 +804,7 @@ function renderClanMemberPage() {
         <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}</span>
         ${isLdr ? '<span class="member-leader-badge">\u041b\u0438\u0434\u0435\u0440</span>' : ''}
       </div>
-      ${canKick ? `<button class="member-kick-btn" onclick="kickClanMember('${esc(m)}')" title="\u041a\u0438\u043a\u043d\u0443\u0442\u044c">
+      ${canKick ? `<button class="member-kick-btn" data-onclick="kickClanMember('${esc(m)}')" title="\u041a\u0438\u043a\u043d\u0443\u0442\u044c">
         <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
       </button>` : ''}
     </div>`;
@@ -814,9 +814,9 @@ function renderClanMemberPage() {
   if (totalPages <= 1) { pg.style.display = 'none'; return; }
   pg.style.display = 'flex';
   pg.innerHTML = `
-    <button class="page-btn" onclick="_clanMemberPage--;renderClanMemberPage()" ${_clanMemberPage<=1?'disabled':''}>&#8249; \u041f\u0440\u0435\u0434</button>
+    <button class="page-btn" data-onclick="_clanMemberPage--;renderClanMemberPage()" ${_clanMemberPage<=1?'disabled':''}>&#8249; \u041f\u0440\u0435\u0434</button>
     <span class="page-info">${_clanMemberPage} / ${totalPages}</span>
-    <button class="page-btn" onclick="_clanMemberPage++;renderClanMemberPage()" ${_clanMemberPage>=totalPages?'disabled':''}>\u0421\u043b\u0435\u0434 &#8250;</button>`;
+    <button class="page-btn" data-onclick="_clanMemberPage++;renderClanMemberPage()" ${_clanMemberPage>=totalPages?'disabled':''}>\u0421\u043b\u0435\u0434 &#8250;</button>`;
 }
 
 function kickClanMember(username) {
@@ -835,7 +835,7 @@ function renderClanBrowseList(clans){
   const c=document.getElementById('clan-browse-list');
   if (!clans.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:10px;">Кланов пока нет</div>';return;}
   c.innerHTML=clans.slice(0,10).map(cl=>`
-    <div class="clan-card" style="cursor:pointer" onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}';switchClanSubTab('join')">
+    <div class="clan-card" style="cursor:pointer" data-onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}';switchClanSubTab('join')">
       <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+ '22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+ esc(cl.tag||'')}</span></div>
       <div class="clan-meta"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg> ${cl.members} · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg> ${(cl.pixels||0).toLocaleString()} пикс.</div>
       ${cl.description?`<div class="clan-meta">${esc(cl.description)}</div>`:''}
@@ -857,7 +857,7 @@ function buildShopUI(){
         ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price">🪙 ${item.cost}</span>`}
       </div>
       <div class="shop-item-desc">${item.desc}</div>
-      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
+      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" data-data-data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
       ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Требуется: ${item.requires}</div>` : ''}
     </div>`;
   });
@@ -874,8 +874,8 @@ function buildShopUI(){
         </div>
         <div class="shop-item-desc">${item.desc}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-vip btn-sm" onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
+          <button class="btn btn-vip btn-sm" data-data-data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-data-data-onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
         </div>
       </div>`;
     });
@@ -894,7 +894,7 @@ function buildShopUI(){
       html += `<div class="shop-item admin-item">
         <div class="shop-header"><div class="shop-item-title">${item.icon} ${item.title}</div><span style="font-size:10px;color:var(--text3);">БЕСПЛАТНО</span></div>
         <div class="shop-item-desc">${item.desc}</div>
-        <button class="btn btn-primary btn-sm" onclick="useAdminShopItem('${item.id}')">Применить</button>
+        <button class="btn btn-primary btn-sm" data-data-data-onclick="useAdminShopItem('${item.id}')">Применить</button>
       </div>`;
     });
     html += '</div>';
@@ -1071,13 +1071,13 @@ function renderAdminUsers(users){
         ${u.banned?'<span class="user-badge badge-banned">BANNED</span>':''}
       </div>
       <div class="user-actions">
-        <button class="action-btn ab-role" onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Снять админа':'Дать админа'}</button>
-        <button class="action-btn ab-vip" onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='vip'?'user':'vip'}')">${u.role==='vip'?'Снять VIP':'Дать VIP'}</button>
-        <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',300)">5м</button>
-        <button class="action-btn ab-timeout" onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
-        <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
-        <button class="action-btn ab-msg" onclick="prefillDM('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></button>
-        <button class="action-btn ab-role" onclick="promptGiveCoins('${esc(u.username)}')">🪙+</button>
+        <button class="action-btn ab-role" data-onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Снять админа':'Дать админа'}</button>
+        <button class="action-btn ab-vip" data-onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='vip'?'user':'vip'}')">${u.role==='vip'?'Снять VIP':'Дать VIP'}</button>
+        <button class="action-btn ab-timeout" data-onclick="adminCmd('timeout','${esc(u.username)}',300)">5м</button>
+        <button class="action-btn ab-timeout" data-onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
+        <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" data-onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
+        <button class="action-btn ab-msg" data-onclick="prefillDM('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></button>
+        <button class="action-btn ab-role" data-onclick="promptGiveCoins('${esc(u.username)}')">🪙+</button>
       </div>
     </div>`).join('');
 }
@@ -1289,11 +1289,11 @@ function renderAdminClans(clans) {
         ${cl.description ? '&middot; ' + esc(cl.description.slice(0,50)) : ''}
       </div>
       <div class="user-actions">
-        <button class="action-btn ab-ban" onclick="adminDeleteClan('${esc(cl.name)}')">
+        <button class="action-btn ab-ban" data-onclick="adminDeleteClan('${esc(cl.name)}')">
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
           \u0423\u0434\u0430\u043b\u0438\u0442\u044c
         </button>
-        <button class="action-btn ab-msg" onclick="adminBroadcastToClan('${esc(cl.name)}')">
+        <button class="action-btn ab-msg" data-onclick="adminBroadcastToClan('${esc(cl.name)}')">
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg>
           \u0421\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435
         </button>

@@ -35,6 +35,8 @@ function onAuthSuccess(d) {
   document.getElementById('profile-hud').classList.add('visible');
 
   document.getElementById('btn-admin').style.display=isAdmin?'flex':'none';
+  const adminDiv=document.getElementById('divider-before-admin');
+  if(adminDiv) adminDiv.style.display=isAdmin?'':'none';
   document.querySelectorAll('.admin-tool-btn').forEach(el => el.style.display = isAdmin?'flex':'none');
   
   if (isAdmin){loadAdminUsers();}
@@ -55,6 +57,8 @@ function doLogout() {
   isLoggedIn=false;isAdmin=false;isVip=false;currentUser='';currentClan='';
   document.getElementById('auth-panel').classList.add('show');
   document.getElementById('btn-admin').style.display='none';
+  const adminDivL=document.getElementById('divider-before-admin');
+  if(adminDivL) adminDivL.style.display='none';
   document.querySelectorAll('.admin-tool-btn').forEach(el => el.style.display = 'none');
   document.getElementById('profile-hud').classList.remove('visible');
   hidePanel('profile-panel');

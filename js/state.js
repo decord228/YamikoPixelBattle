@@ -70,6 +70,9 @@ let stencilOrigWidth = 0, stencilOrigHeight = 0;
 let savedStencils = []; // Сохраненные пресеты трафаретов
 let stencilLocked = false; // true = трафарет взят у соклановца, нельзя двигать/масштабировать
 let stencilOwnerName = ''; // имя владельца, если трафарет взят у соклановца (для лейбла)
+let stencilUploadPending = false; // true = картинка ещё грузится на Cloudinary, personalStencilUrl устарел
+let stencilPendingSave = null; // { rect, opacity } — копится, пока upload не завершится, и шлётся сразу после
+let stencilUploadGen = 0; // увеличивается при каждой новой загрузке/отмене — отбрасывает устаревшие ответы fetch
 
 // Active item usage
 let activeItem = null;

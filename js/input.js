@@ -80,8 +80,8 @@ wrap.addEventListener('mouseup',e=>{
   isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
   
   // Сохраняем позицию трафарета в облако после перемещения
-  if (wasDraggingStencil && typeof personalStencilUrl !== 'undefined' && personalStencilUrl) {
-      sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+  if (wasDraggingStencil && typeof savePersonalStencil === 'function') {
+      savePersonalStencil();
   }
 
   if (isDraggingAdminShape) {
@@ -170,8 +170,8 @@ wrap.addEventListener('touchend',e=>{
     let wasDraggingStencil = !!stencilHandle;
     isDragging=false;isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
     
-    if (wasDraggingStencil && typeof personalStencilUrl !== 'undefined' && personalStencilUrl) {
-        sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
+    if (wasDraggingStencil && typeof savePersonalStencil === 'function') {
+        savePersonalStencil();
     }
 
     if (e.changedTouches.length===1){

@@ -308,20 +308,51 @@ function toggleStencilEdit() {
 }
 
 async function uploadPersonalStencil(dataUrl) {
+    stencilUploadPending = true;
+    const myGen = ++stencilUploadGen; // помечаем эту загрузку текущим "поколением"
     showToast('Сохранение в облако...', 'info');
     try {
-        const res = await fetch('/api/upload-template', {
+        const res = await fetch(getApiUrl() + '/upload-template', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageBase64: dataUrl, name: 'stencil_' + currentUser, username: currentUser })
         });
+        if (!res.ok) throw new Error('HTTP ' + res.status);
         const data = await res.json();
+        // Если за время запроса трафарет был отменён или заменён новой загрузкой —
+        // stencilUploadGen уже не совпадает, и этот ответ безопасно отбрасываем,
+        // чтобы он не "оживил" уже неактуальный трафарет.
+        if (myGen !== stencilUploadGen) return;
         if (data.url) {
             personalStencilUrl = data.url;
-            sendJSON({ action: 'save_personal_stencil', stencil: { img: data.url, rect: stencilRect, opacity: stencilOpacity } });
+            stencilUploadPending = false;
+            // Если за время загрузки юзер успел подвинуть/изменить трафарет —
+            // stencilPendingSave хранит САМЫЕ СВЕЖИЕ rect/opacity на момент
+            // последнего действия. Отправляем именно их, а не те, что были
+            // в момент старта загрузки — иначе позиция "откатится".
+            const toSave = stencilPendingSave || { rect: stencilRect, opacity: stencilOpacity };
+            stencilPendingSave = null;
+            sendJSON({ action: 'save_personal_stencil', stencil: { img: data.url, rect: toSave.rect, opacity: toSave.opacity } });
             showToast('Трафарет сохранён в облаке!', 'success');
+        } else {
+            stencilUploadPending = false;
         }
-    } catch (e) { console.error(e); }
+    } catch (e) { console.error(e); if (myGen === stencilUploadGen) stencilUploadPending = false; }
+}
+
+// Единая точка сохранения личного трафарета (позиция/прозрачность/картинка).
+// Все места, которые раньше звали sendJSON({action:'save_personal_stencil', ...})
+// напрямую, теперь должны звать эту функцию — она защищает от гонки, когда
+// картинка ещё грузится на Cloudinary и personalStencilUrl ещё не актуален:
+// в этом случае новые rect/opacity просто откладываются и отправятся сразу
+// после того, как загрузка завершится с правильным URL.
+function savePersonalStencil() {
+  if (stencilUploadPending) {
+    stencilPendingSave = { rect: { ...stencilRect }, opacity: stencilOpacity };
+    return;
+  }
+  if (!personalStencilUrl) return;
+  sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
 }
 
 function updateStencilGraphic() {
@@ -358,9 +389,7 @@ function scaleStencil(factor) {
   stencilRect.h = newH;
   updateStencilGraphic();
   showToast(`Размер: ${newW}×${newH} пикс.`, 'info');
-  if (personalStencilUrl) {
-      sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
-  }
+  savePersonalStencil();
 }
 
 document.getElementById('stencil-file-input').addEventListener('change',e=>{
@@ -449,9 +478,7 @@ function updateStencilOpacity(v){
   stencilOpacity=v/100;
   document.getElementById('stencil-opacity-val').textContent=v+'%';
   renderOverlay();
-  if (personalStencilUrl && !stencilLocked) {
-      sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
-  }
+  if (!stencilLocked) savePersonalStencil();
 }
 
 function cancelStencil(){
@@ -459,6 +486,7 @@ function cancelStencil(){
   // Сбрасываем весь стейт трафарета
   stencilActive=false; stencilImg=null; stencilImageData=null; stencilOrigImg=null; personalStencilUrl=null;
   stencilHandle=null; isDraggingTool=false; adminActiveHandle=null; stencilLocked=false; stencilOwnerName='';
+  stencilUploadPending=false; stencilPendingSave=null; stencilUploadGen++;
   document.getElementById('stencil-panel').style.display='none';
   if (typeof setStencilToolActive === 'function') setStencilToolActive(false);
   updateStencilLockUI();
@@ -506,10 +534,18 @@ function renderSavedStencils() {
 function loadSavedStencil(i) {
   const s = savedStencils[i];
   if (!s || !s.stencil || !s.stencil.img) { showToast('Трафарет повреждён', 'error'); return; }
-  const cp = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2);
-  const w = (s.stencil.rect && s.stencil.rect.w) || 64;
-  const h = (s.stencil.rect && s.stencil.rect.h) || 64;
-  applySharedStencil({ img: s.stencil.img, opacity: s.stencil.opacity || 0.6, rect: { x: Math.floor(cp.x - w/2), y: Math.floor(cp.y - h/2), w, h } });
+  const savedRect = s.stencil.rect;
+  let rect;
+  if (savedRect && savedRect.w && savedRect.h && savedRect.x !== undefined && savedRect.y !== undefined) {
+    rect = { x: savedRect.x, y: savedRect.y, w: savedRect.w, h: savedRect.h };
+  } else {
+    // Фоллбэк: центр экрана если координаты не сохранились
+    const cp = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2);
+    const w = (savedRect && savedRect.w) || 64;
+    const h = (savedRect && savedRect.h) || 64;
+    rect = { x: Math.floor(cp.x - w / 2), y: Math.floor(cp.y - h / 2), w, h };
+  }
+  applySharedStencil({ img: s.stencil.img, opacity: s.stencil.opacity || 0.6, rect });
 }
 
 function deleteSavedStencil(i) {
@@ -524,6 +560,7 @@ async function shareStencilToClan(){
   if (!currentClan){showToast('Вы не в клане','error');return;}
   if (!stencilImg) {showToast('Сначала загрузите трафарет','error');return;}
   if (stencilLocked) {showToast('Это трафарет соклановца — поделиться им от своего имени нельзя','error');return;}
+  if (stencilUploadPending) {showToast('Картинка ещё загружается в облако, подождите секунду...','info');return;}
 
   if (clanSharedStencil && clanSharedStencil.owner !== currentUser) {
     showToast(`В клане уже есть трафарет от ${clanSharedStencil.owner}`, 'error');
@@ -538,13 +575,15 @@ async function shareStencilToClan(){
   
   showToast('Загрузка в облако...', 'info');
   try {
-    const res = await fetch('/api/upload-template', {
+    const res = await fetch(getApiUrl() + '/upload-template', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64: stencilImg.src, name: 'clan_stencil', username: currentUser })
     });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     if (data.url) {
+      personalStencilUrl = data.url;
       sendJSON({ action: 'clan_share_stencil', stencil: { img: data.url, rect: stencilRect, opacity: stencilOpacity } });
       showToast('Трафарет отправлен соклановцам!', 'success');
     } else { showToast('Ошибка загрузки', 'error'); }
@@ -628,9 +667,10 @@ function applySharedStencil(data, locked = false, ownerName = ''){
     updateStencilLockUI();
 
     personalStencilUrl = data.img;
-    if (!locked) {
-      sendJSON({ action: 'save_personal_stencil', stencil: { img: data.img, rect: stencilRect, opacity: stencilOpacity } });
-    }
+    stencilUploadPending = false; // применяем уже готовый URL — никакой загрузки в облако не идёт
+    stencilPendingSave = null;
+    stencilUploadGen++; // отбрасываем любую предыдущую незавершённую загрузку файла
+    if (!locked) savePersonalStencil();
 
     updateStencilGraphic(); 
     showToast('Трафарет успешно загружен!','success');

@@ -3170,6 +3170,28 @@ html, body {
     transition: color .15s, transform .15s;
 }
 
+#admin-tab-timelapse .tl-sess-delete {
+    flex: 0 0 auto;
+    width: 28px;
+    height: 28px;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: transparent;
+    color: var(--text3);
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+    #admin-tab-timelapse .tl-sess-delete:hover {
+        background: var(--danger, #e4393c);
+        border-color: var(--danger, #e4393c);
+        color: #fff;
+    }
+
 #admin-tab-timelapse .tl-session-item:hover .tl-sess-arrow,
 #admin-tab-timelapse .tl-session-item.selected .tl-sess-arrow {
     color: var(--accent);
@@ -3389,162 +3411,295 @@ html, body {
         border-color: var(--accent);
     }
 
+/* ══════════════════════════════════════════════════════
+   TIMELAPSE FULLSCREEN HUD
+   Поверх основного канваса — только верхняя плашка и нижний тайм-лайн.
+   Основной канвас остаётся полностью интерактивным.
+════════════════════════════════════════════════════════ */
 /* ════════════════════════════════════════════════════════════
-   Timelapse — fullscreen overlay
-   Живёт вне #admin-tab-timelapse в DOM (растягивается на весь
-   экран приложения), поэтому стили не заскоуплены под него.
-   #tl-player-core при входе физически переносится сюда JS-ом,
-   так что все .tl-* стили выше продолжают работать как есть —
-   они навешаны на классы, не на родителя.
+   Timelapse — Fullscreen HUD (redesign)
 ════════════════════════════════════════════════════════════ */
-.tl-fs-overlay {
+
+/* Корневой оверлей: закрывает весь экран, pointer-events none чтобы канвас
+   оставался интерактивным — только дочерние pointer-events:all элементы кликабельны */
+.tl-fs-hud {
     position: fixed;
     inset: 0;
-    z-index: 10000;
-    background: radial-gradient(circle at 50% 20%, var(--bg2) 0%, var(--bg) 70%);
+    z-index: 9000;
+    pointer-events: none;
     display: flex;
     flex-direction: column;
-}
-
-.tl-fs-topbar {
-    flex: 0 0 auto;
-    display: flex;
-    align-items: center;
     justify-content: space-between;
-    padding: 14px 18px;
-    border-bottom: 1px solid var(--border);
 }
 
-.tl-fs-title {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    letter-spacing: .5px;
-    color: var(--text2);
-    text-transform: uppercase;
-    font-family: 'Space Mono', monospace;
-}
-
-.tl-fs-overlay .tl-icon-btn {
-    width: 32px;
-    height: 32px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border: 1px solid var(--border2);
-    border-radius: 8px;
-    background: var(--surface2);
-    color: var(--text2);
-    font-size: 15px;
-    cursor: pointer;
-    transition: background .15s, color .15s;
-}
-
-    .tl-fs-overlay .tl-icon-btn:hover {
-        background: var(--surface3);
-        color: var(--text);
+    /* ── Верхняя панель ── */
+    .tl-fs-hud .tl-fs-topbar {
+        pointer-events: all;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 18px;
+        background: linear-gradient(180deg, rgba(7,7,9,0.94) 0%, transparent 100%);
     }
 
-.tl-fs-stage {
+/* Бейдж «🎬 ТАЙМ-ЛАПС» */
+.tl-fs-badge {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #a5b4fc;
+    background: rgba(99,102,241,0.18);
+    border: 1px solid rgba(99,102,241,0.35);
+    border-radius: 6px;
+    padding: 4px 9px;
+    flex-shrink: 0;
+    white-space: nowrap;
+}
+
+/* ID сессии */
+.tl-fs-session-label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: rgba(255,255,255,0.35);
     flex: 1 1 auto;
-    min-height: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Группа кнопок скорости в топ-баре */
+.tl-fs-speed {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    flex-shrink: 0;
+}
+
+/* Правые кнопки (авто / выйти) */
+.tl-fs-topbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.tl-fs-hud-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    height: 30px;
+    padding: 0 12px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(15,15,18,0.80);
+    color: rgba(255,255,255,0.55);
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s;
+    white-space: nowrap;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+    .tl-fs-hud-btn:hover {
+        background: rgba(40,40,50,0.90);
+        color: rgba(255,255,255,0.85);
+        border-color: rgba(255,255,255,0.2);
+    }
+
+    .tl-fs-hud-btn.active {
+        background: rgba(99,102,241,0.25);
+        border-color: rgba(99,102,241,0.55);
+        color: #a5b4fc;
+    }
+
+.tl-fs-hud-btn-close:hover {
+    background: rgba(239,68,68,0.2);
+    border-color: rgba(239,68,68,0.5);
+    color: #f87171;
+}
+
+/* ── Нижняя панель (controls + timeline) ── */
+.tl-fs-timeline {
+    pointer-events: all;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 18px;
-    overflow: hidden;
+    gap: 8px;
+    padding: 0 20px 18px;
+    background: linear-gradient(0deg, rgba(7,7,9,0.96) 0%, transparent 100%);
 }
 
-    /* Внутри fullscreen-сцены раскладываем перенесённый #tl-player-core
-   так, чтобы канвас занимал максимум места, а панель управления
-   была прижата книзу и не растягивалась без необходимости. */
-    .tl-fs-stage #tl-player-core {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 18px;
-        width: 100%;
-        height: 100%;
-        min-height: 0;
+/* Строка с кнопками */
+.tl-fs-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+/* Кнопки управления воспроизведением */
+.tl-fs-ctrl {
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(18,18,22,0.85);
+    color: rgba(255,255,255,0.6);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .15s, color .15s, border-color .15s, transform .1s;
+    flex-shrink: 0;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+}
+
+    .tl-fs-ctrl:hover {
+        background: rgba(45,45,55,0.95);
+        color: #fff;
+        border-color: rgba(255,255,255,0.2);
+        transform: scale(1.06);
     }
 
-    .tl-fs-stage .tl-canvas-wrap {
-        flex: 1 1 auto;
-        min-height: 0;
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: #0a0a0c;
-        margin: 0;
+/* Play/Pause — крупнее и акцентный */
+.tl-fs-ctrl-play {
+    width: 46px;
+    height: 46px;
+    font-size: 18px;
+    background: rgba(99,102,241,0.22);
+    border-color: rgba(99,102,241,0.5);
+    color: #a5b4fc;
+    border-radius: 50%;
+}
+
+    .tl-fs-ctrl-play:hover {
+        background: rgba(99,102,241,0.40);
+        color: #fff;
+        border-color: #818cf8;
     }
 
-        .tl-fs-stage .tl-canvas-wrap canvas {
-            image-rendering: pixelated;
-            border-radius: 6px;
-            box-shadow: 0 8px 40px rgba(0,0,0,.5);
-        }
+/* Область прогресса */
+.tl-fs-progress-area {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 0;
+}
 
-    .tl-fs-stage .tl-fullscreen-btn {
-        display: none; /* в самом fullscreen уже не нужна — закрываем через топбар/Esc */
+/* Обёртка трека — нужна для позиционирования ручки */
+.tl-fs-progress-track {
+    position: relative;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.12);
+    cursor: pointer;
+    transition: height .15s;
+}
+
+    .tl-fs-progress-track:hover {
+        height: 7px;
     }
 
-    .tl-fs-stage .tl-load-track {
-        display: none; /* полоса первичной загрузки не нужна в уже подготовленном плеере */
+    /* Ручка-скруббер */
+    .tl-fs-progress-track::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: var(--tl-scrubber-pos, 0%);
+        transform: translate(-50%, -50%) scale(0);
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: #fff;
+        box-shadow: 0 0 0 3px rgba(99,102,241,0.6);
+        transition: transform .15s;
+        pointer-events: none;
     }
 
-    /* Нижняя панель воспроизведения — фиксированная ширина, по центру,
-   не растягивается на весь экран по высоте */
-    .tl-fs-stage .tl-progress-wrap,
-    .tl-fs-stage .tl-controls-row {
-        flex: 0 0 auto;
-        width: min(720px, 92vw);
+    .tl-fs-progress-track:hover::after {
+        transform: translate(-50%, -50%) scale(1);
     }
 
-    .tl-fs-stage .tl-controls-row {
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 14px;
-        background: var(--surface);
-        border: 1px solid var(--border2);
-        border-radius: 14px;
-        padding: 12px 16px;
+.tl-fs-progress-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #6366f1 0%, #a5b4fc 100%);
+    pointer-events: none;
+}
+
+/* Метка времени */
+.tl-fs-progress-count {
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    color: rgba(255,255,255,0.45);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+    .tl-fs-progress-count .tl-time-current {
+        color: rgba(255,255,255,0.85);
+        font-size: 13px;
     }
 
-    .tl-fs-stage .tl-ctrl-btn {
+    .tl-fs-progress-count .tl-time-sep {
+        color: rgba(255,255,255,0.25);
+    }
+
+/* ── Кнопки скорости (общий стиль — используется и в панели, и в HUD) ── */
+.tl-speed-btn {
+    height: 26px;
+    padding: 0 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(18,18,22,0.8);
+    color: rgba(255,255,255,0.45);
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    cursor: pointer;
+    transition: background .12s, color .12s, border-color .12s;
+    white-space: nowrap;
+}
+
+    .tl-speed-btn:hover {
+        background: rgba(45,45,55,0.95);
+        color: rgba(255,255,255,0.8);
+        border-color: rgba(255,255,255,0.18);
+    }
+
+    .tl-speed-btn.active {
+        background: rgba(99,102,241,0.25);
+        border-color: rgba(99,102,241,0.5);
+        color: #a5b4fc;
+    }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+    .tl-fs-session-label {
+        display: none;
+    }
+
+    .tl-fs-speed {
+        display: none;
+    }
+
+    .tl-fs-timeline {
+        padding: 0 12px 14px;
+        gap: 6px;
+    }
+
+    .tl-fs-hud .tl-fs-topbar {
+        padding: 8px 12px;
+    }
+
+    .tl-fs-ctrl-play {
         width: 40px;
         height: 40px;
+        font-size: 16px;
     }
-
-    .tl-fs-stage .tl-ctrl-play {
-        width: 50px;
-        height: 50px;
-        font-size: 17px;
-    }
-
-@media (max-width: 640px) {
-    .tl-fs-topbar {
-        padding: 10px 12px;
-    }
-
-    .tl-fs-stage {
-        padding: 10px;
-        gap: 12px;
-    }
-
-        .tl-fs-stage #tl-player-core {
-            gap: 12px;
-        }
-
-        .tl-fs-stage .tl-controls-row {
-            flex-direction: column;
-            gap: 10px;
-            padding: 10px 12px;
-        }
-
-        .tl-fs-stage .tl-speed-group {
-            justify-content: center;
-        }
 }

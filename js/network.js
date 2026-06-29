@@ -249,6 +249,9 @@ function handleJSON(d) {
   else if (a === 'timelapse_status') {
     if (typeof tlHandleStatus === 'function') tlHandleStatus(d);
   }
+  else if (a === 'timelapse_session_deleted') {
+    if (typeof tlHandleSessionDeleted === 'function') tlHandleSessionDeleted(d.sessionId);
+  }
 }
 
 function applyServerSettings(s) {

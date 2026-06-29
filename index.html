@@ -594,7 +594,7 @@
                         <div class="tl-controls-row">
                             <div class="tl-ctrl-buttons">
                                 <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
-                                <button class="tl-ctrl-btn tl-ctrl-play" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
+                                <button class="tl-ctrl-btn tl-ctrl-play tl-play-btn-sync" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
                                 <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
                             </div>
                             <div class="tl-speed-group">
@@ -616,13 +616,37 @@
         </div>
     </div>
 
-    <!-- ── Timelapse fullscreen overlay (пустой контейнер — tl-player-core переносится сюда JS-ом) ── -->
-    <div id="tl-fullscreen-overlay" class="tl-fs-overlay" style="display:none">
+    <!-- ── Timelapse fullscreen HUD (поверх основного канваса) ── -->
+    <div id="tl-fs-hud" class="tl-fs-hud" style="display:none">
         <div class="tl-fs-topbar">
-            <div class="tl-fs-title" id="tl-fs-title">Тайм-лапс</div>
-            <button class="tl-icon-btn" id="tl-fs-close" data-onclick="tlToggleFullscreen()" title="Свернуть (Esc)">✕</button>
+            <div class="tl-fs-badge">🎬 ТАЙМ-ЛАПС</div>
+            <div class="tl-fs-session-label" id="tl-fs-session-label"></div>
+            <div class="tl-fs-speed">
+                <button class="tl-speed-btn" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
+                <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
+                <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
+                <button class="tl-speed-btn" data-speed="50" data-onclick="tlSetSpeed(50)">×50</button>
+                <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
+                <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
+            </div>
+            <div class="tl-fs-topbar-actions">
+                <button class="tl-fs-hud-btn tl-autocenter-btn" id="tl-autocenter-btn" data-onclick="tlSetAutocenter(!tlAutocenter)" title="Автоцентрирование">⊕ Авто</button>
+                <button class="tl-fs-hud-btn tl-fs-hud-btn-close" data-onclick="tlExitFullscreen()" title="Выйти (Esc)">✕ Выйти</button>
+            </div>
         </div>
-        <div class="tl-fs-stage" id="tl-fs-stage"></div>
+        <div class="tl-fs-timeline">
+            <div class="tl-fs-progress-area">
+                <div class="tl-fs-progress-track" id="tl-fs-progress-bar-bg" data-onclick="tlSeekFs(event)">
+                    <div class="tl-fs-progress-fill tl-progress-fill" style="width:0%"></div>
+                </div>
+                <div class="tl-fs-progress-count tl-progress-label">0с / 0с</div>
+            </div>
+            <div class="tl-fs-controls">
+                <button class="tl-fs-ctrl" data-onclick="tlResetPlayer()" title="В начало">⏮</button>
+                <button class="tl-fs-ctrl tl-fs-ctrl-play tl-play-btn-sync" data-onclick="tlPlay()">▶</button>
+                <button class="tl-fs-ctrl" data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
+            </div>
+        </div>
     </div>
 
     <canvas id="admin-image-canvas" style="display:none"></canvas>

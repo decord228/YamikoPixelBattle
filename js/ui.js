@@ -1516,10 +1516,11 @@ function playClick(){
 }
 
 function switchAdminTab(tab){
-  ['users','canvas','broadcast','stats','clans'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
-  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats','clans'][i]===tab); });
+  ['users','canvas','broadcast','stats','clans','timelapse'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats','clans','timelapse'][i]===tab); });
   if (tab==='stats') loadAdminStats();
   if (tab==='clans') loadAdminClans();
+  if (tab==='timelapse') tlRefreshStatus();
 }
 function showPanel(id){
   hideAllPanels();

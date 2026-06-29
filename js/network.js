@@ -246,6 +246,9 @@ function handleJSON(d) {
       updateInspector(null, null, d.x, d.y, true);
     }
   }
+  else if (a === 'timelapse_status') {
+    if (typeof tlHandleStatus === 'function') tlHandleStatus(d);
+  }
 }
 
 function applyServerSettings(s) {

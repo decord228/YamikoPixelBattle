@@ -77,6 +77,12 @@ let stencilUploadGen = 0; // увеличивается при каждой но
 // Active item usage
 let activeItem = null;
 
+// ── PIXEL OWNERSHIP CACHE ──
+// Ключ: "x,y" → { username, emoji } | 'loading' | 'unknown'
+const pixelOwnerCache = new Map();
+let pixelInfoDebounceTimer = null;
+let pixelInfoLastPos = { x: -1, y: -1 };
+
 // ── DOM ELEMENTS ──
 const wrap = document.getElementById('canvas-wrap');
 const mainCanvas = document.getElementById('main-canvas');

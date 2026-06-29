@@ -2458,7 +2458,27 @@ html, body {
     box-shadow: 0 4px 16px rgba(0,0,0,.5);
     gap: 7px;
     align-items: center;
+    flex-direction: row;
+    white-space: nowrap;
 }
+
+#inspector-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    line-height: 1.4;
+}
+
+.inspector-owner {
+    color: #a78bfa;
+    font-size: 10px;
+    opacity: 0.9;
+}
+
+    .inspector-owner b {
+        color: #fff;
+        font-weight: 600;
+    }
 
 #inspector-color {
     width: 13px;

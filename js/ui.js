@@ -196,6 +196,8 @@ function placePixel() {
   }
   sendPixel(x,y,colorToPlace);
   canvasData[y*canvasW+x]=colorToPlace;
+  // Сразу записываем себя в кэш авторов — не ждём ответа сервера
+  pixelOwnerCache.set(`${x},${y}`, { username: currentUser, emoji: currentEmoji });
   renderPixel(x,y,colorToPlace);
   sessionPixels++;
   updateProfileStats(currentPixels+1,currentRank);
@@ -1545,18 +1547,43 @@ function showToast(msg,type='info'){
 }
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function updateCoordsBar(x,y){document.getElementById('coords-badge').textContent=(x<0)?'— , —':`${x} , ${y}`;}
-function updateInspector(mx,my,px,py){
+function updateInspector(mx, my, px, py, fromCache) {
   if (!inspectorEnabled||px<0||py<0||px>=canvasW||py>=canvasH){document.getElementById('inspector').style.display='none';return;}
   const cidx=canvasData[py*canvasW+px];
   const col=PALETTE[cidx]||{c:'#fff',n:'?'};
+
+  // Определяем строку автора из кэша
+  const key = `${px},${py}`;
+  const cached = pixelOwnerCache.get(key);
+  let ownerHtml = '';
+  if (cached === 'loading') {
+    ownerHtml = '<span class="inspector-owner">⏳</span>';
+  } else if (cached && cached !== 'unknown') {
+    ownerHtml = `<span class="inspector-owner">${cached.emoji} <b>${esc(cached.username)}</b></span>`;
+  }
+
   document.getElementById('inspector-color').style.background=col.c;
-  document.getElementById('inspector-text').textContent=`${px},${py} — ${col.n}`;
+  document.getElementById('inspector-text').innerHTML=
+    `<span>${px},${py} — ${col.n}</span>${ownerHtml}`;
+
+  // Если ещё нет в кэше — запрашиваем у сервера с дебаунсом
+  if (!cached && !fromCache && isLoggedIn) {
+    pixelOwnerCache.set(key, 'loading');
+    clearTimeout(pixelInfoDebounceTimer);
+    pixelInfoLastPos = { x: px, y: py };
+    pixelInfoDebounceTimer = setTimeout(() => {
+      sendJSON({ action: 'pixel_info', x: pixelInfoLastPos.x, y: pixelInfoLastPos.y });
+    }, 250);
+  }
+
   const el=document.getElementById('inspector');
   el.style.display='flex';
-  let lx=mx+14,ly=my+14;
-  if (lx+200>window.innerWidth) lx=mx-190;
-  if (ly+38>window.innerHeight) ly=my-38;
-  el.style.left=lx+'px';el.style.top=ly+'px';
+  if (mx !== null) {
+    let lx=mx+14,ly=my+14;
+    if (lx+220>window.innerWidth) lx=mx-210;
+    if (ly+52>window.innerHeight) ly=my-52;
+    el.style.left=lx+'px';el.style.top=ly+'px';
+  }
 }
 
 document.getElementById('backdrop').onclick=()=>{ if(document.getElementById('auth-panel').classList.contains('show'))return; hideAllPanels(); };

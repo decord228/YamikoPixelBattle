@@ -51,6 +51,8 @@ function handleBinary(data) {
       const x=(data[i]<<8)|data[i+1],y=(data[i+2]<<8)|data[i+3],cidx=data[i+4];
       if (x>=0&&x<canvasW&&y>=0&&y<canvasH&&cidx<PALETTE.length){
         canvasData[y*canvasW+x]=cidx;renderPixel(x,y,cidx);
+        // Инвалидируем кэш автора — пиксель только что перекрасили
+        pixelOwnerCache.delete(`${x},${y}`);
       }
     }
   }
@@ -231,6 +233,18 @@ function handleJSON(d) {
   else if (a==='move_saved') {
     showToast('Перемещение сохранено на холст!','success');
     if (d.pixels) { canvasData.set(d.pixels); fullRender(d.pixels); }
+  }
+  else if (a==='pixel_info_result') {
+    const key = `${d.x},${d.y}`;
+    if (d.username) {
+      pixelOwnerCache.set(key, { username: d.username, emoji: d.emoji || '👾' });
+    } else {
+      pixelOwnerCache.set(key, 'unknown');
+    }
+    // Если курсор всё ещё на этом пикселе — обновим инспектор
+    if (hoveredPixel.x === d.x && hoveredPixel.y === d.y) {
+      updateInspector(null, null, d.x, d.y, true);
+    }
   }
 }
 

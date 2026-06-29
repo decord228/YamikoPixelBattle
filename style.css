@@ -3259,9 +3259,8 @@ html, body {
 /* ── Контролы плеера ── */
 #admin-tab-timelapse .tl-controls-row {
     display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: space-between;
+    flex-direction: column;
+    align-items: stretch;
     gap: 10px;
 }
 
@@ -3269,6 +3268,7 @@ html, body {
     display: flex;
     flex-direction: row;
     align-items: center;
+    justify-content: center;
     gap: 6px;
 }
 
@@ -3320,6 +3320,8 @@ html, body {
 #admin-tab-timelapse .tl-speed-group {
     display: flex;
     flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
     gap: 3px;
     background: var(--surface2);
     border: 1px solid var(--border2);
@@ -3348,3 +3350,201 @@ html, body {
         background: var(--accent);
         color: #fff;
     }
+
+    #admin-tab-timelapse .tl-speed-btn[data-speed="10"] {
+        margin-left: 4px;
+        border-left: 1px solid var(--border2);
+        padding-left: 11px;
+    }
+
+/* ── Канвас-обёртка: relative для плавающей кнопки fullscreen ── */
+#admin-tab-timelapse .tl-canvas-wrap {
+    position: relative;
+}
+
+#admin-tab-timelapse .tl-fullscreen-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 30px;
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20,20,22,.72);
+    backdrop-filter: blur(4px);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text2);
+    font-size: 15px;
+    line-height: 1;
+    cursor: pointer;
+    z-index: 2;
+    transition: background .15s, color .15s, border-color .15s;
+}
+
+    #admin-tab-timelapse .tl-fullscreen-btn:hover {
+        background: var(--surface3);
+        color: var(--text);
+        border-color: var(--accent);
+    }
+
+/* ════════════════════════════════════════════════════════════
+   Timelapse — fullscreen overlay
+   Живёт вне #admin-tab-timelapse в DOM (растягивается на весь
+   экран приложения), поэтому стили не заскоуплены под него.
+   #tl-player-core при входе физически переносится сюда JS-ом,
+   так что все .tl-* стили выше продолжают работать как есть —
+   они навешаны на классы, не на родителя.
+════════════════════════════════════════════════════════════ */
+.tl-fs-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: radial-gradient(circle at 50% 20%, var(--bg2) 0%, var(--bg) 70%);
+    display: flex;
+    flex-direction: column;
+}
+
+.tl-fs-topbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+}
+
+.tl-fs-title {
+    font-family: 'Unbounded', sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: var(--text2);
+    text-transform: uppercase;
+    font-family: 'Space Mono', monospace;
+}
+
+.tl-fs-overlay .tl-icon-btn {
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+    .tl-fs-overlay .tl-icon-btn:hover {
+        background: var(--surface3);
+        color: var(--text);
+    }
+
+.tl-fs-stage {
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    overflow: hidden;
+}
+
+    /* Внутри fullscreen-сцены раскладываем перенесённый #tl-player-core
+   так, чтобы канвас занимал максимум места, а панель управления
+   была прижата книзу и не растягивалась без необходимости. */
+    .tl-fs-stage #tl-player-core {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 18px;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+    }
+
+    .tl-fs-stage .tl-canvas-wrap {
+        flex: 1 1 auto;
+        min-height: 0;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #0a0a0c;
+        margin: 0;
+    }
+
+        .tl-fs-stage .tl-canvas-wrap canvas {
+            image-rendering: pixelated;
+            border-radius: 6px;
+            box-shadow: 0 8px 40px rgba(0,0,0,.5);
+        }
+
+    .tl-fs-stage .tl-fullscreen-btn {
+        display: none; /* в самом fullscreen уже не нужна — закрываем через топбар/Esc */
+    }
+
+    .tl-fs-stage .tl-load-track {
+        display: none; /* полоса первичной загрузки не нужна в уже подготовленном плеере */
+    }
+
+    /* Нижняя панель воспроизведения — фиксированная ширина, по центру,
+   не растягивается на весь экран по высоте */
+    .tl-fs-stage .tl-progress-wrap,
+    .tl-fs-stage .tl-controls-row {
+        flex: 0 0 auto;
+        width: min(720px, 92vw);
+    }
+
+    .tl-fs-stage .tl-controls-row {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+        background: var(--surface);
+        border: 1px solid var(--border2);
+        border-radius: 14px;
+        padding: 12px 16px;
+    }
+
+    .tl-fs-stage .tl-ctrl-btn {
+        width: 40px;
+        height: 40px;
+    }
+
+    .tl-fs-stage .tl-ctrl-play {
+        width: 50px;
+        height: 50px;
+        font-size: 17px;
+    }
+
+@media (max-width: 640px) {
+    .tl-fs-topbar {
+        padding: 10px 12px;
+    }
+
+    .tl-fs-stage {
+        padding: 10px;
+        gap: 12px;
+    }
+
+        .tl-fs-stage #tl-player-core {
+            gap: 12px;
+        }
+
+        .tl-fs-stage .tl-controls-row {
+            flex-direction: column;
+            gap: 10px;
+            padding: 10px 12px;
+        }
+
+        .tl-fs-stage .tl-speed-group {
+            justify-content: center;
+        }
+}

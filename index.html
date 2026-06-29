@@ -577,28 +577,35 @@
 
                     <div class="tl-load-track"><div id="tl-load-bar" class="tl-load-fill" style="width:0%"></div></div>
 
-                    <div id="tl-canvas-wrap" class="tl-canvas-wrap">
-                        <canvas id="tl-canvas"></canvas>
-                    </div>
-
-                    <div class="tl-progress-wrap">
-                        <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
-                            <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                    <!-- tl-player-core: переносится целиком в fullscreen-оверлей и обратно -->
+                    <div id="tl-player-core">
+                        <div id="tl-canvas-wrap" class="tl-canvas-wrap">
+                            <button class="tl-fullscreen-btn" id="tl-fullscreen-btn" data-onclick="tlToggleFullscreen()" title="На весь экран">⛶</button>
+                            <canvas id="tl-canvas"></canvas>
                         </div>
-                        <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
-                    </div>
 
-                    <div class="tl-controls-row">
-                        <div class="tl-ctrl-buttons">
-                            <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
-                            <button class="tl-ctrl-btn tl-ctrl-play" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
-                            <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
+                        <div class="tl-progress-wrap">
+                            <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
+                                <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                            </div>
+                            <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
                         </div>
-                        <div class="tl-speed-group">
-                            <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
-                            <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
-                            <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
-                            <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
+
+                        <div class="tl-controls-row">
+                            <div class="tl-ctrl-buttons">
+                                <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
+                                <button class="tl-ctrl-btn tl-ctrl-play" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
+                                <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
+                            </div>
+                            <div class="tl-speed-group">
+                                <button class="tl-speed-btn" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
+                                <button class="tl-speed-btn" data-speed="2" data-onclick="tlSetSpeed(2)">×2</button>
+                                <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
+                                <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
+                                <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
+                                <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
+                                <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -607,6 +614,15 @@
 
             </div>
         </div>
+    </div>
+
+    <!-- ── Timelapse fullscreen overlay (пустой контейнер — tl-player-core переносится сюда JS-ом) ── -->
+    <div id="tl-fullscreen-overlay" class="tl-fs-overlay" style="display:none">
+        <div class="tl-fs-topbar">
+            <div class="tl-fs-title" id="tl-fs-title">Тайм-лапс</div>
+            <button class="tl-icon-btn" id="tl-fs-close" data-onclick="tlToggleFullscreen()" title="Свернуть (Esc)">✕</button>
+        </div>
+        <div class="tl-fs-stage" id="tl-fs-stage"></div>
     </div>
 
     <canvas id="admin-image-canvas" style="display:none"></canvas>

@@ -135,14 +135,18 @@ function handleJSON(d) {
     if (!clanShareCursor) clearCursorFlags();
   }
   else if (a==='clan_stencil_update') {
-    // Больше не применяем трафарет автоматически у всех — только обновляем список,
-    // пользователь сам решает, взять его или нет (кнопка "ВЗЯТЬ").
+    // Кто-то обновил клановый трафарет — получаем свежий список
     if (currentClan) sendJSON({ action: 'clan_get_stencils' });
-    if (d.from && d.from !== currentUser) showToast(`${d.from} поделился новым трафаретом`, 'info');
+    if (d.from && d.from !== currentUser) {
+      if (d.removed) showToast(`${d.from} убрал трафарет из клана`, 'info');
+      else showToast(`${d.from} обновил трафарет клана`, 'info');
+    }
   }
   else if (a==='clan_stencils_list') {
     clanSharedStencils = d.stencils || [];
     if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
+    // Обновляем «статус в клане» в панели трафарета, если она открыта
+    if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
   }
   else if (a==='clan_chat_message') {
     if (d.msg) addClanChatMessage(d.msg.username, d.msg.text, d.msg.emoji);

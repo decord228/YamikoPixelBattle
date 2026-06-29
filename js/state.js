@@ -69,6 +69,7 @@ let stencilImageData = null;
 let stencilOrigWidth = 0, stencilOrigHeight = 0;
 let savedStencils = []; // Сохраненные пресеты трафаретов
 let stencilLocked = false; // true = трафарет взят у соклановца, нельзя двигать/масштабировать
+let stencilOwnerName = ''; // имя владельца, если трафарет взят у соклановца (для лейбла)
 
 // Active item usage
 let activeItem = null;

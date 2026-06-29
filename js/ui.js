@@ -46,6 +46,7 @@ function onAuthSuccess(d) {
   
   if (d.stencil) applySharedStencil(d.stencil);
   if (currentClan) sendJSON({action:'clan_get'});
+  updateStencilPanelClanStatus();
   buildShopUI();
 }
 
@@ -275,7 +276,22 @@ function activateItem(itemId) {
 
 function toggleStencilPanel() {
   const p = document.getElementById('stencil-panel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
+  const isHidden = p.style.display === 'none';
+  setStencilToolActive(isHidden);
+  if (isHidden) {
+    updateStencilPanelClanStatus();
+    if (currentClan) requestClanStencils();
+  }
+}
+
+// Единая точка для синхронизации кнопки "Трафарет" в сайдбаре с панелью
+// трафарета — чтобы кнопка всегда отражала, открыта ли панель, независимо
+// от того, что её открыло (клик по кнопке, загрузка трафарета соклановца,
+// загрузка сохранённого шаблона, и т.д.).
+function setStencilToolActive(active) {
+  const p = document.getElementById('stencil-panel');
+  if (p) p.style.display = active ? 'block' : 'none';
+  document.getElementById('btn-tool-stencil')?.classList.toggle('active', active);
 }
 
 function toggleStencilEdit() {
@@ -287,6 +303,7 @@ function toggleStencilEdit() {
       showToast('Режим редактирования: ВКЛ. Рисование заблокировано.', 'info');
   } else {
       showToast('Режим редактирования: ВЫКЛ. Теперь можно рисовать поверх трафарета.', 'success');
+      if (typeof startStencilAnimIfNeeded === 'function') startStencilAnimIfNeeded();
   }
 }
 
@@ -379,21 +396,42 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
 
       const snappedImg = new Image();
       snappedImg.onload = () => {
+        // Позиционирование нового трафарета:
+        // 1) Если на холсте уже что-то показано (свой трафарет ИЛИ взятый у
+        //    соклановца) — новая картинка занимает то же МЕСТО (центр старого
+        //    прямоугольника), просто с новым размером. Так удобно подменить
+        //    картинку без необходимости заново её подгонять под нужный участок.
+        // 2) Если трафарета нет вообще — кладём по центру текущего вида экрана,
+        //    это единственный разумный дефолт для первой загрузки.
+        let centerX, centerY;
+        if (stencilActive && stencilRect) {
+          centerX = stencilRect.x + stencilRect.w / 2;
+          centerY = stencilRect.y + stencilRect.h / 2;
+        } else {
+          const cp = screenToCanvas(window.innerWidth/2, window.innerHeight/2);
+          centerX = cp.x; centerY = cp.y;
+        }
+
         stencilOrigImg = snappedImg;
         stencilOrigWidth = img.width;
         stencilOrigHeight = img.height;
-        
-        const cp = screenToCanvas(window.innerWidth/2, window.innerHeight/2);
+
         stencilRect = {
-          x: Math.floor(cp.x - img.width/2),
-          y: Math.floor(cp.y - img.height/2),
+          x: Math.floor(centerX - img.width/2),
+          y: Math.floor(centerY - img.height/2),
           w: img.width, 
           h: img.height
         };
-        
+
+        // Новая загруженная картинка — это всегда МОЙ трафарет, даже если до
+        // этого на холсте был "взятый" (locked) трафарет соклановца.
         stencilActive=true;
         stencilEditMode=true;
+        stencilLocked=false;
+        stencilOwnerName='';
         document.getElementById('stencil-edit-toggle').classList.add('on');
+        updateStencilLockUI();
+        setStencilToolActive(true);
         
         updateStencilGraphic(); 
         showToast(`Трафарет загружен! ${img.width}×${img.height} пикс.`,'info');
@@ -420,8 +458,9 @@ function cancelStencil(){
   const wasLocked = stencilLocked;
   // Сбрасываем весь стейт трафарета
   stencilActive=false; stencilImg=null; stencilImageData=null; stencilOrigImg=null; personalStencilUrl=null;
-  stencilHandle=null; isDraggingTool=false; adminActiveHandle=null; stencilLocked=false;
+  stencilHandle=null; isDraggingTool=false; adminActiveHandle=null; stencilLocked=false; stencilOwnerName='';
   document.getElementById('stencil-panel').style.display='none';
+  if (typeof setStencilToolActive === 'function') setStencilToolActive(false);
   updateStencilLockUI();
   // Если это был "взятый" трафарет соклановца — он никогда не сохранялся как личный,
   // поэтому очищать личный трафарет на сервере не нужно (чтобы не затереть свой).
@@ -484,7 +523,13 @@ function deleteSavedStencil(i) {
 async function shareStencilToClan(){
   if (!currentClan){showToast('Вы не в клане','error');return;}
   if (!stencilImg) {showToast('Сначала загрузите трафарет','error');return;}
-  
+  if (stencilLocked) {showToast('Это трафарет соклановца — поделиться им от своего имени нельзя','error');return;}
+
+  if (clanSharedStencil && clanSharedStencil.owner !== currentUser) {
+    showToast(`В клане уже есть трафарет от ${clanSharedStencil.owner}`, 'error');
+    return;
+  }
+
   if (personalStencilUrl) {
       sendJSON({ action: 'clan_share_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
       showToast('Трафарет отправлен соклановцам!', 'success');
@@ -506,8 +551,16 @@ async function shareStencilToClan(){
   } catch (e) { showToast('Ошибка сети', 'error'); }
 }
 
-// ── CLAN STENCILS LIST ──
-let clanSharedStencils = []; // [{username, emoji, stencil}]
+// Владелец клановского трафарета убирает его — у всех соклановцев он исчезнет
+// (если они его сейчас просматривают).
+function unshareClanStencil() {
+  if (!clanSharedStencil || clanSharedStencil.owner !== currentUser) return;
+  if (!confirm('Снять ваш трафарет с показа всему клану?')) return;
+  sendJSON({ action: 'clan_unshare_stencil' });
+}
+
+// ── CLAN STENCIL (один на клан, с владельцем) ──
+let clanSharedStencil = null; // { owner, emoji, stencil } | null
 
 function requestClanStencils() {
   if (!currentClan) return;
@@ -517,31 +570,43 @@ function requestClanStencils() {
 function renderClanStencilsList() {
   const c = document.getElementById('clan-stencils-list');
   if (!c) return;
-  if (!clanSharedStencils.length) {
+  if (!clanSharedStencil) {
     c.innerHTML = '<div class="stencil-list-empty">Никто не поделился трафаретом</div>';
     return;
   }
-  c.innerHTML = clanSharedStencils.map((entry, i) => `
-    <div class="stencil-item" data-onclick="loadClanMemberStencil(${i})">
+  const entry = clanSharedStencil;
+  const isMine = entry.owner === currentUser;
+  const isShowingThis = stencilActive && personalStencilUrl === (entry.stencil && entry.stencil.img);
+  c.innerHTML = `
+    <div class="stencil-item${isMine ? ' stencil-item-mine' : ''}">
       <span class="stencil-item-emoji">${esc(entry.emoji||'👾')}</span>
-      <div class="stencil-item-info">
-        <div class="stencil-item-name">${esc(entry.username)}</div>
+      <div class="stencil-item-info" data-onclick="loadClanMemberStencil()" style="cursor:pointer;">
+        <div class="stencil-item-name">${isMine ? 'Ваш трафарет' : esc(entry.owner)}${isShowingThis ? ' · сейчас показан' : ''}</div>
         <div class="stencil-item-meta">${entry.stencil&&entry.stencil.rect?entry.stencil.rect.w+'×'+entry.stencil.rect.h+' пикс.':''}</div>
       </div>
-      <span class="stencil-item-action">ВЗЯТЬ</span>
-    </div>`).join('');
+      ${isMine
+        ? `<button class="stencil-item-delete" data-onclick="unshareClanStencil()" title="Снять трафарет с клана">✕</button>`
+        : `<span class="stencil-item-action" data-onclick="loadClanMemberStencil()" style="cursor:pointer;">${isShowingThis ? 'ПОКАЗАН' : 'ВЗЯТЬ'}</span>`
+      }
+    </div>`;
 }
 
-function loadClanMemberStencil(i) {
-  const entry = clanSharedStencils[i];
+function loadClanMemberStencil() {
+  const entry = clanSharedStencil;
   if (!entry || !entry.stencil || !entry.stencil.img) { showToast('Трафарет недоступен', 'error'); return; }
+  if (entry.owner === currentUser) {
+    // Это свой же трафарет — просто открываем его как редактируемый (полные права).
+    applySharedStencil(entry.stencil, false);
+    showToast('Ваш трафарет загружен', 'success');
+    return;
+  }
   // Берём трафарет ровно в тех координатах, в которых его сохранил соклановец —
-  // без перемещения в центр экрана.
-  applySharedStencil(entry.stencil, true);
-  showToast(`Загружен трафарет от ${entry.username}`, 'success');
+  // без перемещения в центр экрана. Чужой трафарет — только просмотр (locked).
+  applySharedStencil(entry.stencil, true, entry.owner);
+  showToast(`Загружен трафарет от ${entry.owner}`, 'success');
 }
 
-function applySharedStencil(data, locked = false){
+function applySharedStencil(data, locked = false, ownerName = ''){
   if (!data||!data.img) return;
   const img=new Image();
   img.crossOrigin = "Anonymous";
@@ -555,8 +620,9 @@ function applySharedStencil(data, locked = false){
     stencilActive=true;
     stencilEditMode=false;
     stencilLocked=locked;
+    stencilOwnerName = locked ? (ownerName || '') : '';
     document.getElementById('stencil-edit-toggle').classList.remove('on');
-    document.getElementById('stencil-panel').style.display='block';
+    setStencilToolActive(true);
     document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
     document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
     updateStencilLockUI();
@@ -568,6 +634,7 @@ function applySharedStencil(data, locked = false){
 
     updateStencilGraphic(); 
     showToast('Трафарет успешно загружен!','success');
+    if (typeof startStencilAnimIfNeeded === 'function') startStencilAnimIfNeeded();
   };
   img.src=data.img;
 }
@@ -580,7 +647,57 @@ function updateStencilLockUI() {
   const lockNote = document.getElementById('stencil-lock-note');
   if (editRow) editRow.style.display = stencilLocked ? 'none' : '';
   if (scaleRow) scaleRow.style.display = stencilLocked ? 'none' : '';
-  if (lockNote) lockNote.style.display = stencilLocked ? 'flex' : 'none';
+  if (lockNote) {
+    lockNote.style.display = stencilLocked ? 'flex' : 'none';
+    const span = lockNote.querySelector('span');
+    if (span) span.textContent = stencilOwnerName
+      ? `Трафарет от ${stencilOwnerName} — можно менять только прозрачность`
+      : 'Трафарет соклановца — можно менять только прозрачность';
+  }
+  if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
+}
+
+// Управляет блоком "Поделиться с кланом" в панели трафарета: показывает кто сейчас
+// держит общий трафарет клана и подменяет кнопку на "СНЯТЬ", если это владелец.
+function updateStencilPanelClanStatus() {
+  const statusEl = document.getElementById('stencil-clan-share-status');
+  const btnEl = document.getElementById('stencil-clan-share-btn');
+  const rowEl = document.getElementById('stencil-clan-share-row');
+  if (!statusEl || !btnEl) return;
+
+  if (!currentClan) {
+    if (rowEl) rowEl.style.display = 'none';
+    return;
+  }
+  if (rowEl) rowEl.style.display = '';
+
+  if (stencilLocked) {
+    // Сейчас показан чужой трафарет — делиться им от своего имени нельзя,
+    // зато можно показать, кто именно сейчас держит трафарет клана.
+    statusEl.textContent = clanSharedStencil ? `Сейчас делится: ${clanSharedStencil.owner}` : '';
+    btnEl.textContent = 'ПРОСМОТР';
+    btnEl.className = 'btn btn-secondary btn-sm';
+    btnEl.style.background = '';
+    btnEl.setAttribute('data-onclick', "showToast('Загрузите свою картинку, чтобы поделиться','info')");
+  } else if (!clanSharedStencil) {
+    statusEl.textContent = 'Никто не делится';
+    btnEl.textContent = 'ОТПРАВИТЬ';
+    btnEl.className = 'btn btn-primary btn-sm';
+    btnEl.style.background = 'var(--accent2)';
+    btnEl.setAttribute('data-onclick', 'shareStencilToClan()');
+  } else if (clanSharedStencil.owner === currentUser) {
+    statusEl.textContent = 'Ваш трафарет виден всему клану';
+    btnEl.textContent = 'СНЯТЬ';
+    btnEl.className = 'btn btn-danger btn-sm';
+    btnEl.style.background = '';
+    btnEl.setAttribute('data-onclick', 'unshareClanStencil()');
+  } else {
+    statusEl.textContent = `Сейчас делится: ${clanSharedStencil.owner}`;
+    btnEl.textContent = 'ЗАНЯТО';
+    btnEl.className = 'btn btn-secondary btn-sm';
+    btnEl.style.background = '';
+    btnEl.setAttribute('data-onclick', 'shareStencilToClan()');
+  }
 }
 
 function handleStencilStart(clientX,clientY){
@@ -1027,9 +1144,14 @@ function useAdminShopItem(itemId) {
 function showLeaderboard() {
   leaderboardOpen = !leaderboardOpen;
   document.getElementById('leaderboard-panel').classList.toggle('show', leaderboardOpen);
+  document.getElementById('btn-leaderboard')?.classList.toggle('active', leaderboardOpen);
   if (leaderboardOpen) sendJSON({action:'get_leaderboard'});
 }
-function hideLeaderboard() { leaderboardOpen = false; document.getElementById('leaderboard-panel').classList.remove('show'); }
+function hideLeaderboard() {
+  leaderboardOpen = false;
+  document.getElementById('leaderboard-panel').classList.remove('show');
+  document.getElementById('btn-leaderboard')?.classList.remove('active');
+}
 
 function switchLbTab(tab){
   document.querySelector('#leaderboard-panel .sub-tab:nth-child(1)').classList.toggle('active',tab==='players');
@@ -1341,6 +1463,8 @@ function hidePanel(id){document.getElementById(id)?.classList.remove('show');doc
 function hideAllPanels(){
   document.querySelectorAll('.overlay-panel:not(#auth-panel)').forEach(p=>p.classList.remove('show'));
   document.getElementById('backdrop').classList.remove('show');
+  leaderboardOpen = false;
+  document.getElementById('btn-leaderboard')?.classList.remove('active');
 }
 function showToast(msg,type='info'){
   const wrap=document.getElementById('toast-wrap');

@@ -1086,14 +1086,19 @@ html, body {
     transition: border-color .15s, background .15s;
 }
 
-    .stencil-item[data-onclick] {
-        cursor: pointer;
-    }
+.stencil-item-mine {
+    border-color: var(--accent2, var(--accent));
+    background: rgba(99, 102, 241, 0.08);
+}
 
-        .stencil-item[data-onclick]:hover {
-            border-color: var(--accent);
-            background: var(--bg4, var(--bg3));
-        }
+.stencil-item[data-onclick] {
+    cursor: pointer;
+}
+
+    .stencil-item[data-onclick]:hover {
+        border-color: var(--accent);
+        background: var(--bg4, var(--bg3));
+    }
 
 .stencil-item-emoji {
     font-size: 16px;
@@ -2281,6 +2286,47 @@ html, body {
 
 .cursor-flag-emoji {
     font-size: 13px;
+}
+
+/* ── STENCIL LABEL ── */
+#stencil-label {
+    position: absolute;
+    pointer-events: none;
+    z-index: 19;
+    transform: translate(-50%, -100%);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(20,20,22,.92);
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+    font-family: 'Space Mono',monospace;
+    box-shadow: 0 3px 12px rgba(0,0,0,.5);
+    color: var(--text1);
+    animation: stencil-label-pulse 2.4s ease-in-out infinite;
+}
+
+    #stencil-label .stencil-label-icon {
+        font-size: 12px;
+        flex-shrink: 0;
+    }
+
+    #stencil-label .stencil-label-owner {
+        color: var(--accent2, var(--accent));
+    }
+
+@keyframes stencil-label-pulse {
+    0%, 100% {
+        box-shadow: 0 3px 12px rgba(0,0,0,.5), 0 0 0 0 rgba(255,255,255,0);
+    }
+
+    50% {
+        box-shadow: 0 3px 14px rgba(0,0,0,.5), 0 0 0 3px rgba(255,255,255,.06);
+    }
 }
 
 /* ── TOAST ── */

@@ -114,16 +114,28 @@ function handleJSON(d) {
   else if (a==='clan_update') {
     if (d.clan) {
       currentClan=d.clan.name||'';
+      clanSharedStencil = d.clan.shared_stencil || null;
       renderClanView(d.clan);
     } else {
       currentClan='';
+      clanSharedStencil = null;
+      // Если мы только что покинули клан/были исключены, а на холсте у нас
+      // показан "чужой" (locked) трафарет клана — он больше не актуален.
+      if (stencilLocked) cancelStencil();
       renderNoClanView();
     }
     if (d.coins!==undefined) {currentCoins=d.coins;updateCoinsUI(currentCoins);}
     if (d.message) showToast(d.message,'success');
+    if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
+    if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
   }
   else if (a==='clan_data') {
-    if (d.clan) renderClanView(d.clan);
+    if (d.clan) {
+      clanSharedStencil = d.clan.shared_stencil || null;
+      renderClanView(d.clan);
+      if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
+      if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
+    }
   }
   else if (a==='clan_list_data') {
     renderClanBrowseList(d.clans||[]);
@@ -135,15 +147,44 @@ function handleJSON(d) {
     if (!clanShareCursor) clearCursorFlags();
   }
   else if (a==='clan_stencil_update') {
-    // Кто-то обновил клановый трафарет — получаем свежий список
-    if (currentClan) sendJSON({ action: 'clan_get_stencils' });
-    if (d.from && d.from !== currentUser) {
+    // Сервер шлёт уже готовый объект { owner, emoji, stencil } или null (если снят).
+    clanSharedStencil = d.stencil || null;
+    if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
+    if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
+
+    const isWatchingClanStencil = stencilLocked; // мы сейчас смотрим на чужой (взятый) трафарет
+    if (d.from && d.from !== currentUser && !isWatchingClanStencil) {
       if (d.removed) showToast(`${d.from} убрал трафарет из клана`, 'info');
       else showToast(`${d.from} обновил трафарет клана`, 'info');
     }
+
+    // Если прямо сейчас на холсте показан ЧУЖОЙ (locked) трафарет — синхронизируем
+    // его вживую: подвинулся/изменился у владельца → подвинется и у нас;
+    // владелец снял трафарет → автоматически скрываем у себя тоже.
+    if (isWatchingClanStencil) {
+      if (!clanSharedStencil || d.removed) {
+        cancelStencil();
+        showToast('Трафарет клана был снят владельцем', 'info');
+      } else if (clanSharedStencil.stencil) {
+        const wasShowingOwner = stencilOwnerName === clanSharedStencil.owner;
+        if (wasShowingOwner) {
+          stencilRect = clanSharedStencil.stencil.rect || stencilRect;
+          stencilOpacity = clanSharedStencil.stencil.opacity || stencilOpacity;
+          personalStencilUrl = clanSharedStencil.stencil.img;
+          document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
+          document.getElementById('stencil-opacity-val').textContent = Math.round(stencilOpacity * 100) + '%';
+          if (clanSharedStencil.stencil.img !== stencilOrigImg?.src) {
+            applySharedStencil(clanSharedStencil.stencil, true, clanSharedStencil.owner);
+          } else {
+            renderOverlay();
+          }
+          if (d.from && d.from !== currentUser) showToast(`${d.from} обновил трафарет клана`, 'info');
+        }
+      }
+    }
   }
   else if (a==='clan_stencils_list') {
-    clanSharedStencils = d.stencils || [];
+    clanSharedStencil = d.stencil || null;
     if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
     // Обновляем «статус в клане» в панели трафарета, если она открыта
     if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();

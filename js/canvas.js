@@ -163,8 +163,33 @@ function renderOverlay() {
       octx.setLineDash([6 / camZoom, 3 / camZoom]); 
       octx.strokeRect(ir.x, ir.y, ir.w, ir.h); 
       octx.setLineDash([]);
+    } else {
+      // Лёгкая "бегущая" обводка, чтобы трафарет визуально отличался от уже
+      // выставленных пикселей холста, даже когда редактирование выключено.
+      const t = performance.now() / 1000;
+      const dashLen = 5 / camZoom, gapLen = 4 / camZoom;
+      const dashOffset = -(t * 14) % (dashLen + gapLen);
+      const pulse = 0.45 + 0.25 * Math.sin(t * 2.2); // 0.2 .. 0.7
+      octx.save();
+      octx.strokeStyle = `rgba(255,255,255,${pulse.toFixed(2)})`;
+      octx.lineWidth = 1.5 / camZoom;
+      octx.setLineDash([dashLen, gapLen]);
+      octx.lineDashOffset = dashOffset;
+      octx.strokeRect(ir.x, ir.y, ir.w, ir.h);
+      // Второй контур контрастным тёмным цветом снизу, чтобы обводка была
+      // видна и на светлом, и на тёмном фоне холста.
+      octx.strokeStyle = `rgba(0,0,0,${(pulse*0.6).toFixed(2)})`;
+      octx.lineDashOffset = dashOffset + (dashLen + gapLen) / 2;
+      octx.strokeRect(ir.x, ir.y, ir.w, ir.h);
+      octx.setLineDash([]);
+      octx.restore();
     }
   }
+
+  // Лейбл-плашка над трафаретом (DOM, не на canvas — текст должен оставаться
+  // читаемым при любом зуме). Показывается только когда трафарет не в режиме
+  // редактирования — в этот момент важно не спутать его с пикселями холста.
+  updateStencilLabel();
 
   // Курсор / Пипетка
   if (tool==='pencil'||tool==='eyedrop'||(!stencilEditMode && stencilActive)) {
@@ -255,6 +280,29 @@ function renderStencilErrors(ctx) {
       }
     }
   }
+}
+
+// Плашка-лейбл над трафаретом (DOM-элемент, обновляется в координатах экрана,
+// чтобы текст оставался читаемым на любом зуме). Видна только когда трафарет
+// показан в режиме просмотра (не редактирования) — именно тогда легче всего
+// спутать его с уже выставленными пикселями холста.
+function updateStencilLabel() {
+  const el = document.getElementById('stencil-label');
+  if (!el) return;
+  if (!stencilActive || stencilEditMode) { el.style.display = 'none'; return; }
+
+  const isMine = !stencilLocked;
+  if (isMine) {
+    el.innerHTML = `<span class="stencil-label-icon">🖼️</span><span>Ваш трафарет</span>`;
+  } else {
+    el.innerHTML = `<span class="stencil-label-icon">👥</span><span>Трафарет: <span class="stencil-label-owner">${esc(stencilOwnerName || '?')}</span></span>`;
+  }
+
+  const ir = stencilRect;
+  const topCenter = canvasToScreen(ir.x + ir.w / 2, ir.y);
+  el.style.left = topCenter.x + 'px';
+  el.style.top = (topCenter.y - 6) + 'px';
+  el.style.display = 'flex';
 }
 
 // ── CURSORS ──
@@ -354,13 +402,19 @@ function smoothTick() {
   updateAllCursorFlags();
 }
 
-// ── RAF RENDER LOOP (keeps overlay + cursors in sync during panning) ──
+// ── RAF RENDER LOOP (keeps overlay + cursors + stencil pulse in sync) ──
 let _rafLoopId = null;
 
+function _stencilNeedsAnim() {
+  return typeof stencilActive !== 'undefined' && stencilActive && !stencilEditMode;
+}
+
 function _rafLoop() {
-  if (typeof isDragging !== 'undefined' && isDragging) {
+  const dragging = typeof isDragging !== 'undefined' && isDragging;
+  const stencilAnim = _stencilNeedsAnim();
+  if (dragging || stencilAnim) {
     renderOverlay();
-    updateAllCursorFlags();
+    if (dragging) updateAllCursorFlags();
     _rafLoopId = requestAnimationFrame(_rafLoop);
   } else {
     _rafLoopId = null;
@@ -369,6 +423,11 @@ function _rafLoop() {
 
 function startDragRaf() {
   if (!_rafLoopId) _rafLoopId = requestAnimationFrame(_rafLoop);
+}
+
+// Алиас для читаемости в местах, где трафарет включается/обновляется.
+function startStencilAnimIfNeeded() {
+  if (_stencilNeedsAnim()) startDragRaf();
 }
 
 function resizeCanvas(w,h) {

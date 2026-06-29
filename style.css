@@ -545,7 +545,7 @@ html, body {
     top: 125px;
     /* Снизу: chat-btn bottom(14) + height(48) + gap(10) */
     bottom: 72px;
-    left: 6px; /* сдвинуто влево чтобы тени не обрезались краем */
+    left: 0px; /* сдвинуто влево чтобы тени не обрезались краем */
     /* overflow:visible на самом sidebar — тени не обрезаются */
     overflow: visible;
     display: flex;

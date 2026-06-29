@@ -48,3 +48,13 @@ function getWsUrl() {
     : 'wss://yamikopixelbattleserver.onrender.com';
 }
 const WS_URL = 'wss://yamikopixelbattleserver.onrender.com'; // fallback для обратной совместимости
+
+// Абсолютный адрес backend для HTTP-запросов (fetch).
+// Нужен, потому что фронтенд может быть открыт с другого домена
+// (например GitHub Pages), и относительные пути типа '/api/...'
+// в этом случае ведут не на backend, а на текущий домен фронтенда.
+function getApiUrl() {
+  return IS_DISCORD_ACTIVITY
+    ? '/api' // Discord сам проксирует /api на backend
+    : 'https://yamikopixelbattleserver.onrender.com/api';
+}

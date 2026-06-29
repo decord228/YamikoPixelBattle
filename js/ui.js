@@ -292,7 +292,7 @@ function toggleStencilEdit() {
 async function uploadPersonalStencil(dataUrl) {
     showToast('Сохранение в облако...', 'info');
     try {
-        const res = await fetch('/api/upload-template', {
+        const res = await fetch(`${getApiUrl()}/upload-template`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageBase64: dataUrl, name: 'stencil_' + currentUser, username: currentUser })
@@ -302,8 +302,13 @@ async function uploadPersonalStencil(dataUrl) {
             personalStencilUrl = data.url;
             sendJSON({ action: 'save_personal_stencil', stencil: { img: data.url, rect: stencilRect, opacity: stencilOpacity } });
             showToast('Трафарет сохранён в облаке!', 'success');
+        } else {
+            showToast('Не удалось сохранить трафарет в облаке', 'error');
         }
-    } catch (e) { console.error(e); }
+    } catch (e) {
+        console.error(e);
+        showToast('Ошибка сети при сохранении трафарета', 'error');
+    }
 }
 
 function updateStencilGraphic() {
@@ -487,7 +492,7 @@ async function shareStencilToClan(){
   
   showToast('Загрузка в облако...', 'info');
   try {
-    const res = await fetch('/api/upload-template', {
+    const res = await fetch(`${getApiUrl()}/upload-template`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64: stencilImg.src, name: 'clan_stencil', username: currentUser })

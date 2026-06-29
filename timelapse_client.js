@@ -166,7 +166,7 @@ function tlSetupCanvas() {
 }
 
 function tlGetColor(idx) {
-  return (typeof PALETTE !== 'undefined' && PALETTE[idx]) ? PALETTE[idx] : '#000';
+  return (typeof PALETTE !== 'undefined' && PALETTE[idx]) ? PALETTE[idx].c : '#000000';
 }
 
 function tlDrawFrame() {

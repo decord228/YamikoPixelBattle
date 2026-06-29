@@ -2890,330 +2890,461 @@ html, body {
         width: auto;
         max-height: 55vh;
     }
+}
+/* end @media (max-width:640px) */
 
-    /* ════════════════════════════════════════════════════════════
+/* ════════════════════════════════════════════════════════════
    Timelapse — admin panel UI
-   (селекторы намеренно scoped под #admin-tab-timelapse,
-   чтобы перебивать общие правила .btn{width:100%} независимо
-   от порядка подключения файлов)
-   ════════════════════════════════════════════════════════════ */
+   Все кнопки — собственный класс .tl-btn, не .btn
+════════════════════════════════════════════════════════════ */
 
-    #admin-tab-timelapse .tl-section {
-        margin-bottom: 4px;
+/* ── Базовые кнопки ── */
+#admin-tab-timelapse .tl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 8px 14px;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: 'Unbounded', sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: .8px;
+    text-transform: uppercase;
+    transition: all .18s;
+    white-space: nowrap;
+    width: auto;
+}
+
+#admin-tab-timelapse .tl-btn-full {
+    width: 100%;
+    margin-bottom: 10px;
+}
+
+#admin-tab-timelapse .tl-btn-sm {
+    padding: 6px 10px;
+    font-size: 9px;
+}
+
+#admin-tab-timelapse .tl-btn-primary {
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    color: #fff;
+    box-shadow: 0 3px 14px var(--accent-glow);
+}
+
+    #admin-tab-timelapse .tl-btn-primary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px var(--accent-glow);
     }
 
-    #admin-tab-timelapse .tl-section-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        margin-bottom: 8px;
-        font-size: 11px;
-        font-weight: 600;
-        color: var(--text2);
-        text-transform: uppercase;
-        letter-spacing: .5px;
+    #admin-tab-timelapse .tl-btn-primary:disabled {
+        opacity: .45;
+        transform: none;
+        cursor: default;
     }
 
-        #admin-tab-timelapse .tl-section-head .btn {
-            width: auto;
-        }
+#admin-tab-timelapse .tl-btn-danger {
+    background: rgba(239,68,68,.12);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,.25);
+}
 
-    #admin-tab-timelapse .tl-empty-hint {
-        color: var(--text3);
-        text-align: center;
-        padding: 14px 10px;
-        font-size: 12px;
-        border: 1px dashed var(--border1);
-        border-radius: 8px;
+    #admin-tab-timelapse .tl-btn-danger:hover {
+        background: rgba(239,68,68,.22);
     }
 
-    #admin-tab-timelapse .tl-status-line {
-        font-size: 11px;
-        color: var(--text3);
-        margin-top: 10px;
-        min-height: 16px;
-        word-break: break-all;
+    #admin-tab-timelapse .tl-btn-danger:disabled {
+        opacity: .4;
+        cursor: default;
     }
 
-    /* ── Карточка записи ── */
-    #admin-tab-timelapse .tl-rec-card {
-        background: var(--bg3, var(--surface2));
-        border: 1px solid var(--border1, var(--border2));
-        border-radius: 10px;
-        padding: 12px;
-        margin-bottom: 4px;
+#admin-tab-timelapse .tl-btn-ghost {
+    background: var(--surface2);
+    color: var(--text2);
+    border: 1px solid var(--border2);
+}
+
+    #admin-tab-timelapse .tl-btn-ghost:hover {
+        background: var(--surface3);
+        color: var(--text);
     }
 
-    #admin-tab-timelapse .tl-rec-card-top {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center;
-        gap: 10px;
-        margin-bottom: 10px;
-        width: 100%;
+/* ── Круглая кнопка-иконка ── */
+#admin-tab-timelapse .tl-icon-btn {
+    width: 30px;
+    height: 30px;
+    flex: 0 0 30px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text2);
+    font-size: 15px;
+    cursor: pointer;
+    transition: background .15s, color .15s;
+}
+
+    #admin-tab-timelapse .tl-icon-btn:hover {
+        background: var(--surface3);
+        color: var(--text);
     }
 
-    #admin-tab-timelapse .tl-rec-card-text {
-        flex: 1 1 auto;
-        min-width: 0;
+/* ── Карточка статуса записи ── */
+#admin-tab-timelapse .tl-rec-card {
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 12px;
+    padding: 14px;
+    margin-bottom: 14px;
+}
+
+#admin-tab-timelapse .tl-rec-header {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+}
+
+#admin-tab-timelapse .tl-rec-card-text {
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+#admin-tab-timelapse .tl-rec-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text);
+}
+
+#admin-tab-timelapse .tl-rec-sub {
+    font-size: 11px;
+    color: var(--text2);
+    margin-top: 2px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+#admin-tab-timelapse .tl-rec-actions {
+    display: flex;
+    flex-direction: row;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+    #admin-tab-timelapse .tl-rec-actions .tl-btn {
+        flex: 1 1 0;
     }
 
-    #admin-tab-timelapse .tl-rec-title {
-        font-size: 13px;
-        font-weight: 600;
-        color: var(--text1, var(--text));
+#admin-tab-timelapse .tl-rec-hint {
+    font-size: 10px;
+    color: var(--text3);
+}
+
+/* ── Индикатор записи ── */
+#admin-tab-timelapse .tl-rec-dot {
+    width: 10px;
+    height: 10px;
+    min-width: 10px;
+    flex: 0 0 10px;
+    border-radius: 50%;
+    transition: background .3s;
+}
+
+    #admin-tab-timelapse .tl-rec-dot.idle {
+        background: var(--text3);
     }
 
-    #admin-tab-timelapse .tl-rec-sub {
-        font-size: 11px;
-        color: var(--text3);
-        margin-top: 1px;
+    #admin-tab-timelapse .tl-rec-dot.recording {
+        background: var(--red);
+        animation: tl-blink 1s infinite;
     }
 
-    #admin-tab-timelapse .tl-rec-actions {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 6px;
-        width: 100%;
+@keyframes tl-blink {
+    0%,100% {
+        opacity: 1;
+        box-shadow: 0 0 0 3px rgba(239,68,68,.3);
     }
 
-        #admin-tab-timelapse .tl-rec-actions .btn {
-            flex: 1 1 0% !important;
-            width: auto !important;
-            min-width: 0;
-        }
+    50% {
+        opacity: .4;
+        box-shadow: none;
+    }
+}
 
-    #admin-tab-timelapse .tl-rec-hint {
-        font-size: 10px;
-        color: var(--text3);
-        margin-top: 8px;
+/* ── Секция со списком сессий ── */
+#admin-tab-timelapse .tl-section {
+    margin-bottom: 4px;
+}
+
+#admin-tab-timelapse .tl-section-head {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+#admin-tab-timelapse .tl-section-sep {
+    height: 1px;
+    background: var(--border);
+    margin: 12px 0;
+}
+
+#admin-tab-timelapse .tl-session-list {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    max-height: 220px;
+    overflow-y: auto;
+}
+
+#admin-tab-timelapse .tl-empty-hint {
+    color: var(--text3);
+    text-align: center;
+    padding: 18px 10px;
+    font-size: 12px;
+    border: 1px dashed var(--border2);
+    border-radius: 8px;
+}
+
+/* ── Карточка сессии ── */
+#admin-tab-timelapse .tl-session-item {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+    background: transparent;
+}
+
+    #admin-tab-timelapse .tl-session-item:hover {
+        background: var(--surface2);
+        border-color: var(--accent);
     }
 
-    #admin-tab-timelapse .tl-rec-dot {
-        width: 12px !important;
-        height: 12px !important;
-        min-width: 12px;
-        border-radius: 50%;
-        flex: 0 0 12px !important;
-        transition: background .3s;
-        box-shadow: 0 0 0 3px rgba(255,255,255,0.06);
+    #admin-tab-timelapse .tl-session-item.selected {
+        background: var(--surface2);
+        border-color: var(--accent);
     }
 
-        #admin-tab-timelapse .tl-rec-dot.idle {
-            background: #5a5f6e;
-        }
+#admin-tab-timelapse .tl-sess-info {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+}
 
-        #admin-tab-timelapse .tl-rec-dot.recording {
-            background: #e40000;
-            animation: tl-blink 1s infinite;
-        }
+#admin-tab-timelapse .tl-sess-id {
+    font-size: 11px;
+    font-family: 'Space Mono', monospace;
+    color: var(--accent2);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 3px;
+}
 
-    @keyframes tl-blink {
-        0%,100% {
-            opacity: 1
-        }
+#admin-tab-timelapse .tl-sess-meta {
+    font-size: 10px;
+    color: var(--text3);
+}
 
-        50% {
-            opacity: .3
-        }
-    }
+#admin-tab-timelapse .tl-sess-arrow {
+    flex: 0 0 auto;
+    font-size: 16px;
+    color: var(--text3);
+    transition: color .15s, transform .15s;
+}
 
-    #admin-tab-timelapse .btn-icon {
-        flex: 0 0 32px !important;
-        width: 32px !important;
-        height: 32px !important;
-        padding: 0 !important;
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        font-size: 14px;
-    }
+#admin-tab-timelapse .tl-session-item:hover .tl-sess-arrow,
+#admin-tab-timelapse .tl-session-item.selected .tl-sess-arrow {
+    color: var(--accent);
+    transform: translateX(2px);
+}
 
-    #admin-tab-timelapse .btn-icon-lg {
-        flex: 0 0 44px !important;
-        width: 44px !important;
-        height: 44px !important;
-        padding: 0 !important;
-        border-radius: 50%;
-        display: inline-flex !important;
-        align-items: center;
-        justify-content: center;
-        font-size: 16px;
-    }
+/* ── Статус-строка ── */
+#admin-tab-timelapse .tl-status-line {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 10px;
+    min-height: 16px;
+    word-break: break-all;
+}
 
-    /* ── Список сессий ── */
-    #admin-tab-timelapse .tl-session-list {
-        max-height: 180px;
-        overflow-y: auto;
-    }
+/* ── Плеер ── */
+#admin-tab-timelapse .tl-player-section {
+    display: flex;
+    flex-direction: column;
+}
 
-    #admin-tab-timelapse .tl-session-item {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center;
-        justify-content: space-between;
-        gap: 8px;
-        border: 1px solid var(--border1, var(--border2));
-        border-radius: 8px;
-        padding: 9px 11px;
-        margin-bottom: 5px;
-        cursor: pointer;
-        transition: background .15s, border-color .15s;
-    }
+#admin-tab-timelapse .tl-load-track {
+    height: 3px;
+    background: var(--surface3);
+    border-radius: 2px;
+    margin-bottom: 12px;
+    overflow: hidden;
+}
 
-        #admin-tab-timelapse .tl-session-item:hover {
-            background: var(--bg3, var(--surface2));
-            border-color: var(--accent, var(--accent1));
-        }
+#admin-tab-timelapse .tl-load-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 2px;
+    transition: width .2s;
+}
 
-        #admin-tab-timelapse .tl-session-item.selected {
-            background: var(--bg3, var(--surface2));
-            border-color: var(--accent, var(--accent2));
-        }
+#admin-tab-timelapse .tl-canvas-wrap {
+    margin: 0 0 12px;
+    text-align: center;
+    background: #0a0a0c;
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+    padding: 10px;
+    overflow: hidden;
+}
 
-    #admin-tab-timelapse .tl-sess-info {
-        min-width: 0;
-        overflow: hidden;
-        flex: 1 1 auto;
-    }
-
-    #admin-tab-timelapse .tl-sess-id {
-        font-size: 11px;
-        font-family: 'Space Mono', monospace;
-        color: var(--accent, var(--accent2));
-        margin-bottom: 2px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    #admin-tab-timelapse .tl-sess-meta {
-        font-size: 10px;
-        color: var(--text3);
-    }
-
-    #admin-tab-timelapse .tl-sess-arrow {
-        color: var(--text3);
-        flex: 0 0 auto;
-        font-size: 13px;
-    }
-
-    /* ── Плеер ── */
-    #admin-tab-timelapse .tl-player {
-        display: flex;
-        flex-direction: column;
-    }
-
-    #admin-tab-timelapse .tl-full-btn {
-        width: 100% !important;
-        margin-bottom: 8px;
-    }
-
-    #admin-tab-timelapse .tl-load-track {
-        height: 4px;
-        background: var(--bg3, var(--surface2));
-        border-radius: 2px;
-        margin-bottom: 10px;
-        overflow: hidden;
-    }
-
-    #admin-tab-timelapse .tl-load-fill {
-        height: 100%;
-        background: var(--accent, var(--accent2));
-        border-radius: 2px;
-        transition: width .2s;
-    }
-
-    #admin-tab-timelapse .tl-canvas-wrap {
-        margin: 0 0 10px;
-        text-align: center;
-        background: #111;
-        border: 1px solid var(--border1, var(--border2));
-        border-radius: 8px;
-        padding: 8px;
-        overflow: hidden;
-    }
-
-        #admin-tab-timelapse .tl-canvas-wrap canvas {
-            max-width: 100%;
-            image-rendering: pixelated;
-            border-radius: 4px;
-        }
-
-    #admin-tab-timelapse .tl-progress-bg {
-        height: 8px;
-        background: var(--bg3, var(--surface2));
+    #admin-tab-timelapse .tl-canvas-wrap canvas {
+        max-width: 100%;
+        image-rendering: pixelated;
         border-radius: 4px;
-        margin-bottom: 4px;
-        overflow: hidden;
-        position: relative;
-        cursor: pointer;
     }
 
-        #admin-tab-timelapse .tl-progress-bg:hover {
-            background: var(--border2);
-        }
+/* ── Прогресс-бар ── */
+#admin-tab-timelapse .tl-progress-wrap {
+    margin-bottom: 12px;
+}
 
-    #admin-tab-timelapse .tl-progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--accent1, var(--accent)), var(--accent2));
-        border-radius: 4px;
-        transition: width .08s linear;
-        pointer-events: none;
+#admin-tab-timelapse .tl-progress-bg {
+    height: 6px;
+    background: var(--surface3);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+    cursor: pointer;
+    margin-bottom: 5px;
+}
+
+    #admin-tab-timelapse .tl-progress-bg:hover {
+        background: var(--border2);
     }
 
-    #admin-tab-timelapse .tl-progress-label {
-        font-size: 10px;
-        color: var(--text3);
-        text-align: center;
-        margin-bottom: 10px;
-        font-family: 'Space Mono', monospace;
+#admin-tab-timelapse .tl-progress-fill {
+    height: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width .08s linear;
+    pointer-events: none;
+}
+
+#admin-tab-timelapse .tl-progress-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-align: center;
+    font-family: 'Space Mono', monospace;
+}
+
+/* ── Контролы плеера ── */
+#admin-tab-timelapse .tl-controls-row {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+#admin-tab-timelapse .tl-ctrl-buttons {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+}
+
+#admin-tab-timelapse .tl-ctrl-btn {
+    width: 34px;
+    height: 34px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 14px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
+}
+
+    #admin-tab-timelapse .tl-ctrl-btn:hover {
+        background: var(--surface3);
+        border-color: var(--accent);
     }
 
-    #admin-tab-timelapse .tl-player-controls {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center;
-        justify-content: space-between;
-        flex-wrap: wrap;
-        gap: 8px;
-        width: 100%;
+    #admin-tab-timelapse .tl-ctrl-btn:disabled {
+        opacity: .35;
+        cursor: default;
     }
 
-    #admin-tab-timelapse .tl-player-buttons {
-        display: flex !important;
-        flex-direction: row !important;
-        align-items: center;
-        gap: 6px;
+#admin-tab-timelapse .tl-ctrl-play {
+    width: 42px;
+    height: 42px;
+    background: var(--accent);
+    border-color: transparent;
+    font-size: 15px;
+    border-radius: 50%;
+    box-shadow: 0 3px 12px var(--accent-glow);
+}
+
+    #admin-tab-timelapse .tl-ctrl-play:hover {
+        background: var(--accent2);
+        border-color: transparent;
     }
 
-    #admin-tab-timelapse .tl-speed-group {
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 4px;
-        background: var(--bg3, var(--surface2));
-        border-radius: 8px;
-        padding: 3px;
+    #admin-tab-timelapse .tl-ctrl-play:disabled {
+        opacity: .35;
+        cursor: default;
     }
 
-    #admin-tab-timelapse .tl-speed-btn {
-        border: none;
-        background: transparent;
-        color: var(--text3);
-        font-size: 11px;
-        font-family: 'Space Mono', monospace;
-        padding: 5px 8px;
-        border-radius: 6px;
-        cursor: pointer;
-        width: auto !important;
-        transition: background .15s, color .15s;
+#admin-tab-timelapse .tl-speed-group {
+    display: flex;
+    flex-direction: row;
+    gap: 3px;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    border-radius: 8px;
+    padding: 3px;
+}
+
+#admin-tab-timelapse .tl-speed-btn {
+    border: none;
+    background: transparent;
+    color: var(--text3);
+    font-size: 10px;
+    font-family: 'Space Mono', monospace;
+    padding: 5px 7px;
+    border-radius: 5px;
+    cursor: pointer;
+    width: auto;
+    transition: background .12s, color .12s;
+}
+
+    #admin-tab-timelapse .tl-speed-btn:hover {
+        color: var(--text);
     }
 
-        #admin-tab-timelapse .tl-speed-btn:hover {
-            color: var(--text1, var(--text));
-        }
-
-        #admin-tab-timelapse .tl-speed-btn.active {
-            background: var(--accent, var(--accent2));
-            color: #fff;
-        }
+    #admin-tab-timelapse .tl-speed-btn.active {
+        background: var(--accent);
+        color: #fff;
+    }

@@ -539,42 +539,40 @@
 
             <div id="admin-tab-timelapse" style="display:none">
 
-                <!-- Статус-карточка записи -->
+                <!-- Статус записи -->
                 <div class="tl-rec-card">
-                    <div class="tl-rec-card-top">
+                    <div class="tl-rec-header">
                         <div class="tl-rec-dot idle" id="tl-rec-dot"></div>
                         <div class="tl-rec-card-text">
                             <div class="tl-rec-title" id="tl-rec-title">Запись не ведётся</div>
                             <div class="tl-rec-sub" id="tl-rec-info">Нажми «Начать», чтобы запустить тайм-лапс холста</div>
                         </div>
-                        <button class="btn btn-secondary btn-icon" id="tl-refresh-btn" data-onclick="tlRefreshStatus()" title="Обновить статус">↺</button>
+                        <button class="tl-icon-btn" id="tl-refresh-btn" data-onclick="tlRefreshStatus()" title="Обновить статус">↺</button>
                     </div>
                     <div class="tl-rec-actions">
-                        <button class="btn btn-primary" id="tl-rec-start" data-onclick="tlStartRecording()">▶ Начать запись</button>
-                        <button class="btn btn-danger" id="tl-rec-stop" disabled data-onclick="tlStopServer()">■ Остановить</button>
+                        <button class="tl-btn tl-btn-primary" id="tl-rec-start" data-onclick="tlStartRecording()">▶ Начать</button>
+                        <button class="tl-btn tl-btn-danger" id="tl-rec-stop" disabled data-onclick="tlStopServer()">■ Стоп</button>
                     </div>
-                    <div class="tl-rec-hint">Сохраняется в Cloudflare R2 · автосейв каждые 5 мин или 10 000 пикселей</div>
+                    <div class="tl-rec-hint">R2 · автосейв каждые 5 мин или 10 000 пикселей</div>
                 </div>
-
-                <div class="section-sep"></div>
 
                 <!-- Список сессий -->
                 <div class="tl-section">
                     <div class="tl-section-head">
-                        <span>📂 Сессии записи</span>
-                        <button class="btn btn-secondary btn-sm" id="tl-load-btn" data-onclick="tlLoadSessions()">Обновить список</button>
+                        <span>📂 Записанные сессии</span>
+                        <button class="tl-btn tl-btn-ghost tl-btn-sm" id="tl-load-btn" data-onclick="tlLoadSessions()">↻ Обновить</button>
                     </div>
                     <div id="tl-session-list" class="tl-session-list">
-                        <div class="tl-empty-hint">Нажми «Обновить список», чтобы увидеть записанные сессии</div>
+                        <div class="tl-empty-hint">Нажми «Обновить», чтобы увидеть записанные сессии</div>
                     </div>
                 </div>
 
                 <!-- Плеер (скрыт до выбора сессии) -->
-                <div id="tl-player-section" class="tl-player" style="display:none">
-                    <div class="section-sep"></div>
+                <div id="tl-player-section" class="tl-player-section" style="display:none">
+                    <div class="tl-section-sep"></div>
 
-                    <button class="btn btn-primary tl-full-btn" id="tl-prepare-btn" data-onclick="tlLoadAndPrepare()">
-                        ⬇ Загрузить данные сессии
+                    <button class="tl-btn tl-btn-primary tl-btn-full" id="tl-prepare-btn" data-onclick="tlLoadAndPrepare()">
+                        ⬇ Загрузить сессию
                     </button>
 
                     <div class="tl-load-track"><div id="tl-load-bar" class="tl-load-fill" style="width:0%"></div></div>
@@ -583,22 +581,24 @@
                         <canvas id="tl-canvas"></canvas>
                     </div>
 
-                    <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
-                        <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                    <div class="tl-progress-wrap">
+                        <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
+                            <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                        </div>
+                        <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
                     </div>
-                    <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
 
-                    <div class="tl-player-controls">
-                        <div class="tl-player-buttons">
-                            <button class="btn btn-secondary btn-icon" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="Сначала">⏮</button>
-                            <button class="btn btn-primary btn-icon-lg" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
-                            <button class="btn btn-secondary btn-icon" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
+                    <div class="tl-controls-row">
+                        <div class="tl-ctrl-buttons">
+                            <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
+                            <button class="tl-ctrl-btn tl-ctrl-play" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
+                            <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
                         </div>
                         <div class="tl-speed-group">
                             <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
                             <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
                             <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
-                            <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2000</button>
+                            <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
                         </div>
                     </div>
                 </div>

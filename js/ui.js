@@ -355,19 +355,45 @@ function savePersonalStencil() {
   sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
 }
 
+// Кэш палитры в виде массива RGB для быстрого поиска
+const _paletteRGB = PALETTE.map(p => ({
+  r: parseInt(p.c.slice(1,3),16),
+  g: parseInt(p.c.slice(3,5),16),
+  b: parseInt(p.c.slice(5,7),16)
+}));
+
+function snapColorToPalette(r, g, b) {
+  let bestIdx = 0, bestDist = Infinity;
+  for (let pi = 0; pi < _paletteRGB.length; pi++) {
+    const p = _paletteRGB[pi];
+    const dist = (r-p.r)**2 + (g-p.g)**2 + (b-p.b)**2;
+    if (dist < bestDist) { bestDist = dist; bestIdx = pi; }
+  }
+  return _paletteRGB[bestIdx];
+}
+
 function updateStencilGraphic() {
   if (!stencilOrigImg) return;
   const tmpC = document.createElement('canvas');
   tmpC.width = stencilRect.w;
   tmpC.height = stencilRect.h;
   const tctx = tmpC.getContext('2d');
+  // imageSmoothingEnabled=false помогает при увеличении, но при уменьшении
+  // браузер всё равно может смешивать — поэтому снапим цвета к палитре вручную
   tctx.imageSmoothingEnabled = false;
   tctx.drawImage(stencilOrigImg, 0, 0, stencilRect.w, stencilRect.h);
 
   const idata = tctx.getImageData(0, 0, stencilRect.w, stencilRect.h);
   for (let i = 0; i < idata.data.length; i += 4) {
-      if (idata.data[i+3] < 128) idata.data[i+3] = 0;
-      else idata.data[i+3] = 255;
+    const a = idata.data[i+3];
+    if (a < 128) { idata.data[i+3] = 0; continue; }
+    // Снапим к ближайшему цвету палитры — убираем любые промежуточные цвета
+    // от интерполяции браузера при масштабировании
+    const snapped = snapColorToPalette(idata.data[i], idata.data[i+1], idata.data[i+2]);
+    idata.data[i]   = snapped.r;
+    idata.data[i+1] = snapped.g;
+    idata.data[i+2] = snapped.b;
+    idata.data[i+3] = 255;
   }
   tctx.putImageData(idata, 0, 0);
 

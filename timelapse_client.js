@@ -63,7 +63,7 @@ async function tlLoadSessions() {
   if (btn) btn.disabled = true;
   list.innerHTML = '<div class="tl-empty-hint">Загрузка...</div>';
   try {
-    const res = await fetch('/api/timelapse/sessions');
+    const res = await fetch(getApiUrl() + '/timelapse/sessions');
     if (!res.ok) throw new Error('HTTP ' + res.status);
     tlSessions = await res.json();
     tlRenderSessions();
@@ -115,7 +115,7 @@ async function tlLoadAndPrepare() {
 
   try {
     status.textContent = 'Загрузка снапшота...';
-    const snapRes = await fetch(`/api/timelapse/snapshot/${tlSelectedSessionId}`);
+    const snapRes = await fetch(getApiUrl() + `/timelapse/snapshot/${tlSelectedSessionId}`);
     if (!snapRes.ok) throw new Error('снапшот: HTTP ' + snapRes.status);
     const snapBuf = await snapRes.arrayBuffer();
     tlSnapshot = new Uint8Array(snapBuf);
@@ -127,7 +127,7 @@ async function tlLoadAndPrepare() {
     tlH = (sess && sess.h) || canvasH;
 
     status.textContent = 'Загрузка событий...';
-    const evRes = await fetch(`/api/timelapse/events/${tlSelectedSessionId}`);
+    const evRes = await fetch(getApiUrl() + `/timelapse/events/${tlSelectedSessionId}`);
     if (!evRes.ok) throw new Error('события: HTTP ' + evRes.status);
     const evBuf = new Uint8Array(await evRes.arrayBuffer());
     bar.style.width = '80%';

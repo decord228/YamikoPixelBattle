@@ -279,6 +279,7 @@ function toggleStencilPanel() {
 }
 
 function toggleStencilEdit() {
+  if (stencilLocked) { showToast('Это трафарет соклановца — менять положение и размер нельзя', 'error'); return; }
   stencilEditMode = !stencilEditMode;
   document.getElementById('stencil-edit-toggle').classList.toggle('on', stencilEditMode);
   renderOverlay();
@@ -292,7 +293,7 @@ function toggleStencilEdit() {
 async function uploadPersonalStencil(dataUrl) {
     showToast('Сохранение в облако...', 'info');
     try {
-        const res = await fetch(`${getApiUrl()}/upload-template`, {
+        const res = await fetch('/api/upload-template', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ imageBase64: dataUrl, name: 'stencil_' + currentUser, username: currentUser })
@@ -302,13 +303,8 @@ async function uploadPersonalStencil(dataUrl) {
             personalStencilUrl = data.url;
             sendJSON({ action: 'save_personal_stencil', stencil: { img: data.url, rect: stencilRect, opacity: stencilOpacity } });
             showToast('Трафарет сохранён в облаке!', 'success');
-        } else {
-            showToast('Не удалось сохранить трафарет в облаке', 'error');
         }
-    } catch (e) {
-        console.error(e);
-        showToast('Ошибка сети при сохранении трафарета', 'error');
-    }
+    } catch (e) { console.error(e); }
 }
 
 function updateStencilGraphic() {
@@ -337,6 +333,7 @@ function updateStencilGraphic() {
 }
 
 function scaleStencil(factor) {
+  if (stencilLocked) { showToast('Это трафарет соклановца — менять размер нельзя', 'error'); return; }
   if (!stencilOrigImg) { showToast('Сначала загрузите трафарет', 'error'); return; }
   const newW = Math.max(1, Math.round(stencilRect.w * factor));
   const newH = Math.max(1, Math.round(stencilRect.h * factor));
@@ -414,17 +411,21 @@ function updateStencilOpacity(v){
   stencilOpacity=v/100;
   document.getElementById('stencil-opacity-val').textContent=v+'%';
   renderOverlay();
-  if (personalStencilUrl) {
+  if (personalStencilUrl && !stencilLocked) {
       sendJSON({ action: 'save_personal_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
   }
 }
 
 function cancelStencil(){
+  const wasLocked = stencilLocked;
   // Сбрасываем весь стейт трафарета
   stencilActive=false; stencilImg=null; stencilImageData=null; stencilOrigImg=null; personalStencilUrl=null;
-  stencilHandle=null; isDraggingTool=false; adminActiveHandle=null;
+  stencilHandle=null; isDraggingTool=false; adminActiveHandle=null; stencilLocked=false;
   document.getElementById('stencil-panel').style.display='none';
-  sendJSON({ action: 'save_personal_stencil', stencil: null });
+  updateStencilLockUI();
+  // Если это был "взятый" трафарет соклановца — он никогда не сохранялся как личный,
+  // поэтому очищать личный трафарет на сервере не нужно (чтобы не затереть свой).
+  if (!wasLocked) sendJSON({ action: 'save_personal_stencil', stencil: null });
   renderOverlay();
 }
 
@@ -445,20 +446,20 @@ function renderSavedStencils() {
   const c = document.getElementById('saved-stencils-list');
   if (!c) return;
   if (!savedStencils || !savedStencils.length) {
-    c.innerHTML = '<div style="color:var(--text3);font-size:11px;text-align:center;padding:8px 0;">Сохранённых шаблонов нет</div>';
+    c.innerHTML = '<div class="stencil-list-empty">Сохранённых шаблонов нет</div>';
     return;
   }
   // Сервер хранит массив { name, stencil: { img, rect, opacity } }
   c.innerHTML = savedStencils.map((s, i) => {
     const r = s.stencil && s.stencil.rect;
     const safeN = esc(s.name || ('Шаблон ' + (i + 1)));
-    return `<div style="display:flex;align-items:center;gap:6px;padding:5px 8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${safeN}</div>
-        <div style="font-size:10px;color:var(--text3);">${r ? r.w + '×' + r.h + ' пикс.' : ''}</div>
+    return `<div class="stencil-item">
+      <div class="stencil-item-info">
+        <div class="stencil-item-name">${safeN}</div>
+        <div class="stencil-item-meta">${r ? r.w + '×' + r.h + ' пикс.' : ''}</div>
       </div>
-      <button class="btn btn-secondary btn-sm" style="padding:2px 7px;font-size:10px;" data-onclick="loadSavedStencil(${i})">Загр.</button>
-      <button class="btn btn-sm" style="padding:2px 7px;font-size:10px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);color:#f87171;" data-onclick="deleteSavedStencil(${i})">✕</button>
+      <button class="stencil-item-load" data-onclick="loadSavedStencil(${i})">Загр.</button>
+      <button class="stencil-item-delete" data-onclick="deleteSavedStencil(${i})">✕</button>
     </div>`;
   }).join('');
 }
@@ -492,7 +493,7 @@ async function shareStencilToClan(){
   
   showToast('Загрузка в облако...', 'info');
   try {
-    const res = await fetch(`${getApiUrl()}/upload-template`, {
+    const res = await fetch('/api/upload-template', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ imageBase64: stencilImg.src, name: 'clan_stencil', username: currentUser })
@@ -517,40 +518,30 @@ function renderClanStencilsList() {
   const c = document.getElementById('clan-stencils-list');
   if (!c) return;
   if (!clanSharedStencils.length) {
-    c.innerHTML = '<div style="color:var(--text3);font-size:10px;text-align:center;padding:6px 0;">Никто не поделился трафаретом</div>';
+    c.innerHTML = '<div class="stencil-list-empty">Никто не поделился трафаретом</div>';
     return;
   }
   c.innerHTML = clanSharedStencils.map((entry, i) => `
-    <div style="display:flex;align-items:center;gap:7px;padding:5px 8px;background:var(--bg3);border-radius:8px;border:1px solid var(--border);cursor:pointer;transition:.15s;"
-         data-onclick="loadClanMemberStencil(${i})"
-         onmouseenter="this.style.borderColor='var(--accent)'" onmouseleave="this.style.borderColor='var(--border)'">
-      <span style="font-size:15px;">${esc(entry.emoji||'👾')}</span>
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:11px;font-weight:600;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${esc(entry.username)}</div>
-        <div style="font-size:10px;color:var(--text3);">${entry.stencil&&entry.stencil.rect?entry.stencil.rect.w+'×'+entry.stencil.rect.h+' пикс.':''}</div>
+    <div class="stencil-item" data-onclick="loadClanMemberStencil(${i})">
+      <span class="stencil-item-emoji">${esc(entry.emoji||'👾')}</span>
+      <div class="stencil-item-info">
+        <div class="stencil-item-name">${esc(entry.username)}</div>
+        <div class="stencil-item-meta">${entry.stencil&&entry.stencil.rect?entry.stencil.rect.w+'×'+entry.stencil.rect.h+' пикс.':''}</div>
       </div>
-      <span style="font-size:10px;color:var(--accent);font-weight:600;">ВЗЯТЬ</span>
+      <span class="stencil-item-action">ВЗЯТЬ</span>
     </div>`).join('');
 }
 
 function loadClanMemberStencil(i) {
   const entry = clanSharedStencils[i];
   if (!entry || !entry.stencil || !entry.stencil.img) { showToast('Трафарет недоступен', 'error'); return; }
-  // Clone stencil data and reposition to center of current view
-  const s = entry.stencil;
-  const cp = screenToCanvas(window.innerWidth / 2, window.innerHeight / 2);
-  const w = s.rect ? s.rect.w : 64;
-  const h = s.rect ? s.rect.h : 64;
-  const centeredStencil = {
-    img: s.img,
-    opacity: s.opacity || 0.6,
-    rect: { x: Math.floor(cp.x - w / 2), y: Math.floor(cp.y - h / 2), w, h }
-  };
-  applySharedStencil(centeredStencil);
+  // Берём трафарет ровно в тех координатах, в которых его сохранил соклановец —
+  // без перемещения в центр экрана.
+  applySharedStencil(entry.stencil, true);
   showToast(`Загружен трафарет от ${entry.username}`, 'success');
 }
 
-function applySharedStencil(data){
+function applySharedStencil(data, locked = false){
   if (!data||!data.img) return;
   const img=new Image();
   img.crossOrigin = "Anonymous";
@@ -563,18 +554,33 @@ function applySharedStencil(data){
     stencilOpacity=data.opacity||0.6;
     stencilActive=true;
     stencilEditMode=false;
+    stencilLocked=locked;
     document.getElementById('stencil-edit-toggle').classList.remove('on');
     document.getElementById('stencil-panel').style.display='block';
     document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
     document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
-    
+    updateStencilLockUI();
+
     personalStencilUrl = data.img;
-    sendJSON({ action: 'save_personal_stencil', stencil: { img: data.img, rect: stencilRect, opacity: stencilOpacity } });
-    
+    if (!locked) {
+      sendJSON({ action: 'save_personal_stencil', stencil: { img: data.img, rect: stencilRect, opacity: stencilOpacity } });
+    }
+
     updateStencilGraphic(); 
     showToast('Трафарет успешно загружен!','success');
   };
   img.src=data.img;
+}
+
+// Показывает/скрывает элементы управления трафаретом в зависимости от того,
+// можно ли его двигать/масштабировать (нельзя — если он взят у соклановца).
+function updateStencilLockUI() {
+  const editRow = document.getElementById('stencil-edit-row');
+  const scaleRow = document.getElementById('stencil-scale-row');
+  const lockNote = document.getElementById('stencil-lock-note');
+  if (editRow) editRow.style.display = stencilLocked ? 'none' : '';
+  if (scaleRow) scaleRow.style.display = stencilLocked ? 'none' : '';
+  if (lockNote) lockNote.style.display = stencilLocked ? 'flex' : 'none';
 }
 
 function handleStencilStart(clientX,clientY){

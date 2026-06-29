@@ -135,9 +135,10 @@ function handleJSON(d) {
     if (!clanShareCursor) clearCursorFlags();
   }
   else if (a==='clan_stencil_update') {
-    if (d.stencil) applySharedStencil(d.stencil);
-    // Refresh the clan stencils list since someone shared
+    // Больше не применяем трафарет автоматически у всех — только обновляем список,
+    // пользователь сам решает, взять его или нет (кнопка "ВЗЯТЬ").
     if (currentClan) sendJSON({ action: 'clan_get_stencils' });
+    if (d.from && d.from !== currentUser) showToast(`${d.from} поделился новым трафаретом`, 'info');
   }
   else if (a==='clan_stencils_list') {
     clanSharedStencils = d.stencils || [];

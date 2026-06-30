@@ -6,7 +6,17 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="style.css?v=20260630-1">
+    <!--
+      ВАЖНО про Discord Activity: discordsays.com проксирует ваш фронтенд
+      через свой CDN/прокси-слой, который кэширует статику по URL гораздо
+      агрессивнее обычного браузера. Если после деплоя в браузере (Firefox)
+      всё ок, а в Discord Activity видна СТАРАЯ версия style.css — это
+      почти всегда кэш именно по этому URL ("style.css" без параметров).
+      Меняйте ?v=... при каждом деплое (дата/хэш сборки), иначе Discord
+      может продолжать отдавать закэшированную версию файла даже после
+      того, как вы обновили его на сервере/CDN.
+    -->
 </head>
 <body>
 
@@ -765,7 +775,7 @@
         window.DiscordSDK = DiscordSDK;
 
         // Динамически грузим скрипты после того как SDK готов в window
-        const v = '20260101'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
+        const v = '20260102'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
         const scripts = [
         'js/config.js', 'js/state.js', 'js/canvas.js', 'js/modal.js',
         'js/network.js', 'js/ui.js', 'js/input.js', 'js/events.js', 'js/main.js'

@@ -21,6 +21,7 @@
     --radius: 16px;
     --radius-sm: 10px;
     --radius-pill: 999px;
+    --bar-h: 46px; /* единая высота top-bar / profile-hud, чтобы пилюли совпадали по вертикали */
 }
 
 * {
@@ -138,6 +139,11 @@ html, body {
     align-items: center;
     gap: 10px;
     z-index: 11;
+    /* Резервируем место под #profile-hud слева и круглые кнопки справа,
+       чтобы центрированный topbar физически не мог дотянуться до них —
+       раньше при сужении окна (но ещё выше мобильного брейкпоинта 640px)
+       topbar рос вплотную к худу профиля и визуально наезжал на аватар. */
+    max-width: calc(100vw - 240px);
 }
 
 /* ── TOP BAR ── */
@@ -145,13 +151,18 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 16px;
+    height: var(--bar-h);
+    padding: 0 16px;
     background: rgba(15,15,17,0.92);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border2);
     border-radius: var(--radius-pill);
     box-shadow: 0 4px 24px rgba(0,0,0,.5);
     white-space: nowrap;
+    box-sizing: border-box;
+    flex-shrink: 1;
+    min-width: 0;
+    overflow: hidden;
 }
 
 #logo {
@@ -414,11 +425,13 @@ html, body {
     top: auto;
     left: auto;
     display: none;
+    height: var(--bar-h);
+    box-sizing: border-box;
     background: rgba(15,15,17,0.92);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border2);
     border-radius: var(--radius-pill);
-    padding: 8px 14px;
+    padding: 0 14px;
     gap: 10px;
     align-items: center;
     box-shadow: 0 4px 24px rgba(0,0,0,.5);
@@ -729,6 +742,8 @@ html, body {
     align-items: flex-start;
     gap: 10px;
     pointer-events: none;
+    z-index: 12; /* выше #top-bar-row (11) — раньше центрированный topbar мог
+                    наезжать поверх худа профиля на узких/средних экранах */
 }
 
 /* ── SIDEBAR ── */
@@ -3288,15 +3303,28 @@ html, body {
     font-family: 'Space Mono',monospace;
 }
 
+/* ── MEDIUM (между десктопом и мобильным 640px) ──
+      Раньше тут не было брейкпоинта вообще: topbar оставался полноразмерным
+      до 640px, из-за чего на средних ширинах (~640–900px) центрированный
+      topbar мог визуально наезжать на худ профиля слева. */
+@media (max-width: 900px) {
+    #made-by, #coords-badge, .top-divider:last-of-type {
+        display: none;
+    }
+}
+
 /* ── MOBILE ── */
 @media(max-width:640px) {
     /* Верхняя панель — компактнее */
-    #top-bar {
-        padding: 6px 10px;
-        gap: 6px;
+    #top-bar-row {
         top: 8px;
-        left: 50%;
-        transform: translateX(-50%);
+        max-width: calc(100vw - 110px);
+    }
+
+    #top-bar {
+        height: 36px;
+        padding: 0 10px;
+        gap: 6px;
         white-space: nowrap;
     }
 
@@ -3317,9 +3345,10 @@ html, body {
         position: fixed;
         top: 8px;
         left: 8px;
+        height: 36px;
         margin-left: 0;
         flex-shrink: unset;
-        padding: 6px 10px;
+        padding: 0 10px;
         gap: 7px;
         border-radius: var(--radius-pill);
     }

@@ -407,7 +407,8 @@ html, body {
     transform: translateY(0);
 }
 
-/* ── PROFILE HUD (top-left) ── */
+/* ── PROFILE HUD (top-left) — горизонтальная капсула, тот же визуальный
+      язык что у #top-bar: блюр, пилюля, тонкая граница, разделители ── */
 #profile-hud {
     position: relative;
     top: auto;
@@ -416,23 +417,30 @@ html, body {
     background: rgba(15,15,17,0.92);
     backdrop-filter: blur(24px);
     border: 1px solid var(--border2);
-    border-radius: 18px;
-    padding: 14px 20px;
-    gap: 14px;
+    border-radius: var(--radius-pill);
+    padding: 8px 14px;
+    gap: 10px;
     align-items: center;
     box-shadow: 0 4px 24px rgba(0,0,0,.5);
     pointer-events: auto;
-    min-width: 260px;
     flex-shrink: 0;
+    white-space: nowrap;
 }
 
     #profile-hud.visible {
         display: flex;
     }
 
+.phud-divider {
+    width: 1px;
+    height: 16px;
+    flex-shrink: 0;
+    background: var(--border2);
+}
+
 #phud-avatar {
-    width: 48px;
-    height: 48px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     background: linear-gradient(135deg,#6366f1,#818cf8);
     padding: 2px;
@@ -447,26 +455,22 @@ html, body {
         display: block;
     }
 
-#phud-info {
-    flex: 1;
-    min-width: 0;
-}
-
 #phud-name {
     font-family: 'Unbounded',sans-serif;
-    font-size: 14px;
+    font-size: 12px;
     font-weight: 700;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    max-width: 140px;
 }
 
 #phud-role {
-    font-size: 11px;
-    margin-top: 2px;
-    padding: 3px 8px;
+    font-size: 10px;
+    padding: 3px 9px;
     border-radius: var(--radius-pill);
-    display: inline-block;
+    white-space: nowrap;
+    flex-shrink: 0;
 }
 
 .phud-role-user {
@@ -485,29 +489,28 @@ html, body {
 }
 
 #phud-coins {
-    font-size: 12px;
+    font-size: 11px;
     color: #fbbf24;
     font-family: 'Space Mono',monospace;
-    margin-top: 4px;
+    flex-shrink: 0;
 }
 
 #phud-actions {
     display: flex;
-    gap: 5px;
-    flex-direction: column;
+    gap: 6px;
+    flex-shrink: 0;
 }
 
 .phud-btn {
     width: auto;
-    min-width: 36px;
-    height: 36px;
+    height: 30px;
     padding: 0 10px;
-    border-radius: 10px;
+    border-radius: var(--radius-sm);
     display: flex;
     align-items: center;
-    justify-content: flex-start;
-    gap: 6px;
-    font-size: 16px;
+    justify-content: center;
+    gap: 5px;
+    font-size: 14px;
     cursor: pointer;
     border: 1px solid var(--border2);
     background: var(--surface2);
@@ -519,7 +522,7 @@ html, body {
     font-size: 9px;
     font-weight: 700;
     color: var(--text2);
-    letter-spacing: 1px;
+    letter-spacing: .5px;
     text-transform: uppercase;
     white-space: nowrap;
 }
@@ -3305,7 +3308,7 @@ html, body {
         display: none;
     }
 
-    /* Profile HUD — компактный, только аватар + имя + монеты */
+    /* Profile HUD — та же горизонтальная капсула, просто компактнее */
     #left-col {
         display: contents; /* растворяем враппер, дети позиционируются сами */
     }
@@ -3316,38 +3319,44 @@ html, body {
         left: 8px;
         margin-left: 0;
         flex-shrink: unset;
-        min-width: 0;
-        padding: 8px 12px;
-        gap: 10px;
-        border-radius: 14px;
+        padding: 6px 10px;
+        gap: 7px;
+        border-radius: var(--radius-pill);
     }
 
     #phud-avatar {
-        width: 36px;
-        height: 36px;
+        width: 26px;
+        height: 26px;
     }
 
-    .phud-info {
-        gap: 2px;
+    #phud-name {
+        font-size: 10px;
+        max-width: 70px;
     }
 
-    .phud-name {
-        font-size: 11px;
+    #phud-role {
+        font-size: 8px;
+        padding: 2px 6px;
     }
 
-    .phud-role {
+    #phud-coins {
         font-size: 9px;
     }
 
-    .phud-coins {
-        font-size: 10px;
+    .phud-divider {
+        height: 12px;
     }
 
     .phud-btn {
-        padding: 5px 10px;
-        font-size: 9px;
-        border-radius: 8px;
-        gap: 4px;
+        height: 24px;
+        padding: 0 7px;
+        font-size: 11px;
+        border-radius: 7px;
+        gap: 3px;
+    }
+
+    .phud-btn-label {
+        font-size: 8px;
     }
 
     /* ── SIDEBAR — горизонтальный скроллируемый тулбар снизу ── */

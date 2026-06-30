@@ -91,11 +91,12 @@
                 <div id="phud-avatar" data-onclick="showPanel('profile-panel')">
                     <canvas id="phud-avatar-canvas" width="48" height="48"></canvas>
                 </div>
-                <div id="phud-info">
-                    <div id="phud-name">—</div>
-                    <div id="phud-role" class="phud-role-user">Пользователь</div>
-                    <div id="phud-coins">🪙 0</div>
-                </div>
+                <div id="phud-name">—</div>
+                <div class="phud-divider"></div>
+                <div id="phud-role" class="phud-role-user">Пользователь</div>
+                <div class="phud-divider"></div>
+                <div id="phud-coins">🪙 0</div>
+                <div class="phud-divider"></div>
                 <div id="phud-actions">
                     <div class="phud-btn" data-onclick="showPanel('clan-panel')" title="Кланы"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V3" /><path d="M5 4h14l-3.2 4L19 12H5" /></svg><span class="phud-btn-label">Клан</span></div>
                     <div class="phud-btn" data-onclick="showPanel('shop-panel')" title="Магазин"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><path d="M2.5 3h2l2.6 12.6a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.5L21 8H6" /></svg><span class="phud-btn-label">Магазин</span></div>
@@ -764,7 +765,7 @@
         window.DiscordSDK = DiscordSDK;
 
         // Динамически грузим скрипты после того как SDK готов в window
-        const v = '20260774'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
+        const v = '20260101'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
         const scripts = [
         'js/config.js', 'js/state.js', 'js/canvas.js', 'js/modal.js',
         'js/network.js', 'js/ui.js', 'js/input.js', 'js/events.js', 'js/main.js'

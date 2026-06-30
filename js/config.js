@@ -58,3 +58,27 @@ function getApiUrl() {
     ? '/api' // Discord сам проксирует /api на backend
     : 'https://yamikopixelbattleserver.onrender.com/api';
 }
+
+// ── ПРОКСИРОВАНИЕ ВНЕШНИХ КАРТИНОК (Cloudinary) ВНУТРИ DISCORD ACTIVITY ──
+// CSP Discord Activity ограничивает img-src только собственным доменом
+// (discordsays.com) + доменами, явно прописанными как URL Mapping в Developer
+// Portal. Картинки трафаретов (Cloudinary) грузились напрямую с
+// res.cloudinary.com — браузер тихо блокировал <img src>, поэтому "трафарет
+// получен", а на холсте ничего не появлялось.
+//
+// ВАЖНО: для работы этого проксирования нужно один раз добавить в Discord
+// Developer Portal → Activities → URL Mappings:
+//   Prefix: /cdn-proxy      Target: res.cloudinary.com
+// Discord проксирует запросы к /cdn-proxy/* НАПРЯМУЮ на res.cloudinary.com —
+// никакого отдельного роута на своём backend для этого писать не нужно
+// (в отличие от /api, который указывает на ваш собственный сервер).
+function getProxiedImageUrl(url) {
+  if (!IS_DISCORD_ACTIVITY || !url) return url;
+  try {
+    const u = new URL(url, window.location.origin);
+    if (u.hostname.endsWith('cloudinary.com')) {
+      return `/cdn-proxy${u.pathname}${u.search}`;
+    }
+  } catch (_) {}
+  return url;
+}

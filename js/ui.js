@@ -709,7 +709,7 @@ function applySharedStencil(data, locked = false, ownerName = ''){
     showToast('Трафарет успешно загружен!','success');
     if (typeof startStencilAnimIfNeeded === 'function') startStencilAnimIfNeeded();
   };
-  img.src=data.img;
+  img.src=getProxiedImageUrl(data.img);
 }
 
 // Показывает/скрывает элементы управления трафаретом в зависимости от того,

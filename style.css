@@ -3678,6 +3678,173 @@ html, body {
         color: #a5b4fc;
     }
 
+/* ── Кнопка экспорта видео 🎥 (в панели и в fullscreen HUD) ── */
+/* В строке кнопок плеера — небольшой разделитель перед кнопкой экспорта,
+   чтобы визуально отделить «управление воспроизведением» от «экспорта». */
+#admin-tab-timelapse #tl-video-export-btn {
+    margin-left: 4px;
+    border-left: 1px solid var(--border2);
+    padding-left: 4px;
+    /* Чуть заметнее обычных серых кнопок — фиолетовый оттенок */
+    color: #a5b4fc;
+    position: relative;
+}
+
+    #admin-tab-timelapse #tl-video-export-btn:hover {
+        background: rgba(99,102,241,0.15);
+        border-color: rgba(99,102,241,0.45);
+        color: #c7d2fe;
+    }
+
+    #admin-tab-timelapse #tl-video-export-btn:disabled {
+        color: var(--text3);
+        border-left-color: transparent;
+        opacity: .35;
+    }
+
+/* Аналогично в fullscreen HUD */
+.tl-fs-controls .tl-fs-ctrl:last-child {
+    margin-left: 4px;
+    color: #a5b4fc;
+    border-color: rgba(99,102,241,0.3);
+}
+
+    .tl-fs-controls .tl-fs-ctrl:last-child:hover {
+        background: rgba(99,102,241,0.22);
+        border-color: rgba(99,102,241,0.55);
+        color: #c7d2fe;
+    }
+
+/* ── Модал экспорта видео ── */
+#tl-export-modal {
+    font-family: 'Space Mono', monospace;
+}
+
+    #tl-export-modal > div {
+        background: var(--surface2);
+        border: 1px solid var(--border2);
+        border-radius: 14px;
+        padding: 28px 28px 24px;
+        min-width: 320px;
+        max-width: 440px;
+        width: 90vw;
+        text-align: center;
+        box-shadow: 0 12px 48px rgba(0,0,0,0.7), 0 0 0 1px rgba(99,102,241,0.12);
+    }
+
+    /* Кнопки скорости внутри модала — те же .tl-speed-btn,
+   но нужен чуть бо́льший flex-grow чтобы красиво заполнили ряд */
+    #tl-export-modal .tl-exp-speed-btn {
+        flex: 1 1 0;
+        min-width: 40px;
+        text-align: center;
+        /* Сбрасываем авто-ширину из базового стиля — пусть растягиваются */
+        width: auto;
+    }
+
+    /* Кнопки качества */
+    #tl-export-modal .tl-exp-qual-btn {
+        flex: 1 1 0;
+        text-align: center;
+        width: auto;
+    }
+
+/* Прогресс-бар внутри модала */
+#tl-exp-bar {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--accent2) 100%);
+    transition: width .15s linear;
+}
+
+/* Кнопка «Отмена» в модале уже имеет класс .tl-btn .tl-btn-danger,
+   но внутри модала она не в контексте #admin-tab-timelapse,
+   поэтому дублируем нужные стили напрямую. */
+#tl-export-modal .tl-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    padding: 0 14px;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-family: 'Space Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: background .15s, border-color .15s, color .15s;
+}
+
+#tl-export-modal .tl-btn-primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: transparent;
+}
+
+    #tl-export-modal .tl-btn-primary:hover {
+        background: var(--accent2);
+    }
+
+#tl-export-modal .tl-btn-danger {
+    background: rgba(239,68,68,0.12);
+    color: #f87171;
+    border-color: rgba(239,68,68,0.3);
+}
+
+    #tl-export-modal .tl-btn-danger:hover {
+        background: rgba(239,68,68,0.22);
+        border-color: rgba(239,68,68,0.5);
+    }
+
+/* Метки внутри модала */
+#tl-export-modal label {
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    color: var(--text2);
+}
+
+/* Заголовок и подзаголовок */
+#tl-exp-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text);
+    margin-bottom: 4px;
+}
+
+#tl-exp-sub {
+    font-size: .8rem;
+    color: var(--text2);
+    margin-bottom: 18px;
+}
+
+/* Процент прогресса */
+#tl-exp-pct {
+    font-size: .8rem;
+    color: var(--text2);
+    font-family: 'Space Mono', monospace;
+    margin-top: 4px;
+}
+
+/* Трек прогресса */
+#tl-exp-progress-wrap > div:first-child {
+    background: var(--surface3);
+    border-radius: 6px;
+    height: 8px;
+    overflow: hidden;
+}
+
+/* Адаптив: на узких экранах уменьшаем паддинги модала */
+@media (max-width: 480px) {
+    #tl-export-modal > div {
+        padding: 20px 16px 18px;
+        min-width: unset;
+    }
+
+    #tl-export-modal .tl-exp-speed-btn {
+        padding: 5px 4px;
+        font-size: 9px;
+    }
+}
+
 /* ── Mobile ── */
 @media (max-width: 600px) {
     .tl-fs-session-label {

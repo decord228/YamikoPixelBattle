@@ -51,6 +51,18 @@ function fullRender(data) {
 
 function renderOverlay() {
   octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+
+  // Во время тайм-лапса в полноэкранном режиме оверлей (сетка, трафарет/шаблон,
+  // курсор, инструменты админа и т.д.) рисуется поверх ИГРОВОЙ камеры (camX/camY/
+  // camZoom), а не камеры тайм-лапса. Раньше это приводило к тому, что активный
+  // трафарет/шаблон оставался виден прямо над воспроизведением тайм-лапса.
+  // Тайм-лапс показывает только историю холста — никаких оверлеев ему не нужно.
+  if (typeof tlFullscreen !== 'undefined' && tlFullscreen) {
+    const label = document.getElementById('stencil-label');
+    if (label) label.style.display = 'none';
+    return;
+  }
+
   const off = getRenderOffset();
 
   // Применяем ту же матрицу трансформации, что и CSS, чтобы избежать субпиксельных сдвигов

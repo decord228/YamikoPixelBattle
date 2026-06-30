@@ -43,32 +43,71 @@ function tlStopServer() {
 
 // Вызывается из network.js при action==='timelapse_status'
 function tlHandleStatus(d) {
-  const dot = document.getElementById('tl-rec-dot');
-  const title = document.getElementById('tl-rec-title');
-  const info = document.getElementById('tl-rec-info');
-  const startBtn = document.getElementById('tl-rec-start');
-  const stopBtn = document.getElementById('tl-rec-stop');
-  if (!dot) return;
-
   const recording = !!d.recording;
-  dot.classList.toggle('recording', recording);
-  dot.classList.toggle('idle', !recording);
 
-  if (recording) {
-    title.textContent = 'Запись идёт';
+  // ── Индикатор внутри админ-панели (может отсутствовать в DOM, если
+  //    панель ещё не была открыта — это не повод прерывать функцию,
+  //    глобальный индикатор в топ-баре должен обновиться в любом случае) ──
+  const dot = document.getElementById('tl-rec-dot');
+  if (dot) {
+    const title = document.getElementById('tl-rec-title');
+    const info = document.getElementById('tl-rec-info');
+    const startBtn = document.getElementById('tl-rec-start');
+    const stopBtn = document.getElementById('tl-rec-stop');
+
+    dot.classList.toggle('recording', recording);
+    dot.classList.toggle('idle', !recording);
+
+    if (recording) {
+      title.textContent = 'Запись идёт';
+      const parts = [];
+      if (d.sessionId) parts.push(`ID: ${d.sessionId}`);
+      if (typeof d.pixelCount === 'number') parts.push(`${d.pixelCount.toLocaleString()} пикс.`);
+      if (d.startedAt) parts.push('с ' + new Date(d.startedAt).toLocaleTimeString());
+      info.textContent = parts.join(' · ') || 'Идёт запись изменений холста';
+      if (startBtn) startBtn.disabled = true;
+      if (stopBtn) stopBtn.disabled = false;
+    } else {
+      title.textContent = 'Запись не ведётся';
+      info.textContent = 'Нажми «Начать», чтобы запустить тайм-лапс холста';
+      if (startBtn) startBtn.disabled = false;
+      if (stopBtn) stopBtn.disabled = true;
+    }
+  }
+
+  // ── Глобальный индикатор записи в топ-баре (виден всегда, не только
+  //    при открытой админ-панели) ──
+  tlUpdateTopBarIndicator(d, recording);
+}
+
+// Круглый индикатор слева от top-bar с тултипом при наведении
+function tlUpdateTopBarIndicator(d, recording) {
+  const wrap = document.getElementById('tl-rec-indicator');
+  if (!wrap) return;
+  wrap.style.display = recording ? 'flex' : 'none';
+  if (!recording) return;
+
+  const sub = document.getElementById('tl-rec-indicator-tip-sub');
+  if (sub) {
     const parts = [];
-    if (d.sessionId) parts.push(`ID: ${d.sessionId}`);
     if (typeof d.pixelCount === 'number') parts.push(`${d.pixelCount.toLocaleString()} пикс.`);
     if (d.startedAt) parts.push('с ' + new Date(d.startedAt).toLocaleTimeString());
-    info.textContent = parts.join(' · ') || 'Идёт запись изменений холста';
-    if (startBtn) startBtn.disabled = true;
-    if (stopBtn) stopBtn.disabled = false;
-  } else {
-    title.textContent = 'Запись не ведётся';
-    info.textContent = 'Нажми «Начать», чтобы запустить тайм-лапс холста';
-    if (startBtn) startBtn.disabled = false;
-    if (stopBtn) stopBtn.disabled = true;
+    sub.textContent = parts.join(' · ') || 'Идёт запись изменений холста';
   }
+}
+
+// Периодический опрос статуса записи для глобального индикатора —
+// сервер шлёт timelapse_status только в ответ на запрос внутри admin_cmd,
+// поэтому без поллинга индикатор не узнает о текущем состоянии до тех пор,
+// пока кто-то не откроет админ-панель. Опрашиваем редко, без нагрузки.
+let tlStatusPollTimer = null;
+function tlStartStatusPolling() {
+  if (tlStatusPollTimer) return;
+  tlRefreshStatus();
+  tlStatusPollTimer = setInterval(tlRefreshStatus, 15000);
+}
+function tlStopStatusPolling() {
+  if (tlStatusPollTimer) { clearInterval(tlStatusPollTimer); tlStatusPollTimer = null; }
 }
 
 // ── Список сессий (REST) ────────────────────────────────────
@@ -523,24 +562,17 @@ let tlExportCancelled = false;
 
 // Определяем лучший поддерживаемый формат (MP4 предпочтителен — маленький файл,
 // широкая совместимость; если не поддерживается — WebM с VP9 или базовый WebM).
-// Список форматов, которые мы вообще предлагаем пользователю в UI.
-// label — то что видит пользователь, mime — то что передаём в MediaRecorder,
-// ext — расширение файла.
-const TL_EXPORT_FORMATS = [
-  { id: 'webm-vp9', label: 'WebM (VP9)',  mime: 'video/webm;codecs=vp9',  ext: 'webm' },
-  { id: 'webm-vp8', label: 'WebM (VP8)',  mime: 'video/webm;codecs=vp8',  ext: 'webm' },
-  { id: 'mp4',      label: 'MP4 (H.264)', mime: 'video/mp4;codecs=avc1', ext: 'mp4'  },
-];
-
-function tlGetSupportedExportFormats() {
-  return TL_EXPORT_FORMATS.filter(f => MediaRecorder.isTypeSupported(f.mime));
-}
-
-// Дефолт для предзаполнения UI — первый поддерживаемый браузером формат.
-// Финальный выбор пользователя хранится в _tlExpFormatId.
 function tlGetExportMimeType() {
-  const supported = tlGetSupportedExportFormats();
-  return (supported[0] || { mime: 'video/webm' }).mime;
+  const candidates = [
+    'video/mp4',
+    'video/webm;codecs=vp9',
+    'video/webm;codecs=vp8',
+    'video/webm',
+  ];
+  for (const mime of candidates) {
+    if (MediaRecorder.isTypeSupported(mime)) return mime;
+  }
+  return 'video/webm'; // последний fallback
 }
 
 function tlShowExportModal() {
@@ -576,8 +608,6 @@ function tlShowExportModal() {
             <button class="tl-speed-btn tl-exp-qual-btn" data-qual="2160"
               data-onclick="tlExpSelectQual(2160)">4K</button>
           </div>
-          <label style="display:block;margin-top:12px;margin-bottom:6px">Формат файла:</label>
-          <div id="tl-exp-format-row" style="display:flex;gap:6px;flex-wrap:wrap"></div>
           <div style="margin-top:14px">
             <button class="tl-btn tl-btn-primary" style="width:100%"
               data-onclick="tlStartExport()">▶ Начать экспорт</button>
@@ -601,26 +631,10 @@ function tlShowExportModal() {
   document.getElementById('tl-exp-settings').style.display = '';
   document.getElementById('tl-exp-progress-wrap').style.display = 'none';
   document.getElementById('tl-exp-title').textContent = 'Экспорт видео';
-
-  const supported = tlGetSupportedExportFormats();
-  if (!_tlExpFormatId || !supported.find(f => f.id === _tlExpFormatId)) {
-    _tlExpFormatId = supported[0] ? supported[0].id : 'webm-vp8';
-  }
-  const formatRow = document.getElementById('tl-exp-format-row');
-  if (formatRow) {
-    if (!supported.length) {
-      formatRow.innerHTML = `<div style="opacity:.7">Браузер не поддерживает запись видео в этой вкладке</div>`;
-    } else {
-      formatRow.innerHTML = supported.map(f =>
-        `<button class="tl-speed-btn tl-exp-format-btn${f.id === _tlExpFormatId ? ' active' : ''}"
-          data-format="${f.id}" data-onclick="tlExpSelectFormat('${f.id}')">${f.label}</button>`
-      ).join('');
-    }
-  }
-
-  const sel = tlGetSelectedFormat();
+  const mime = tlGetExportMimeType();
+  const ext  = mime.startsWith('video/mp4') ? 'MP4' : 'WebM';
   document.getElementById('tl-exp-sub').textContent =
-    `${sel.label} · ${tlEvents.length.toLocaleString()} событий`;
+    `Формат: ${ext} · ${tlEvents.length.toLocaleString()} событий`;
 }
 
 function tlHideExportModal() {
@@ -630,7 +644,6 @@ function tlHideExportModal() {
 
 let _tlExpSpeed = 100;  // скорость экспорта
 let _tlExpQual  = 1080; // высота в пикселях выходного видео
-let _tlExpFormatId = null; // id из TL_EXPORT_FORMATS, выбирается явно пользователем
 
 function tlExpSelectSpeed(s) {
   _tlExpSpeed = s;
@@ -642,32 +655,16 @@ function tlExpSelectQual(q) {
   document.querySelectorAll('.tl-exp-qual-btn').forEach(b =>
     b.classList.toggle('active', parseInt(b.dataset.qual) === q));
 }
-function tlExpSelectFormat(id) {
-  _tlExpFormatId = id;
-  document.querySelectorAll('.tl-exp-format-btn').forEach(b =>
-    b.classList.toggle('active', b.dataset.format === id));
-}
-function tlGetSelectedFormat() {
-  const supported = tlGetSupportedExportFormats();
-  return supported.find(f => f.id === _tlExpFormatId) || supported[0] || { id:'webm', mime:'video/webm', ext:'webm', label:'WebM' };
-}
 
 async function tlStartExport() {
   if (!tlSnapshot || !tlEvents.length) return;
-
-  const supported = tlGetSupportedExportFormats();
-  if (!supported.length) {
-    showToast('Браузер не поддерживает запись видео (MediaRecorder)', 'error');
-    return;
-  }
 
   tlExportCancelled = false;
   document.getElementById('tl-exp-settings').style.display = 'none';
   document.getElementById('tl-exp-progress-wrap').style.display = '';
 
-  const fmt    = tlGetSelectedFormat();
-  const mime   = fmt.mime;
-  const ext    = fmt.ext;
+  const mime   = tlGetExportMimeType();
+  const ext    = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
   const FPS    = 60;
   const speed  = _tlExpSpeed;
   const qual   = _tlExpQual;
@@ -675,6 +672,7 @@ async function tlStartExport() {
   // Размер выходного кадра: масштабируем исходный холст до нужного качества
   // сохраняя соотношение сторон, округляя до чётного (требование кодека).
   const scale  = Math.max(1, Math.floor(qual / Math.max(tlOrigH, 1)));
+  // Начальный размер — будет пересчитываться при resize-событиях
   let expW = tlOrigW * scale;
   let expH = tlOrigH * scale;
   expW += expW % 2; expH += expH % 2;
@@ -691,11 +689,12 @@ async function tlStartExport() {
   const pixCtx    = pixCanvas.getContext('2d', { alpha: false });
   pixCtx.imageSmoothingEnabled = false;
 
+  // Клонируем начальный кадр — не трогаем глобальные tlFrame/tlW/tlH
+  let expW0 = tlOrigW, expH0 = tlOrigH;
   let expFrame = new Uint8Array(tlSnapshot);
-  let curW = tlOrigW, curH = tlOrigH;
 
-  // Рисует текущий expFrame на offCanvas с нужным масштабом.
-  function drawExpFrame() {
+  // Функция «нарисовать expFrame на offCanvas с нужным масштабом»
+  function drawExpFrame(curW, curH) {
     const curScale = Math.max(1, Math.floor(qual / Math.max(curH, 1)));
     const dstW = curW * curScale + (curW * curScale) % 2;
     const dstH = curH * curScale + (curH * curScale) % 2;
@@ -721,54 +720,37 @@ async function tlStartExport() {
     offCtx.drawImage(pixCanvas, 0, 0, dstW, dstH);
   }
 
-  // ── КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ───────────────────────────────────────
-  // captureStream(FPS) полагается на то, что браузер сам периодически
-  // снимает кадр с канваса — а наш цикл рисования синхронный и быстрый,
-  // поэтому большинство нарисованных кадров браузер просто не успевает
-  // захватить, и реальные события "слипаются" в редкие тики на видео.
-  //
-  // Решение: captureStream(0) — ручной режим, кадр захватывается ТОЛЬКО
-  // когда мы явно вызываем track.requestFrame(). Каждое событие пикселя
-  // (или явно выбранная группа одновременных событий) рисуется и сразу
-  // захватывается одним кадром — события физически не могут потеряться.
-  // Длительность на видео обеспечивается повторным requestFrame() того же
-  // кадра нужное количество раз (frame holding), без лишней перерисовки.
-  const stream = offCanvas.captureStream(0);
-  const [track] = stream.getVideoTracks();
-
+  // Захватываем поток с offCanvas (скорость захвата = FPS)
+  const stream   = offCanvas.captureStream(FPS);
   let recorder;
   try {
     recorder = new MediaRecorder(stream, { mimeType: mime, videoBitsPerSecond: 12_000_000 });
   } catch {
-    recorder = new MediaRecorder(stream, { mimeType: mime });
+    // Если указанный mime не прошёл — попробуем без параметров
+    recorder = new MediaRecorder(stream);
   }
 
   const chunks = [];
   recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
-  recorder.start(100); // запрашивать данные каждые 100 мс реального времени
 
-  // msPerOutputFrame — сколько мс "сессии" укладывается в один выходной
-  // кадр при выбранной скорости. Используем только для расчёта, сколько
-  // повторов (holdFrames) нужно дать кадру, чтобы видео не "проскакивало"
-  // мгновенно и не растягивалось до многочасовой длины зря.
-  const msPerOutputFrame = speed * (1000 / FPS);
+  recorder.start(100); // запрашивать данные каждые 100 мс
 
-  // Группируем события по одинаковому timestamp — события, случившиеся
-  // в один и тот же момент сессии, должны попасть в ОДИН кадр видео
-  // (иначе там, где параллельно ставили 50 пикселей разом, будет 50
-  // одинаковых на вид кадров подряд без дополнительной информации).
+  // Перебираем все события с правильным темпом: каждый «виртуальный» кадр
+  // (1000ms / FPS мс реального времени = speed * (1000/FPS) мс сессии) рисуем.
+  const msPerFrame = speed * (1000 / FPS); // мс сессии на один выходной кадр
+  const totalFrames = Math.ceil(tlMaxTime / msPerFrame) || 1;
+
   let evIdx = 0;
-  const totalEvents = tlEvents.length;
-  let lastFlushTime = -1; // performance.now() последнего await/прогресса
+  let curW = expW0, curH = expH0;
 
-  while (evIdx < tlEvents.length && !tlExportCancelled) {
-    const batchStartT = tlEvents[evIdx].t;
-    let nextT = batchStartT;
+  for (let frame = 0; frame <= totalFrames && !tlExportCancelled; frame++) {
+    const virtualTime = frame * msPerFrame;
 
-    // Применяем все события с тем же timestamp одним кадром
-    while (evIdx < tlEvents.length && tlEvents[evIdx].t === batchStartT) {
+    // Применяем все события до virtualTime
+    while (evIdx < tlEvents.length && tlEvents[evIdx].t <= virtualTime) {
       const ev = tlEvents[evIdx++];
       if (ev.resize) {
+        // Resize: перестраиваем кадр под новый размер
         const grown = new Uint8Array(ev.w * ev.h);
         const mw = Math.min(curW, ev.w), mh = Math.min(curH, ev.h);
         for (let y = 0; y < mh; y++)
@@ -781,39 +763,19 @@ async function tlStartExport() {
       }
     }
 
-    drawExpFrame();
+    drawExpFrame(curW, curH);
 
-    // Сколько выходных кадров "удерживать" этот шаг, исходя из реального
-    // интервала времени до следующего события (а не фиксированного тика).
-    const followingT = evIdx < tlEvents.length ? tlEvents[evIdx].t : tlMaxTime;
-    const realGapMs = Math.max(0, followingT - nextT);
-    const holdFrames = Math.max(1, Math.round(realGapMs / msPerOutputFrame));
-
-    for (let h = 0; h < holdFrames; h++) {
-      track.requestFrame();
-      // Отдаём управление событийному циклу между захватами кадров —
-      // MediaRecorder получает данные из стрима асинхронно, без этого
-      // requestFrame() может вызываться быстрее, чем рекордер успевает
-      // их забрать, и часть кадров всё равно потеряется.
-      await new Promise(r => setTimeout(r, 0));
-    }
-
-    // Прогресс-бар и UI обновляем не чаще ~30 раз в секунду реального времени
-    const now = performance.now();
-    if (lastFlushTime < 0 || now - lastFlushTime > 33) {
-      lastFlushTime = now;
-      const pct = Math.round((evIdx / totalEvents) * 100);
+    // Обновляем прогресс-бар примерно раз в 30 кадров (не тормозим UI)
+    if (frame % 30 === 0) {
+      const pct = Math.round((frame / totalFrames) * 100);
       const bar = document.getElementById('tl-exp-bar');
       const pctEl = document.getElementById('tl-exp-pct');
       if (bar) bar.style.width = pct + '%';
       if (pctEl) pctEl.textContent = pct + '%';
+      // Уступаем UI-потоку, чтобы браузер мог перерисовать прогресс и
+      // MediaRecorder успел захватить кадры с captureStream
+      await new Promise(r => setTimeout(r, 0));
     }
-  }
-
-  // Финальный кадр держим чуть дольше, чтобы видео не обрывалось мгновенно
-  for (let h = 0; h < 5 && !tlExportCancelled; h++) {
-    track.requestFrame();
-    await new Promise(r => setTimeout(r, 0));
   }
 
   recorder.stop();
@@ -823,6 +785,7 @@ async function tlStartExport() {
     return;
   }
 
+  // Ждём onStop (финальный dataavailable), затем собираем файл
   await new Promise(r => { recorder.onstop = r; });
   const blob = new Blob(chunks, { type: mime });
   const url  = URL.createObjectURL(blob);
@@ -833,7 +796,7 @@ async function tlStartExport() {
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 
   tlHideExportModal();
-  showToast(`Видео сохранено (${fmt.label}, ×${speed})`, 'success');
+  showToast(`Видео сохранено (${ext.toUpperCase()}, ×${speed})`, 'success');
 }
 
 function tlCancelExport() {

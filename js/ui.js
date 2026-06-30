@@ -40,6 +40,7 @@ function onAuthSuccess(d) {
   document.querySelectorAll('.admin-tool-btn').forEach(el => el.style.display = isAdmin?'flex':'none');
   
   if (isAdmin){loadAdminUsers();}
+  if (isAdmin && typeof tlStartStatusPolling === 'function') tlStartStatusPolling();
   showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'success');
   loadAvatarFromStorage();
   drawAvatarCanvas(selectedEmoji);
@@ -55,6 +56,8 @@ function onAuthSuccess(d) {
 function doLogout() {
   clearSession();
   isLoggedIn=false;isAdmin=false;isVip=false;currentUser='';currentClan='';
+  if (typeof tlStopStatusPolling === 'function') tlStopStatusPolling();
+  const tlInd=document.getElementById('tl-rec-indicator'); if (tlInd) tlInd.style.display='none';
   document.getElementById('auth-panel').classList.add('show');
   document.getElementById('btn-admin').style.display='none';
   const adminDivL=document.getElementById('divider-before-admin');
@@ -1542,13 +1545,19 @@ function showPanel(id){
   if (id==='admin-panel') loadAdminStats();
   if (id==='clan-panel') { if (currentClan) sendJSON({action:'clan_get'}); else sendJSON({action:'clan_list'}); }
   if (id==='shop-panel') buildShopUI();
+  if (id==='news-panel' && typeof newsStartAutoplay === 'function') newsStartAutoplay();
 }
-function hidePanel(id){document.getElementById(id)?.classList.remove('show');document.getElementById('backdrop').classList.remove('show');}
+function hidePanel(id){
+  document.getElementById(id)?.classList.remove('show');
+  document.getElementById('backdrop').classList.remove('show');
+  if (id==='news-panel' && typeof newsStopAutoplay === 'function') newsStopAutoplay();
+}
 function hideAllPanels(){
   document.querySelectorAll('.overlay-panel:not(#auth-panel)').forEach(p=>p.classList.remove('show'));
   document.getElementById('backdrop').classList.remove('show');
   leaderboardOpen = false;
   document.getElementById('btn-leaderboard')?.classList.remove('active');
+  if (typeof newsStopAutoplay === 'function') newsStopAutoplay();
 }
 function showToast(msg,type='info'){
   const wrap=document.getElementById('toast-wrap');
@@ -1663,4 +1672,82 @@ function filterAdminClans() {
   const q = document.getElementById('admin-clans-search').value.toLowerCase();
   const filtered = q ? adminClansData.filter(cl => cl.name.toLowerCase().includes(q) || (cl.tag||'').toLowerCase().includes(q)) : adminClansData;
   renderAdminClans(filtered);
+}
+// ════════════════════════════════════════════════════════════
+//  NEWS PANEL
+// ════════════════════════════════════════════════════════════
+let newsCurrentSlide = 0;
+const newsSlideCount = 3;
+
+function openNewsPanel() {
+  showPanel('news-panel');
+  newsCurrentSlide = 0;
+  newsUpdateSlidePosition(false);
+  const dot = document.getElementById('news-indicator-dot');
+  if (dot) dot.style.display = 'none';
+}
+
+function newsUpdateSlidePosition(animate = true) {
+  const track = document.getElementById('news-slides-track');
+  if (!track) return;
+  track.style.transition = animate ? '' : 'none';
+  track.style.transform = `translateX(-${newsCurrentSlide * 100}%)`;
+  if (!animate) {
+    // форсируем reflow, чтобы следующий transform снова анимировался
+    void track.offsetHeight;
+    track.style.transition = '';
+  }
+  document.querySelectorAll('.news-slide-dot').forEach((d, i) => d.classList.toggle('active', i === newsCurrentSlide));
+}
+
+function newsSlideNext() {
+  newsCurrentSlide = (newsCurrentSlide + 1) % newsSlideCount;
+  newsUpdateSlidePosition();
+}
+
+function newsSlidePrev() {
+  newsCurrentSlide = (newsCurrentSlide - 1 + newsSlideCount) % newsSlideCount;
+  newsUpdateSlidePosition();
+}
+
+function newsSlideGoto(i) {
+  newsCurrentSlide = i;
+  newsUpdateSlidePosition();
+}
+
+// Автопрокрутка слайдшоу, пока панель открыта
+let newsAutoplayTimer = null;
+function newsStartAutoplay() {
+  newsStopAutoplay();
+  newsAutoplayTimer = setInterval(() => {
+    const panel = document.getElementById('news-panel');
+    if (!panel || !panel.classList.contains('show')) { newsStopAutoplay(); return; }
+    newsSlideNext();
+  }, 6000);
+}
+function newsStopAutoplay() {
+  if (newsAutoplayTimer) { clearInterval(newsAutoplayTimer); newsAutoplayTimer = null; }
+}
+
+// Заглушка-данные для списка новостей (заменить на реальные данные с сервера позже)
+const NEWS_ITEMS_STUB = [
+  {
+    icon: '🛠️', tag: 'Заглушка', title: 'Новость-заглушка №1', date: '— дата —',
+    text: 'Здесь появится полный текст выбранной новости. Пока что это место — заглушка для предпросмотра дизайна: текст, абзацы и возможное изображение будут добавлены позже вместе с реальным функционалом ленты новостей.'
+  },
+  {
+    icon: '📢', tag: 'Заглушка', title: 'Новость-заглушка №2', date: '— дата —',
+    text: 'Вторая заглушка новости — здесь так же появится реальный контент после подключения функционала ленты новостей к бэкенду.'
+  },
+];
+
+function newsSelectItem(el, idx) {
+  document.querySelectorAll('.news-list-item').forEach(it => it.classList.remove('active'));
+  el.classList.add('active');
+  const item = NEWS_ITEMS_STUB[idx];
+  if (!item) return;
+  document.querySelector('.news-detail-tag').textContent = item.tag;
+  document.querySelector('.news-detail-title').textContent = item.title;
+  document.querySelector('.news-detail-date').textContent = item.date;
+  document.querySelector('.news-detail-text').textContent = item.text;
 }

@@ -624,9 +624,10 @@ async function shareStencilToClan(){
 
 // Владелец клановского трафарета убирает его — у всех соклановцев он исчезнет
 // (если они его сейчас просматривают).
-function unshareClanStencil() {
+async function unshareClanStencil() {
   if (!clanSharedStencil || clanSharedStencil.owner !== currentUser) return;
-  if (!confirm('Снять ваш трафарет с показа всему клану?')) return;
+  const ok = await showConfirm('Снять ваш трафарет с показа всему клану?', { title: 'Снять трафарет', icon: '🪞' });
+  if (!ok) return;
   sendJSON({ action: 'clan_unshare_stencil' });
 }
 
@@ -875,13 +876,15 @@ function joinClan(){
   sendJSON({action:'clan_join',name});
 }
 
-function leaveClan(){
-  if (!confirm('Покинуть клан?')) return;
+async function leaveClan(){
+  const ok = await showConfirm('Покинуть клан?', { title: 'Выйти из клана', icon: '🚪' });
+  if (!ok) return;
   sendJSON({action:'clan_leave'});
 }
 
-function disbandClan(){
-  if (!confirm('Распустить клан? Все участники будут исключены, это действие необратимо.')) return;
+async function disbandClan(){
+  const ok = await showConfirm('Распустить клан? Все участники будут исключены, это действие необратимо.', { title: 'Распустить клан', icon: '⚠️', danger: true, confirmText: 'Распустить' });
+  if (!ok) return;
   sendJSON({action:'clan_disband'});
 }
 
@@ -1118,8 +1121,9 @@ function renderClanMemberPage() {
     <button class="page-btn" data-onclick="_clanMemberPage++;renderClanMemberPage()" ${_clanMemberPage>=totalPages?'disabled':''}>\u0421\u043b\u0435\u0434 &#8250;</button>`;
 }
 
-function kickClanMember(username) {
-  if (!confirm(`Кикнуть ${username} из клана?`)) return;
+async function kickClanMember(username) {
+  const ok = await showConfirm(`Кикнуть ${username} из клана?`, { title: 'Исключить участника', icon: '👋' });
+  if (!ok) return;
   sendJSON({action:'clan_kick', username});
 }
 
@@ -1156,7 +1160,7 @@ function buildShopUI(){
         ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price">🪙 ${item.cost}</span>`}
       </div>
       <div class="shop-item-desc">${item.desc}</div>
-      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" data-data-data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
+      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
       ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Требуется: ${item.requires}</div>` : ''}
     </div>`;
   });
@@ -1173,8 +1177,8 @@ function buildShopUI(){
         </div>
         <div class="shop-item-desc">${item.desc}</div>
         <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-vip btn-sm" data-data-data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-data-data-onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
+          <button class="btn btn-vip btn-sm" data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
         </div>
       </div>`;
     });
@@ -1193,7 +1197,7 @@ function buildShopUI(){
       html += `<div class="shop-item admin-item">
         <div class="shop-header"><div class="shop-item-title">${item.icon} ${item.title}</div><span style="font-size:10px;color:var(--text3);">БЕСПЛАТНО</span></div>
         <div class="shop-item-desc">${item.desc}</div>
-        <button class="btn btn-primary btn-sm" data-data-data-onclick="useAdminShopItem('${item.id}')">Применить</button>
+        <button class="btn btn-primary btn-sm" data-onclick="useAdminShopItem('${item.id}')">Применить</button>
       </div>`;
     });
     html += '</div>';
@@ -1204,9 +1208,10 @@ function buildShopUI(){
 function getItemCount(itemId) { return Array.isArray(purchasedItems) ? purchasedItems.filter(i => i === itemId).length : 0; }
 function buyItem(itemId) { sendJSON({action:'shop_buy', itemId: itemId}); }
 
-function useAdminShopItem(itemId) {
+async function useAdminShopItem(itemId) {
   if (itemId === 'admin_nuke') {
-    if (!confirm('Очистить весь холст?')) return;
+    const ok = await showConfirm('Очистить весь холст?', { title: 'Ядерная кнопка', icon: '☢️', danger: true, confirmText: 'Очистить' });
+    if (!ok) return;
     sendJSON({action:'admin_cmd', cmd:'clear_canvas'});
   } else if (itemId === 'admin_rainbow') {
     sendJSON({action:'admin_cmd', cmd:'rainbow_storm'});
@@ -1385,8 +1390,10 @@ function renderAdminUsers(users){
       </div>
     </div>`).join('');
 }
-function promptGiveCoins(username){
-  const amt=parseInt(prompt(`Сколько монет выдать ${username}?`));
+async function promptGiveCoins(username){
+  const val = await showPrompt(`Сколько монет выдать ${username}?`, '', { title: 'Выдать монеты', icon: '🪙' });
+  if (val === null) return;
+  const amt = parseInt(val);
   if (!amt||amt<=0) return;
   sendJSON({action:'admin_cmd',cmd:'give_coins',target:username,params:amt});
   setTimeout(()=>loadAdminUsers(adminPage),300);
@@ -1401,8 +1408,9 @@ function adminResizeCanvas(){
   if (w<16||h<16||w>2048||h>2048){showToast('Некорректный размер (16–2048)','error');return;}
   sendJSON({action:'admin_cmd',cmd:'resize_canvas',params:{w,h}});
 }
-function adminClearCanvas(){
-  if (!confirm('Очистить весь холст?')) return;
+async function adminClearCanvas(){
+  const ok = await showConfirm('Очистить весь холст?', { title: 'Очистка холста', icon: '🧹', danger: true, confirmText: 'Очистить' });
+  if (!ok) return;
   sendJSON({action:'admin_cmd',cmd:'clear_canvas'});
 }
 function adminToggleCursors(){
@@ -1634,17 +1642,18 @@ function renderAdminClans(clans) {
   }).join('');
 }
 
-function adminDeleteClan(name) {
-  if (!confirm('\u0423\u0434\u0430\u043b\u0438\u0442\u044c \u043a\u043b\u0430\u043d \u00ab' + name + '\u00bb? \u0412\u0441\u0435 \u0443\u0447\u0430\u0441\u0442\u043d\u0438\u043a\u0438 \u0431\u0443\u0434\u0443\u0442 \u0438\u0441\u043a\u043b\u044e\u0447\u0435\u043d\u044b.')) return;
+async function adminDeleteClan(name) {
+  const ok = await showConfirm(`Удалить клан «${name}»? Все участники будут исключены.`, { title: 'Удалить клан', icon: '🗑️', danger: true, confirmText: 'Удалить' });
+  if (!ok) return;
   sendJSON({action:'admin_cmd', cmd:'delete_clan', params:{name}});
   setTimeout(() => loadAdminClans(), 400);
 }
 
-function adminBroadcastToClan(name) {
-  const msg = prompt('\u0421\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435 \u0434\u043b\u044f \u043a\u043b\u0430\u043d\u0430 \u00ab' + name + '\u00bb:');
+async function adminBroadcastToClan(name) {
+  const msg = await showPrompt(`Сообщение для клана «${name}»:`, '', { title: 'Сообщение клану', icon: '📢' });
   if (!msg) return;
   sendJSON({action:'admin_cmd', cmd:'clan_broadcast', params:{name, message: msg}});
-  showToast('\u041e\u0442\u043f\u0440\u0430\u0432\u043b\u0435\u043d\u043e', 'success');
+  showToast('Отправлено', 'success');
 }
 
 function filterAdminClans() {

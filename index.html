@@ -41,6 +41,20 @@
 
     <div id="backdrop"></div>
 
+    <!-- ── CUSTOM CONFIRM / PROMPT MODAL (замена native confirm()/prompt(), которые
+         блокируются в iframe Discord Activity) ── -->
+    <div id="modal-backdrop" class="modal-backdrop"></div>
+    <div id="modal-dialog" class="modal-dialog" role="dialog" aria-modal="true">
+        <div class="modal-icon" id="modal-icon">❔</div>
+        <div class="modal-title" id="modal-title"></div>
+        <div class="modal-message" id="modal-message"></div>
+        <input type="text" id="modal-input" class="modal-input" data-onkeydown="modalInputKeydown(event)" />
+        <div class="modal-actions">
+            <button class="modal-btn modal-btn-cancel" id="modal-btn-cancel" data-onclick="resolveModal(null)">Отмена</button>
+            <button class="modal-btn modal-btn-confirm" id="modal-btn-confirm" data-onclick="modalConfirmClick()">OK</button>
+        </div>
+    </div>
+
     <div id="ui">
 
         <div id="top-bar">
@@ -661,9 +675,9 @@
         window.DiscordSDK = DiscordSDK;
 
         // Динамически грузим скрипты после того как SDK готов в window
-        const v = '20260723'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
+        const v = '20260733'; // ← версия для сброса кэша браузера. Меняй при каждом деплое
         const scripts = [
-        'js/config.js', 'js/state.js', 'js/canvas.js',
+        'js/config.js', 'js/state.js', 'js/canvas.js', 'js/modal.js',
         'js/network.js', 'js/ui.js', 'js/input.js', 'js/events.js', 'js/main.js'
         ].map(s => `${s}?v=${v}`);
         for (const src of scripts) {

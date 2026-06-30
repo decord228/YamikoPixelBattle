@@ -38,7 +38,7 @@ const SHOP_ITEMS_ADMIN = [
   {id:'admin_rainbow',title:'🌈 Радужный шторм',desc:'Заливает весь холст случайными цветами.',icon:'🌈',cost:0,type:'admin_tool'},
 ];
 
-const DISCORD_CLIENT_ID = '1520836216818503762';
+const DISCORD_CLIENT_ID = '1521337257938911283';
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');
 
 // WS_URL вычисляется в момент вызова connect(), после patchUrlMappings

@@ -431,7 +431,8 @@ html, body {
     backdrop-filter: blur(24px);
     border: 1px solid var(--border2);
     border-radius: var(--radius-pill);
-    padding: 0 14px;
+    padding-left: 6px;
+    padding-right: 12px;
     gap: 10px;
     align-items: center;
     box-shadow: 0 4px 24px rgba(0,0,0,.5);

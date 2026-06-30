@@ -34,3 +34,51 @@ bindDelegated('click', 'data-onclick');
 bindDelegated('input', 'data-oninput');
 bindDelegated('change', 'data-onchange');
 bindDelegated('keydown', 'data-onkeydown');
+
+// ── SIDEBAR TOOLTIPS ──
+// Раньше тултипы вешались как inline onmouseenter/onmouseleave, поэтому при
+// переходе на CSP-совместимое делегирование (см. выше) их забыли перенести.
+// mouseenter/mouseleave не всплывают (bubble: false), поэтому для делегирования
+// через document используем mouseover/mouseout — они всплывают и заменяют
+// связку enter/leave при проверке relatedTarget.
+
+let _sidebarTooltipBtn = null;
+
+function showSidebarTooltip(btn, text) {
+  const tip = document.getElementById('sidebar-tooltip');
+  if (!tip || !text) return;
+  tip.textContent = text;
+  const r = btn.getBoundingClientRect();
+  tip.style.left = (r.right + 10) + 'px';
+  tip.style.top = (r.top + r.height / 2) + 'px';
+  tip.style.transform = 'translateY(-50%)';
+  tip.classList.add('visible');
+}
+
+function hideSidebarTooltip() {
+  const tip = document.getElementById('sidebar-tooltip');
+  if (tip) tip.classList.remove('visible');
+}
+
+document.addEventListener('mouseover', (ev) => {
+  const btn = ev.target.closest('.sidebar-btn');
+  if (!btn || btn === _sidebarTooltipBtn) return;
+  const tipEl = btn.querySelector('.tip');
+  if (!tipEl) return;
+  _sidebarTooltipBtn = btn;
+  showSidebarTooltip(btn, tipEl.textContent);
+});
+
+document.addEventListener('mouseout', (ev) => {
+  const btn = ev.target.closest('.sidebar-btn');
+  if (!btn || btn !== _sidebarTooltipBtn) return;
+  // Если курсор переходит на дочерний элемент той же кнопки — не скрываем
+  if (btn.contains(ev.relatedTarget)) return;
+  _sidebarTooltipBtn = null;
+  hideSidebarTooltip();
+});
+
+// Скрываем тултип при клике (например, после смены инструмента) и при скролле
+// сайдбара, чтобы он не "залипал" в старой позиции.
+document.addEventListener('click', () => hideSidebarTooltip());
+document.getElementById('sidebar-inner')?.addEventListener('scroll', () => hideSidebarTooltip());

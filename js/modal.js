@@ -24,6 +24,17 @@ function _modalEls() {
 function _openModal(opts) {
   const { title = '', message = '', icon = '❔', isPrompt = false, defaultValue = '', confirmText = 'OK', cancelText = 'Отмена', danger = false } = opts;
   const els = _modalEls();
+
+  // Если разметка модалки не подключена (не скопирован блок #modal-backdrop/
+  // #modal-dialog из index.html вместе с этим файлом) — раньше это привело бы
+  // к "тихому" падению промиса и кнопка выглядела бы как нерабочая без единой
+  // ошибки в консоли. Делаем сбой явным и видимым.
+  if (!els.backdrop || !els.dialog || !els.icon || !els.title || !els.message || !els.input || !els.btnCancel || !els.btnConfirm) {
+    console.error('[modal.js] Не найдена разметка модального окна (#modal-backdrop/#modal-dialog и вложенные элементы). Проверьте, что блок модалки из index.html скопирован целиком.');
+    if (typeof showToast === 'function') showToast('Ошибка: окно подтверждения не найдено в HTML', 'error');
+    return Promise.resolve(isPrompt ? null : false);
+  }
+
   _modalIsPrompt = isPrompt;
 
   els.icon.textContent = icon;
@@ -84,10 +95,10 @@ function modalInputKeydown(ev) {
 }
 
 // Закрытие по клику на фон = отмена
-document.getElementById('modal-backdrop').addEventListener('click', () => resolveModal(_modalIsPrompt ? null : false));
+document.getElementById('modal-backdrop')?.addEventListener('click', () => resolveModal(_modalIsPrompt ? null : false));
 
 document.addEventListener('keydown', (ev) => {
-  if (ev.key === 'Escape' && document.getElementById('modal-dialog').classList.contains('show')) {
+  if (ev.key === 'Escape' && document.getElementById('modal-dialog')?.classList.contains('show')) {
     resolveModal(_modalIsPrompt ? null : false);
   }
 });

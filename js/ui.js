@@ -625,7 +625,10 @@ async function shareStencilToClan(){
 // Владелец клановского трафарета убирает его — у всех соклановцев он исчезнет
 // (если они его сейчас просматривают).
 async function unshareClanStencil() {
-  if (!clanSharedStencil || clanSharedStencil.owner !== currentUser) return;
+  if (!clanSharedStencil || clanSharedStencil.owner !== currentUser) {
+    console.warn('[unshareClanStencil] Отмена: clanSharedStencil=', clanSharedStencil, 'currentUser=', currentUser);
+    return;
+  }
   const ok = await showConfirm('Снять ваш трафарет с показа всему клану?', { title: 'Снять трафарет', icon: '🪞' });
   if (!ok) return;
   sendJSON({ action: 'clan_unshare_stencil' });

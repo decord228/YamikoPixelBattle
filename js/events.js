@@ -15,8 +15,14 @@
 
 function runInlineHandler(el, code, ev) {
   try {
-    // "this" внутри код = элемент, как и было в inline onclick
-    new Function('event', code).call(el, ev);
+    const result = new Function('event', code).call(el, ev);
+    // Многие обработчики теперь async (например показ кастомных confirm/prompt).
+    // Если внутри такой функции произойдёт ошибка, она превращается в "тихий"
+    // rejected Promise, который никто не увидит — ловим явно, чтобы кнопка не
+    // выглядела как "просто не работает" без единого следа в консоли.
+    if (result && typeof result.catch === 'function') {
+      result.catch((err) => console.error('[events.js] Асинхронная ошибка в обработчике:', code, err));
+    }
   } catch (err) {
     console.error('[events.js] Ошибка в обработчике:', code, err);
   }

@@ -3215,6 +3215,105 @@ html, body {
         transform: translate(-50%, -50%) scale(1);
     }
 
+/* ── NEWS BG CROP EDITOR MODAL ── */
+.ncm-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(820px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    background: rgba(18,18,20,.97);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+    z-index: 501;
+    padding: 18px 20px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(.96);
+    transition: opacity .2s cubic-bezier(.34,1.56,.64,1), transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+
+    .ncm-dialog.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+.ncm-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.ncm-title {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--text1);
+}
+
+.ncm-hint {
+    font-size: 11px;
+    color: var(--text3);
+    margin: -4px 0 2px;
+}
+
+#ncm-stage {
+    position: relative;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-conic-gradient(#1c1c20 0% 25%, #161619 0% 50%) 50% / 20px 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    user-select: none;
+    max-height: calc(100vh - 220px);
+}
+
+#ncm-img {
+    display: block;
+    max-width: 100%;
+    max-height: calc(100vh - 220px);
+    pointer-events: none;
+}
+
+#ncm-crop-box {
+    position: absolute;
+    border: 2px dashed #fff;
+    box-shadow: 0 0 0 2000px rgba(0,0,0,.55);
+    cursor: move;
+    box-sizing: border-box;
+}
+
+.ncm-handle {
+    position: absolute;
+    right: -8px;
+    bottom: -8px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    border: 2px solid var(--accent, #6a5cff);
+    cursor: nwse-resize;
+    box-shadow: 0 2px 6px rgba(0,0,0,.5);
+}
+
+.ncm-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+    .ncm-actions .btn {
+        min-width: 96px;
+    }
+
 .modal-icon {
     font-size: 30px;
     line-height: 1;

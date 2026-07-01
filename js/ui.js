@@ -1759,8 +1759,7 @@ function newsStopTimerTick() { if (newsTimerInterval) { clearInterval(newsTimerI
 // удобно, когда весь визуал уже сделан одной картинкой (например, из Figma)
 // и остаётся только подставить её фоном без дублирующих элементов поверх. ──
 function newsSlideHtml(item) {
-  const bgUrl = item.bgImage && typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(item.bgImage) : item.bgImage;
-  const bgStyle = item.bgImage ? ` style="background-image:url('${escapeHtml(bgUrl)}');background-position:${item.bgPosX ?? 50}% ${item.bgPosY ?? 50}%"` : '';
+  const bgStyle = item.bgImage ? ` style="${newsComputeBgStyle(item)}"` : '';
   const artHtml = item.showArt !== false ? `<div class="news-slide-art">${escapeHtml(item.art || '📰')}</div>` : '';
   const tagHtml = (item.showTag !== false && item.tag) ? `<div class="news-slide-tag">${escapeHtml(item.tag)}</div>` : '';
   const textHtml = item.showText !== false ? `
@@ -1870,8 +1869,10 @@ function newsSelectItemById(id) {
 //  АДМИНКА НОВОСТЕЙ — создание/редактирование/удаление/порядок
 // ════════════════════════════════════════════════════════════
 let newsAdminShowArt = true, newsAdminShowTag = true, newsAdminShowText = true;
-let newsAdminBgPosX = 50, newsAdminBgPosY = 50;
-let newsAdminPreviewDragging = false;
+// Крой картинки: доли (0..1) от исходного изображения. w/h всегда в
+// соотношении, равном реальным пропорциям блока слайда новостей.
+let newsAdminCrop = { x: 0, y: 0, w: 1, h: 1 };
+let newsAdminImgNaturalAspect = null;
 
 function renderAdminNewsList() {
   const box = document.getElementById('admin-news-list');
@@ -1918,10 +1919,30 @@ function openNewsAdminForm(id) {
   document.getElementById('na-date').value = item?.date || '';
 
   newsAdminBgImage = item?.bgImage || null;
-  newsAdminBgPosX = item?.bgPosX ?? 50;
-  newsAdminBgPosY = item?.bgPosY ?? 50;
+  newsAdminImgNaturalAspect = null;
   newsAdminUploadPending = false;
-  newsAdminRefreshBgPreview();
+  if (newsAdminBgImage && item?.bgCropW > 0 && item?.bgCropH > 0) {
+    // Уже был выбран крой раньше — используем его как есть.
+    newsAdminCrop = { x: item.bgCropX || 0, y: item.bgCropY || 0, w: item.bgCropW, h: item.bgCropH };
+    newsAdminRefreshBgPreview();
+  } else if (newsAdminBgImage) {
+    // Старая новость без сохранённого кроя (или совсем новая картинка) —
+    // временно ставим "во весь кадр", а как только картинка догрузится,
+    // подставляем красивый дефолт по центру с правильными пропорциями.
+    newsAdminCrop = { x: 0, y: 0, w: 1, h: 1 };
+    newsAdminRefreshBgPreview();
+    const probe = new Image();
+    probe.onload = () => {
+      if (newsAdminBgImage !== (item?.bgImage || null)) return; // форму уже закрыли/сменили картинку
+      newsAdminImgNaturalAspect = probe.naturalWidth / probe.naturalHeight;
+      newsAdminCrop = newsAdminComputeDefaultCrop(newsAdminImgNaturalAspect, getNewsSlideAspect());
+      newsAdminRefreshBgPreview();
+    };
+    probe.src = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(newsAdminBgImage) : newsAdminBgImage;
+  } else {
+    newsAdminCrop = { x: 0, y: 0, w: 1, h: 1 };
+    newsAdminRefreshBgPreview();
+  }
 
   const dt = document.getElementById('na-timer');
   if (item?.eventTimer) {
@@ -1948,15 +1969,72 @@ function closeNewsAdminForm() {
 
 let newsAdminUploadPending = false;
 
-// Строим превью ТОЧНО той же разметкой/классами, что и настоящий слайд
-// (newsSlideHtml), плюс кружок-прицел, показывающий выбранную видимую зону.
+// ── Измерение реальных пропорций слайда ──
+// #news-slideshow всегда в DOM (панель новостей скрыта через opacity:0, а
+// не display:none — см. .overlay-panel в style.css), поэтому его реальный
+// getBoundingClientRect() всегда доступен и даёт ТОЧНЫЕ живые пропорции
+// поста, без каких-либо предположений/захардкоженных чисел.
+function getNewsSlideAspect() {
+  const el = document.getElementById('news-slideshow');
+  if (el) {
+    const r = el.getBoundingClientRect();
+    if (r.width > 10 && r.height > 10) return r.width / r.height;
+  }
+  return 2.7; // запасной вариант, если элемент почему-то ещё не отрисован
+}
+
+// Дефолтный крой (аналог background-size:cover + position:center): берём
+// максимально большую область картинки, вписывающуюся в нужные пропорции,
+// по центру.
+function newsAdminComputeDefaultCrop(imgAspect, targetAspect) {
+  if (!imgAspect || !isFinite(imgAspect)) return { x: 0, y: 0, w: 1, h: 1 };
+  if (imgAspect > targetAspect) {
+    const w = targetAspect / imgAspect;
+    return { x: (1 - w) / 2, y: 0, w, h: 1 };
+  } else {
+    const h = imgAspect / targetAspect;
+    return { x: 0, y: (1 - h) / 2, w: 1, h };
+  }
+}
+
+// Переводит долевой крой {x,y,w,h} в background-size/position, которые дают
+// точно такой же визуальный результат, что и объектный кроп в редакторе —
+// без искажений пропорций картинки.
+function newsComputeBgStyle(item) {
+  if (!item.bgImage) return '';
+  const bgUrl = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(item.bgImage) : item.bgImage;
+  let { bgCropX: x = 0, bgCropY: y = 0, bgCropW: w = 1, bgCropH: h = 1 } = item;
+  w = Math.min(1, Math.max(0.02, w || 1));
+  h = Math.min(1, Math.max(0.02, h || 1));
+  x = Math.min(1 - w, Math.max(0, x || 0));
+  y = Math.min(1 - h, Math.max(0, y || 0));
+  const sizeX = (100 / w).toFixed(3);
+  const sizeY = (100 / h).toFixed(3);
+  const posX = w >= 0.999 ? 50 : (x / (1 - w) * 100).toFixed(3);
+  const posY = h >= 0.999 ? 50 : (y / (1 - h) * 100).toFixed(3);
+  return `background-image:url('${escapeHtml(bgUrl)}');background-repeat:no-repeat;background-size:${sizeX}% ${sizeY}%;background-position:${posX}% ${posY}%`;
+}
+
+// Превью строится ТОЙ ЖЕ разметкой/классами, что и настоящий слайд
+// (newsSlideHtml), а контейнер получает точный пиксельный размер, снятый
+// с реального #news-slideshow (при необходимости пропорционально уменьшенный,
+// чтобы влезть в узкую панель админки) — визуально это 1-в-1 копия поста.
 function newsAdminRefreshBgPreview() {
   const wrap = document.getElementById('na-bg-preview-wrap');
   const box = document.getElementById('na-bg-preview');
+  const frame = document.getElementById('na-bg-preview-frame');
   if (!wrap || !box) return;
 
   if (!newsAdminBgImage) { wrap.style.display = 'none'; return; }
   wrap.style.display = '';
+
+  const real = document.getElementById('news-slideshow')?.getBoundingClientRect();
+  const realW = real && real.width > 10 ? real.width : 724;
+  const realH = real && real.height > 10 ? real.height : 150;
+  const availW = frame ? frame.clientWidth : realW;
+  const scale = Math.min(1, availW / realW);
+  box.style.width = Math.round(realW * scale) + 'px';
+  box.style.height = Math.round(realH * scale) + 'px';
 
   const previewItem = {
     title: document.getElementById('na-title')?.value.trim() || 'Без названия',
@@ -1964,54 +2042,19 @@ function newsAdminRefreshBgPreview() {
     art: document.getElementById('na-art')?.value.trim() || '📰',
     desc: document.getElementById('na-desc')?.value.trim() || '',
     bgImage: newsAdminBgImage,
-    bgPosX: newsAdminBgPosX,
-    bgPosY: newsAdminBgPosY,
+    bgCropX: newsAdminCrop.x, bgCropY: newsAdminCrop.y, bgCropW: newsAdminCrop.w, bgCropH: newsAdminCrop.h,
     eventTimer: null,
     showArt: newsAdminShowArt,
     showTag: newsAdminShowTag,
     showText: newsAdminShowText,
   };
-
-  // Переиспользуем newsSlideHtml — гарантирует, что превью 1-в-1 совпадает
-  // с тем, что увидят игроки на слайде.
-  box.innerHTML = newsSlideHtml(previewItem) + '<div id="na-bg-preview-crosshair"></div>';
-
-  const cross = document.getElementById('na-bg-preview-crosshair');
-  if (cross) {
-    Object.assign(cross.style, {
-      position: 'absolute', width: '22px', height: '22px',
-      left: newsAdminBgPosX + '%', top: newsAdminBgPosY + '%',
-      transform: 'translate(-50%,-50%)', border: '2px solid #fff', borderRadius: '50%',
-      boxShadow: '0 0 0 1px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.5)', pointerEvents: 'none',
-    });
-  }
+  box.innerHTML = newsSlideHtml(previewItem);
 }
 
-function _newsAdminPreviewSetPosFromEvent(ev) {
-  const box = document.getElementById('na-bg-preview');
-  if (!box) return;
-  const r = box.getBoundingClientRect();
-  const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
-  const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
-  const x = Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
-  const y = Math.max(0, Math.min(100, ((clientY - r.top) / r.height) * 100));
-  newsAdminBgPosX = Math.round(x);
-  newsAdminBgPosY = Math.round(y);
-  newsAdminRefreshBgPreview();
-}
-
-function newsAdminPreviewPointerDown(ev) {
-  if (!newsAdminBgImage) return;
-  ev.preventDefault();
-  newsAdminPreviewDragging = true;
-  _newsAdminPreviewSetPosFromEvent(ev);
-}
-document.addEventListener('pointermove', ev => { if (newsAdminPreviewDragging) _newsAdminPreviewSetPosFromEvent(ev); });
-document.addEventListener('pointerup', () => { newsAdminPreviewDragging = false; });
-document.getElementById('na-bg-preview')?.addEventListener('pointerdown', newsAdminPreviewPointerDown);
-
-function resetNewsAdminBgPos() {
-  newsAdminBgPosX = 50; newsAdminBgPosY = 50;
+function clearNewsAdminBgImage() {
+  newsAdminBgImage = null;
+  newsAdminImgNaturalAspect = null;
+  newsAdminCrop = { x: 0, y: 0, w: 1, h: 1 };
   newsAdminRefreshBgPreview();
 }
 
@@ -2030,8 +2073,17 @@ async function handleNewsAdminBgImage(event) {
       const data = await res.json();
       if (data.url) {
         newsAdminBgImage = data.url;
-        newsAdminBgPosX = 50; newsAdminBgPosY = 50;
+        newsAdminImgNaturalAspect = null;
+        newsAdminCrop = { x: 0, y: 0, w: 1, h: 1 };
         newsAdminRefreshBgPreview();
+        const probe = new Image();
+        probe.onload = () => {
+          if (newsAdminBgImage !== data.url) return;
+          newsAdminImgNaturalAspect = probe.naturalWidth / probe.naturalHeight;
+          newsAdminCrop = newsAdminComputeDefaultCrop(newsAdminImgNaturalAspect, getNewsSlideAspect());
+          newsAdminRefreshBgPreview();
+        };
+        probe.src = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(data.url) : data.url;
         showToast(data.fallback ? 'Фон загружен (без CDN — облако не настроено)' : 'Фон загружен!', data.fallback ? 'info' : 'success');
       } else { showToast('Ошибка загрузки фона: ' + (data.error || 'сервер не вернул ссылку'), 'error'); }
     } catch (e) { showToast('Ошибка сети при загрузке фона', 'error'); }
@@ -2039,7 +2091,121 @@ async function handleNewsAdminBgImage(event) {
   };
   reader.readAsDataURL(file);
 }
-function clearNewsAdminBgImage() { newsAdminBgImage = null; newsAdminRefreshBgPreview(); }
+
+// ════════════════════════════════════════════════════════════
+//  МОДАЛКА ВЫБОРА ВИДИМОЙ ЗОНЫ (crop-редактор)
+// ════════════════════════════════════════════════════════════
+let ncmCropSnapshot = null;
+let ncmDragMode = null; // null | 'move' | 'resize'
+let ncmDragStart = { x: 0, y: 0 };
+let ncmBoxStart = { x: 0, y: 0, w: 0, h: 0, imgBox: null };
+
+function ncmGetImgBox() {
+  const stage = document.getElementById('ncm-stage');
+  const img = document.getElementById('ncm-img');
+  const sr = stage.getBoundingClientRect();
+  const ir = img.getBoundingClientRect();
+  return { left: ir.left - sr.left, top: ir.top - sr.top, width: ir.width, height: ir.height };
+}
+
+function ncmLayoutCropBox() {
+  const imgBox = ncmGetImgBox();
+  const box = document.getElementById('ncm-crop-box');
+  if (!box || imgBox.width < 1) return;
+  const c = newsAdminCrop;
+  box.style.left = (imgBox.left + c.x * imgBox.width) + 'px';
+  box.style.top = (imgBox.top + c.y * imgBox.height) + 'px';
+  box.style.width = (c.w * imgBox.width) + 'px';
+  box.style.height = (c.h * imgBox.height) + 'px';
+}
+
+function openNewsCropModal() {
+  if (!newsAdminBgImage) return;
+  ncmCropSnapshot = { ...newsAdminCrop };
+  const img = document.getElementById('ncm-img');
+  const onReady = () => {
+    newsAdminImgNaturalAspect = img.naturalWidth / img.naturalHeight;
+    // Если крой ещё не задавали (полный кадр по умолчанию) — сразу подставляем
+    // красивый центрированный вариант вместо растянутого "во весь кадр".
+    if (newsAdminCrop.w >= 0.999 && newsAdminCrop.h >= 0.999) {
+      newsAdminCrop = newsAdminComputeDefaultCrop(newsAdminImgNaturalAspect, getNewsSlideAspect());
+    }
+    ncmLayoutCropBox();
+  };
+  img.onload = onReady;
+  img.src = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(newsAdminBgImage) : newsAdminBgImage;
+  if (img.complete && img.naturalWidth) onReady();
+  document.getElementById('ncm-backdrop').classList.add('show');
+  document.getElementById('ncm-dialog').classList.add('show');
+}
+
+function closeNewsCropModal(apply) {
+  document.getElementById('ncm-backdrop').classList.remove('show');
+  document.getElementById('ncm-dialog').classList.remove('show');
+  ncmDragMode = null;
+  if (!apply && ncmCropSnapshot) newsAdminCrop = ncmCropSnapshot;
+  ncmCropSnapshot = null;
+  newsAdminRefreshBgPreview();
+}
+
+function resetNewsCrop() {
+  const img = document.getElementById('ncm-img');
+  const aspect = (img && img.naturalWidth) ? img.naturalWidth / img.naturalHeight : newsAdminImgNaturalAspect;
+  newsAdminCrop = newsAdminComputeDefaultCrop(aspect, getNewsSlideAspect());
+  ncmLayoutCropBox();
+}
+
+function _ncmPointerDown(mode, ev) {
+  if (ev.cancelable) ev.preventDefault();
+  ev.stopPropagation();
+  ncmDragMode = mode;
+  ncmDragStart = { x: ev.clientX, y: ev.clientY };
+  ncmBoxStart = { x: newsAdminCrop.x, y: newsAdminCrop.y, w: newsAdminCrop.w, h: newsAdminCrop.h, imgBox: ncmGetImgBox() };
+}
+
+document.getElementById('ncm-crop-box')?.addEventListener('pointerdown', ev => {
+  if (ev.target.id === 'ncm-handle') return;
+  _ncmPointerDown('move', ev);
+});
+document.getElementById('ncm-handle')?.addEventListener('pointerdown', ev => _ncmPointerDown('resize', ev));
+
+document.addEventListener('pointermove', ev => {
+  if (!ncmDragMode) return;
+  const imgBox = ncmBoxStart.imgBox;
+  if (!imgBox || imgBox.width < 5 || imgBox.height < 5) return;
+  const dxFrac = (ev.clientX - ncmDragStart.x) / imgBox.width;
+  const dyFrac = (ev.clientY - ncmDragStart.y) / imgBox.height;
+
+  if (ncmDragMode === 'move') {
+    let nx = Math.max(0, Math.min(1 - ncmBoxStart.w, ncmBoxStart.x + dxFrac));
+    let ny = Math.max(0, Math.min(1 - ncmBoxStart.h, ncmBoxStart.y + dyFrac));
+    newsAdminCrop.x = nx; newsAdminCrop.y = ny;
+  } else if (ncmDragMode === 'resize') {
+    // Рамка тянется за нижний правый угол, верхний левый (x,y) — точка
+    // привязки. w/h всегда меняются вместе, чтобы сохранить соотношение
+    // сторон блока поста.
+    const aspect = ncmBoxStart.w / ncmBoxStart.h;
+    const byX = ncmBoxStart.w + dxFrac;
+    const byY = (ncmBoxStart.h + dyFrac) * aspect;
+    let w = Math.abs(dxFrac) > Math.abs(dyFrac) ? byX : byY;
+    w = Math.max(0.05, Math.min(1, w));
+    let h = w / aspect;
+    if (h > 1) { h = 1; w = h * aspect; }
+    if (ncmBoxStart.x + w > 1) { w = 1 - ncmBoxStart.x; h = w / aspect; }
+    if (ncmBoxStart.y + h > 1) { h = 1 - ncmBoxStart.y; w = h * aspect; }
+    newsAdminCrop.w = w; newsAdminCrop.h = h;
+  }
+  ncmLayoutCropBox();
+});
+document.addEventListener('pointerup', () => { ncmDragMode = null; });
+
+document.getElementById('ncm-backdrop')?.addEventListener('click', () => closeNewsCropModal(false));
+document.addEventListener('keydown', ev => {
+  if (ev.key === 'Escape' && document.getElementById('ncm-dialog')?.classList.contains('show')) closeNewsCropModal(false);
+});
+window.addEventListener('resize', () => {
+  if (document.getElementById('ncm-dialog')?.classList.contains('show')) ncmLayoutCropBox();
+});
 
 function saveNewsAdmin() {
   if (newsAdminUploadPending) { showToast('Дождитесь загрузки картинки...', 'info'); return; }
@@ -2057,8 +2223,10 @@ function saveNewsAdmin() {
     text: document.getElementById('na-text').value.trim(),
     date: document.getElementById('na-date').value.trim() || new Date().toLocaleDateString('ru-RU'),
     bgImage: newsAdminBgImage,
-    bgPosX: newsAdminBgPosX,
-    bgPosY: newsAdminBgPosY,
+    bgCropX: newsAdminCrop.x,
+    bgCropY: newsAdminCrop.y,
+    bgCropW: newsAdminCrop.w,
+    bgCropH: newsAdminCrop.h,
     eventTimer,
     showArt: newsAdminShowArt,
     showTag: newsAdminShowTag,

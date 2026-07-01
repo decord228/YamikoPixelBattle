@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260630-7';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260630-4';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <!--
@@ -52,6 +52,31 @@
         <div class="modal-actions">
             <button class="modal-btn modal-btn-cancel" id="modal-btn-cancel" data-onclick="resolveModal(null)">Отмена</button>
             <button class="modal-btn modal-btn-confirm" id="modal-btn-confirm" data-onclick="modalConfirmClick()">OK</button>
+        </div>
+    </div>
+
+    <!-- ── NEWS BG IMAGE CROP EDITOR MODAL ──
+         Показывает исходную картинку целиком + пунктирную рамку с точным
+         соотношением сторон блока слайда новостей. Рамку можно двигать
+         (перетаскивание) и менять размер, сохраняя пропорции (маркер в углу),
+         чтобы выбрать, какая часть картинки будет видна на посту. -->
+    <div id="ncm-backdrop" class="modal-backdrop"></div>
+    <div id="ncm-dialog" class="ncm-dialog" role="dialog" aria-modal="true">
+        <div class="ncm-header">
+            <div class="ncm-title">Выбор видимой зоны картинки</div>
+            <div class="panel-close" data-onclick="closeNewsCropModal(false)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+        </div>
+        <p class="ncm-hint">Перетащите рамку, чтобы выбрать область, и потяните за маркер в углу, чтобы приблизить/отдалить (пропорции блока сохраняются).</p>
+        <div id="ncm-stage">
+            <img id="ncm-img" alt="Фон новости" draggable="false">
+            <div id="ncm-crop-box">
+                <div class="ncm-handle" id="ncm-handle"></div>
+            </div>
+        </div>
+        <div class="ncm-actions">
+            <button class="btn btn-secondary" data-onclick="resetNewsCrop()">Сбросить</button>
+            <button class="btn btn-secondary" data-onclick="closeNewsCropModal(false)">Отмена</button>
+            <button class="btn btn-primary" data-onclick="closeNewsCropModal(true)">Применить</button>
         </div>
     </div>
 
@@ -626,12 +651,12 @@
                     </div>
                     <input type="file" id="na-bg-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminBgImage(event)">
                     <div id="na-bg-preview-wrap" style="display:none;margin-bottom:12px;">
-                        <p style="font-size:10px;color:var(--text3);margin:0 0 6px;">Так это будет выглядеть на посту. Кликните/потяните по картинке, чтобы выбрать видимую зону:</p>
-                        <div id="na-bg-preview" style="position:relative;width:100%;aspect-ratio:2.7/1;border-radius:8px;overflow:hidden;cursor:crosshair;border:1px solid var(--border2);background:#0c0c0f;user-select:none;">
-                            <div id="na-bg-preview-crosshair" style="position:absolute;width:22px;height:22px;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.5);pointer-events:none;"></div>
+                        <p style="font-size:10px;color:var(--text3);margin:0 0 6px;">Точная копия слайда (пропорции 1-в-1 как в новостях, измерены по реальному блоку):</p>
+                        <div id="na-bg-preview-frame" style="width:100%;display:flex;justify-content:center;">
+                            <div id="na-bg-preview" style="position:relative;overflow:hidden;border-radius:8px;border:1px solid var(--border2);background:#0c0c0f;"></div>
                         </div>
                         <div style="display:flex;gap:8px;margin-top:8px;">
-                            <button class="btn btn-secondary btn-sm" data-onclick="resetNewsAdminBgPos()" style="flex:1;">Сбросить в центр</button>
+                            <button class="btn btn-primary btn-sm" data-onclick="openNewsCropModal()" style="flex:1;">🎯 Изменить позиционирование</button>
                             <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminBgImage()" style="flex:1;">Убрать фон</button>
                         </div>
                     </div>

@@ -1070,20 +1070,37 @@ html, body {
         border-radius: 4px;
     }
 
-/* ── NEWS PANEL ── */
+/* ── NEWS PANEL ──
+   Вся панель увеличена на 50% (ширина, отступы, шрифты, иконки) —
+   компактный вид было тяжело читать. */
 #news-panel {
-    width: 760px;
+    width: 1140px;
     max-width: calc(100vw - 32px);
     max-height: calc(100vh - 56px);
 }
+
+    #news-panel .panel-header {
+        padding: 27px 30px 0;
+    }
+
+    #news-panel .panel-title {
+        font-size: 20px;
+    }
+
+    #news-panel .panel-close {
+        width: 45px;
+        height: 45px;
+        border-radius: 13px;
+        font-size: 21px;
+    }
 
 #news-panel-body {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    padding: 16px 18px 18px;
-    gap: 14px;
+    padding: 24px 27px 27px;
+    gap: 21px;
 }
 
 /* ── Slideshow (top half, smaller) ── */
@@ -1096,10 +1113,11 @@ html, body {
        от текущего слайда: у поста с таймером контента больше — блок выше,
        у поста без таймера — контента меньше, блок проседал, а вместе с ним
        сжималась и фоновая картинка. Фиксированная высота в px устраняет
-       зависимость от содержимого слайда. */
-    flex: 0 0 170px;
-    height: 170px;
-    min-height: 170px;
+       зависимость от содержимого слайда. Высота увеличена на 50% (170→255px)
+       вместе со всей панелью новостей. */
+    flex: 0 0 255px;
+    height: 255px;
+    min-height: 255px;
     border-radius: var(--radius-sm);
     overflow: hidden;
     border: 1px solid var(--border);
@@ -1119,8 +1137,8 @@ html, body {
     height: 100%;
     display: flex;
     align-items: center;
-    gap: 18px;
-    padding: 20px 24px;
+    gap: 27px;
+    padding: 30px 36px;
     background: radial-gradient(circle at 85% 20%, rgba(99,102,241,.16), transparent 55%), var(--surface);
     background-size: cover;
     background-position: center;
@@ -1161,34 +1179,34 @@ html, body {
 }
 
     .news-slide-empty .news-slide-art {
-        margin: 0 auto 6px;
+        margin: 0 auto 9px;
         background: none;
         border: none;
-        font-size: 40px;
+        font-size: 60px;
     }
 
     .news-slide-empty .news-slide-title {
-        margin-bottom: 2px;
+        margin-bottom: 3px;
     }
 
 .news-empty {
     color: var(--text3);
     text-align: center;
-    padding: 26px 12px;
-    font-size: 12px;
+    padding: 39px 18px;
+    font-size: 18px;
 }
 
 .news-slide-art {
     flex-shrink: 0;
-    width: 72px;
-    height: 72px;
+    width: 108px;
+    height: 108px;
     border-radius: var(--radius-sm);
     background: linear-gradient(135deg, var(--surface3), var(--surface2));
     border: 1px solid var(--border2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 32px;
+    font-size: 48px;
 }
 
 .news-slide-content {
@@ -1197,27 +1215,27 @@ html, body {
 
 .news-slide-tag {
     display: inline-block;
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: .5px;
     text-transform: uppercase;
     color: var(--accent2);
     background: var(--accent-glow);
-    padding: 3px 9px;
+    padding: 5px 14px;
     border-radius: var(--radius-pill);
-    margin-bottom: 8px;
+    margin-bottom: 12px;
 }
 
 .news-slide-title {
     font-family: 'Unbounded',sans-serif;
-    font-size: 15px;
+    font-size: 23px;
     font-weight: 700;
-    margin-bottom: 6px;
+    margin-bottom: 9px;
     color: var(--text);
 }
 
 .news-slide-desc {
-    font-size: 12px;
+    font-size: 18px;
     line-height: 1.5;
     color: var(--text2);
     overflow: hidden;
@@ -1230,13 +1248,13 @@ html, body {
 .news-slide-timer {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-top: 10px;
+    gap: 9px;
+    margin-top: 15px;
 }
 
 .news-timer-icon {
-    font-size: 13px;
-    margin-right: 2px;
+    font-size: 20px;
+    margin-right: 3px;
     filter: drop-shadow(0 0 6px rgba(99,102,241,.5));
 }
 
@@ -1245,9 +1263,9 @@ html, body {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    min-width: 34px;
-    padding: 3px 6px;
-    border-radius: 7px;
+    min-width: 51px;
+    padding: 5px 9px;
+    border-radius: 11px;
     background: rgba(0,0,0,.38);
     border: 1px solid rgba(255,255,255,.08);
     backdrop-filter: blur(4px);
@@ -1255,14 +1273,14 @@ html, body {
 
 .news-timer-num {
     font-family: 'Space Mono',monospace;
-    font-size: 13px;
+    font-size: 20px;
     font-weight: 700;
     color: var(--text);
     line-height: 1.1;
 }
 
 .news-timer-lbl {
-    font-size: 8px;
+    font-size: 12px;
     text-transform: uppercase;
     letter-spacing: .4px;
     color: var(--text3);
@@ -1271,23 +1289,23 @@ html, body {
 .news-timer-sep {
     color: var(--text3);
     font-family: 'Space Mono',monospace;
-    font-size: 11px;
+    font-size: 17px;
     margin: 0 -2px;
 }
 
 .news-slide-timer-done {
-    padding: 5px 11px;
+    padding: 8px 17px;
     border-radius: var(--radius-pill);
     background: linear-gradient(135deg, var(--accent), var(--accent2));
     width: fit-content;
 }
 
     .news-slide-timer-done .news-timer-done-icon {
-        margin-right: 5px;
+        margin-right: 8px;
     }
 
     .news-slide-timer-done .news-timer-done-label {
-        font-size: 11px;
+        font-size: 17px;
         font-weight: 700;
         color: #fff;
     }
@@ -1296,8 +1314,8 @@ html, body {
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    width: 28px;
-    height: 28px;
+    width: 42px;
+    height: 42px;
     border-radius: 50%;
     background: rgba(15,15,17,.75);
     border: 1px solid var(--border2);
@@ -1317,30 +1335,30 @@ html, body {
     }
 
     .news-slide-nav .icon {
-        width: 15px;
-        height: 15px;
+        width: 22px;
+        height: 22px;
     }
 
 .news-slide-prev {
-    left: 10px;
+    left: 15px;
 }
 
 .news-slide-next {
-    right: 10px;
+    right: 15px;
 }
 
 #news-slide-dots {
     position: absolute;
-    bottom: 10px;
+    bottom: 15px;
     left: 50%;
     transform: translateX(-50%);
     display: flex;
-    gap: 6px;
+    gap: 9px;
 }
 
 .news-slide-dot {
-    width: 6px;
-    height: 6px;
+    width: 9px;
+    height: 9px;
     border-radius: 50%;
     background: var(--border2);
     cursor: pointer;
@@ -1349,7 +1367,7 @@ html, body {
 
     .news-slide-dot.active {
         background: var(--accent2);
-        width: 16px;
+        width: 24px;
         border-radius: var(--radius-pill);
     }
 
@@ -1358,7 +1376,7 @@ html, body {
     flex: 1;
     min-height: 0;
     display: flex;
-    gap: 12px;
+    gap: 18px;
 }
 
 #news-list-col {
@@ -1375,7 +1393,7 @@ html, body {
 #news-list {
     overflow-y: auto;
     flex: 1;
-    padding: 6px;
+    padding: 9px;
 }
 
     #news-list::-webkit-scrollbar {
@@ -1394,8 +1412,8 @@ html, body {
 .news-list-item {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 9px 10px;
+    gap: 15px;
+    padding: 14px 15px;
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background .15s;
@@ -1412,15 +1430,15 @@ html, body {
 
 .news-list-item-icon {
     flex-shrink: 0;
-    width: 34px;
-    height: 34px;
-    border-radius: 10px;
+    width: 51px;
+    height: 51px;
+    border-radius: 15px;
     background: var(--surface2);
     border: 1px solid var(--border2);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 16px;
+    font-size: 24px;
 }
 
 .news-list-item-info {
@@ -1428,7 +1446,7 @@ html, body {
 }
 
 .news-list-item-title {
-    font-size: 12px;
+    font-size: 18px;
     font-weight: 600;
     color: var(--text);
     white-space: nowrap;
@@ -1437,10 +1455,10 @@ html, body {
 }
 
 .news-list-item-date {
-    font-size: 10px;
+    font-size: 15px;
     color: var(--text3);
     font-family: 'Space Mono',monospace;
-    margin-top: 2px;
+    margin-top: 3px;
 }
 
 #news-detail-col {
@@ -1449,7 +1467,7 @@ html, body {
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
     background: var(--surface);
-    padding: 16px;
+    padding: 24px;
     overflow-y: auto;
 }
 
@@ -1468,27 +1486,27 @@ html, body {
 
 .news-detail-tag {
     display: inline-block;
-    font-size: 10px;
+    font-size: 15px;
     font-weight: 700;
     letter-spacing: .5px;
     text-transform: uppercase;
     color: var(--accent2);
     background: var(--accent-glow);
-    padding: 3px 9px;
+    padding: 5px 14px;
     border-radius: var(--radius-pill);
-    margin-bottom: 10px;
+    margin-bottom: 15px;
 }
 
 .news-detail-title {
     font-family: 'Unbounded',sans-serif;
-    font-size: 16px;
+    font-size: 24px;
     font-weight: 700;
     color: var(--text);
-    margin-bottom: 6px;
+    margin-bottom: 9px;
 }
 
 .news-detail-date {
-    font-size: 11px;
+    font-size: 17px;
     color: var(--text3);
     font-family: 'Space Mono',monospace;
 }
@@ -1496,16 +1514,16 @@ html, body {
 .news-detail-sep {
     height: 1px;
     background: var(--border);
-    margin: 14px 0;
+    margin: 21px 0;
 }
 
 .news-detail-text {
-    font-size: 13px;
+    font-size: 20px;
     line-height: 1.65;
     color: var(--text2);
 }
 
-@media (max-width: 760px) {
+@media (max-width: 1140px) {
     #news-panel {
         width: calc(100vw - 24px);
     }
@@ -1515,7 +1533,7 @@ html, body {
     }
 
     #news-list-col {
-        flex: 0 0 140px;
+        flex: 0 0 210px;
     }
 }
 

@@ -93,6 +93,29 @@
         </div>
     </div>
 
+    <!-- ── CLAN BANNER CROP MODAL ── -->
+    <div id="bcm-backdrop" class="modal-backdrop"></div>
+    <div id="bcm-dialog" class="bcm-dialog" role="dialog" aria-modal="true">
+        <div class="bcm-header">
+            <div class="bcm-title">Позиционирование баннера</div>
+            <div class="panel-close" data-onclick="closeClanBannerCropModal(false)">
+                <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg>
+            </div>
+        </div>
+        <p class="bcm-hint">Перетащите рамку и тяните за уголок, чтобы выбрать видимую область баннера. Пропорции баннера сохраняются.</p>
+        <div id="bcm-stage">
+            <img id="bcm-img" alt="Баннер клана" draggable="false">
+            <div id="bcm-crop-box">
+                <div class="bcm-handle" id="bcm-handle"></div>
+            </div>
+        </div>
+        <div class="bcm-actions">
+            <button class="btn btn-secondary" data-onclick="resetClanBannerCrop()">Сбросить</button>
+            <button class="btn btn-secondary" data-onclick="closeClanBannerCropModal(false)">Отмена</button>
+            <button class="btn btn-primary" data-onclick="closeClanBannerCropModal(true)">Применить</button>
+        </div>
+    </div>
+
     <div id="ui">
 
         <div id="top-bar-row">

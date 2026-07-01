@@ -1,5 +1,16 @@
 ﻿'use strict';
 
+// ── CLAN BANNER STATE ──
+let clanBannerUrl = null;
+let clanBannerCrop = { x: 0, y: 0, w: 1, h: 1 };
+let clanBannerUploadPending = false;
+let clanBannerImgNaturalAspect = null;
+let bcmCropSnapshot = null;
+let bcmDragMode = null;
+let bcmDragStart = { x: 0, y: 0 };
+let bcmBoxStart = { x: 0, y: 0, w: 0, h: 0, imgBox: null };
+const CLAN_BANNER_MAX_MB = 5;
+
 // ── UI & LOGIC ──
 function switchAuthTab(tab) {
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1)));
@@ -906,23 +917,90 @@ async function disbandClan(){
   sendJSON({action:'clan_disband'});
 }
 
-function sendClanChat() {
-  const input = document.getElementById('clan-chat-input');
-  const text = input.value.trim();
-  if (!text || !isLoggedIn || !currentClan) return;
-  sendJSON({action:'clan_chat_send', text});
-  input.value = '';
+// ─────────────────────────────────────────────
+// CLAN CHAT v2 — инициализация и добавление сообщений
+// ─────────────────────────────────────────────
+let _clanChatV2Init = false;
+let _clanChatV2Messages = [];
+
+function initClanChatV2() {
+  const inner = document.getElementById('clan-inner-chat');
+  if (!inner || inner.dataset.v2) return;
+  inner.dataset.v2 = '1';
+  _clanChatV2Init = true;
+  inner.innerHTML = `
+      <div class="clan-chat-v2-wrap" id="clan-chat-v2-msgs">
+          <div class="clan-chat-v2-empty">
+              <div class="clan-chat-v2-empty-icon">💬</div>
+              <div>Здесь появятся сообщения клана</div>
+          </div>
+      </div>
+      <div class="clan-chat-v2-input-row">
+          <input class="clan-chat-v2-input" id="clan-chat-v2-input"
+              placeholder="Сообщение клану..." maxlength="200"
+              data-onkeydown="if(event.key==='Enter')sendClanChatV2()">
+          <button class="clan-chat-v2-send" data-onclick="sendClanChatV2()">
+              <svg class="icon icon-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
+          </button>
+      </div>`;
+  // Восстановить историю
+  if (_clanChatV2Messages.length) {
+    const wrap = document.getElementById('clan-chat-v2-msgs');
+    if (wrap) {
+      wrap.innerHTML = '';
+      _clanChatV2Messages.forEach(m => _appendClanChatV2Msg(m.username, m.text, m.emoji, m.ts));
+    }
+  }
 }
 
-function addClanChatMessage(user, text, emoji) {
+function _appendClanChatV2Msg(user, text, emoji, ts) {
+  const wrap = document.getElementById('clan-chat-v2-msgs');
+  if (!wrap) return;
+  const empty = wrap.querySelector('.clan-chat-v2-empty');
+  if (empty) empty.remove();
+  const pad = n => String(n).padStart(2, '0');
+  let timeStr = '';
+  if (ts) {
+    const d = new Date(ts);
+    const now = new Date();
+    if (d.toDateString() === now.toDateString()) {
+      timeStr = pad(d.getHours()) + ':' + pad(d.getMinutes());
+    } else {
+      timeStr = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+  }
   const el = document.createElement('div');
-  el.className = 'clan-chat-msg';
-  el.innerHTML = `<span class="cm-user">${esc(emoji||'👾')} ${esc(user)}:</span> ${esc(text)}`;
-  const msgs = document.getElementById('clan-chat-messages');
-  msgs.appendChild(el);
-  if (msgs.children.length > 100) msgs.removeChild(msgs.firstChild);
-  msgs.scrollTop = msgs.scrollHeight;
+  el.className = 'clan-chat-v2-msg';
+  el.innerHTML = `
+      <div class="clan-chat-v2-avatar">${esc(emoji || '👾')}</div>
+      <div class="clan-chat-v2-body">
+          <div class="clan-chat-v2-header">
+              <span class="clan-chat-v2-user">${esc(user)}</span>
+              ${timeStr ? `<span class="clan-chat-v2-time">${timeStr}</span>` : ''}
+          </div>
+          <div class="clan-chat-v2-text">${esc(text)}</div>
+      </div>`;
+  wrap.appendChild(el);
+  while (wrap.children.length > 120) wrap.removeChild(wrap.firstChild);
+  wrap.scrollTop = wrap.scrollHeight;
 }
+
+function addClanChatMessage(user, text, emoji, ts) {
+  const msg = { username: user, text, emoji: emoji || '👾', ts: ts || Date.now() };
+  _clanChatV2Messages.push(msg);
+  if (_clanChatV2Messages.length > 120) _clanChatV2Messages.shift();
+  _appendClanChatV2Msg(user, text, emoji, msg.ts);
+}
+
+function sendClanChatV2() {
+  const input = document.getElementById('clan-chat-v2-input');
+  const text = (input?.value || '').trim();
+  if (!text || !isLoggedIn || !currentClan) return;
+  sendJSON({ action: 'clan_chat_send', text });
+  if (input) input.value = '';
+}
+
+function sendClanChat() { sendClanChatV2(); }
 
 function buildClanIconPicker(current) {
   const grid = document.getElementById('cs-icon-grid');
@@ -962,6 +1040,7 @@ function buildClanColorPicker(current) {
 }
 
 function saveClanSettings() {
+  if (clanBannerUploadPending) { showToast('Дождитесь загрузки баннера...', 'info'); return; }
   const icon       = document.getElementById('cs-icon').value || '🏴';
   const tag_color  = document.getElementById('cs-tag-color').value || '#818cf8';
   const join_type  = document.getElementById('cs-join-type').value || 'open';
@@ -975,7 +1054,14 @@ function saveClanSettings() {
 
   sendJSON({
     action: 'clan_update_settings',
-    settings: { icon, tag_color, join_type, min_pixels, is_public, share_cursor, message_of_day }
+    settings: {
+      icon, tag_color, join_type, min_pixels, is_public, share_cursor, message_of_day,
+      banner_url:    clanBannerUrl,
+      banner_crop_x: clanBannerCrop.x,
+      banner_crop_y: clanBannerCrop.y,
+      banner_crop_w: clanBannerCrop.w,
+      banner_crop_h: clanBannerCrop.h,
+    }
   });
   showToast('Настройки клана сохранены ✓', 'success');
 }
@@ -1065,34 +1151,97 @@ function clanPermBadges(rank) {
   return granted.map(p => `<span class="clan-perm-pill" title="${esc(p.name)}: ${esc(p.desc)}">${p.icon} ${esc(p.name)}</span>`).join('');
 }
 
+// ─────────────────────────────────────────────
+// Рендер шапки-баннера клана
+// ─────────────────────────────────────────────
+function renderClanBannerHeader(clan, canManageSettings) {
+    const bannerUrl = clan.banner_url || null;
+    const bannerCrop = {
+        x: clan.banner_crop_x ?? 0,
+        y: clan.banner_crop_y ?? 0,
+        w: clan.banner_crop_w ?? 1,
+        h: clan.banner_crop_h ?? 1,
+    };
+    const bgStyle = bannerUrl ? clanBannerComputeBgStyle(bannerUrl, bannerCrop) : '';
+    const tc = clan.tag_color || '#818cf8';
+    const icon = clan.icon || '🏴';
+    const glowColor = tc + '38';
+
+    return `<div class="clan-banner-wrap">
+        <div class="clan-banner-bg" style="${escapeHtml(bgStyle)}"></div>
+        ${!bannerUrl ? `
+        <div class="clan-banner-glow clan-banner-glow-1" style="background:${glowColor}"></div>
+        <div class="clan-banner-glow clan-banner-glow-2" style="background:${glowColor}"></div>` : ''}
+        <div class="clan-banner-overlay"></div>
+        <div class="clan-banner-content">
+            <div class="clan-banner-icon">${escapeHtml(icon)}</div>
+            <div class="clan-banner-info">
+                <div class="clan-banner-name-row">
+                    <span class="clan-banner-name">${escapeHtml(clan.name || '')}</span>
+                    <span class="clan-banner-tag" style="color:${tc};border-color:${tc}55;">${escapeHtml((icon ? icon + ' ' : '') + (clan.tag || ''))}</span>
+                </div>
+                ${clan.description ? `<div class="clan-banner-desc">${escapeHtml(clan.description)}</div>` : ''}
+            </div>
+            <div class="clan-banner-stats">
+                <div class="clan-banner-stat">
+                    <span class="clan-banner-stat-num">${escapeHtml(String((clan.members || []).length))}</span>
+                    <span class="clan-banner-stat-lbl">участников</span>
+                </div>
+                <div class="clan-banner-stat">
+                    <span class="clan-banner-stat-num">${(clan.pixels || 0).toLocaleString()}</span>
+                    <span class="clan-banner-stat-lbl">пикселей</span>
+                </div>
+            </div>
+        </div>
+        ${canManageSettings ? `<button class="clan-banner-edit-btn" data-onclick="switchClanInnerTab('settings')">
+            <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="12" height="12"><path d="M14.5 4.5l3.5 3.5L7 19l-4 1 1-4z"/></svg>
+            Изменить баннер
+        </button>` : ''}
+    </div>
+    <div class="clan-motd-v2">
+        <span class="clan-motd-v2-icon">📌</span>
+        <span class="clan-motd-v2-text" id="clan-motd-text">${escapeHtml(clan.message_of_day || clan.motd || 'Добро пожаловать в клан!')}</span>
+    </div>`;
+}
+
 function renderClanView(clan){
   currentClan = clan.name || '';
   clanFullData = clan;
   document.getElementById('clan-view-no-clan').style.display='none';
   document.getElementById('clan-view-in-clan').style.display='';
 
-  const heroIcon = document.getElementById('clan-hero-icon');
-  if (heroIcon) heroIcon.textContent = clan.icon || '🏴';
-  document.getElementById('clan-disp-name').textContent=clan.name||'';
-  const dispTag = document.getElementById('clan-disp-tag');
-  dispTag.textContent = (clan.icon ? clan.icon + ' ' : '') + (clan.tag||'');
-  const tc = clan.tag_color || '#818cf8';
-  dispTag.style.color = tc;
-  dispTag.style.background = tc + '22';
-  dispTag.style.borderColor = tc + '55';
-  document.getElementById('clan-disp-desc').textContent=clan.description||'Описание не указано';
-  document.getElementById('clan-disp-members').textContent=(clan.members||[]).length;
-  const navMemberCount = document.getElementById('clan-nav-member-count');
-  if (navMemberCount) navMemberCount.textContent = (clan.members||[]).length;
-  const pxEl = document.getElementById('clan-disp-pixels');
-  if (pxEl) pxEl.textContent = (clan.pixels||0).toLocaleString();
-  if (clan.motd||clan.message_of_day) document.getElementById('clan-motd-text').textContent = clan.motd||clan.message_of_day || 'Добро пожаловать в клан!';
-
   const isLeader = currentUser === clan.leader;
   const myRank = clanRankOfUser(clan, currentUser);
   const canManageSettings = clanHasPermUser(clan, currentUser, 'manage_settings');
   const canEditMotd = clanHasPermUser(clan, currentUser, 'edit_motd') || canManageSettings;
   const canInvite = clanHasPermUser(clan, currentUser, 'invite');
+
+  // ── Рендерим баннер-хедер ──
+  const shellHeader = document.querySelector('.clan-shell-header');
+  if (shellHeader) {
+    shellHeader.innerHTML = renderClanBannerHeader(clan, canManageSettings);
+  }
+
+  // ── Обновляем старые DOM-элементы (для обратной совместимости, могут отсутствовать) ──
+  const setIfExists = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  setIfExists('clan-disp-name', clan.name || '');
+  setIfExists('clan-disp-members', (clan.members || []).length);
+  setIfExists('clan-disp-pixels', (clan.pixels || 0).toLocaleString());
+  const heroIcon = document.getElementById('clan-hero-icon');
+  if (heroIcon) heroIcon.textContent = clan.icon || '🏴';
+  const dispTag = document.getElementById('clan-disp-tag');
+  if (dispTag) {
+    dispTag.textContent = (clan.icon ? clan.icon + ' ' : '') + (clan.tag||'');
+    const tc0 = clan.tag_color || '#818cf8';
+    dispTag.style.color = tc0;
+    dispTag.style.background = tc0 + '22';
+    dispTag.style.borderColor = tc0 + '55';
+  }
+  const dispDesc = document.getElementById('clan-disp-desc');
+  if (dispDesc) dispDesc.textContent = clan.description || 'Описание не указано';
+
+  const navMemberCount = document.getElementById('clan-nav-member-count');
+  if (navMemberCount) navMemberCount.textContent = (clan.members||[]).length;
 
   const settingsTab = document.getElementById('clan-settings-tab');
   if (settingsTab) settingsTab.style.display = (canManageSettings || canEditMotd || isLeader) ? '' : 'none';
@@ -1116,7 +1265,18 @@ function renderClanView(clan){
 
   // Settings form (visible section toggling by permission)
   const appearanceBlock = document.getElementById('clan-settings-appearance');
-  if (appearanceBlock) appearanceBlock.style.display = canManageSettings ? '' : 'none';
+  if (appearanceBlock) {
+    // Инжектируем секцию баннера в начало блока настроек
+    const bannerSectionId = 'clan-banner-settings-section';
+    let bannerSection = document.getElementById(bannerSectionId);
+    if (!bannerSection) {
+      bannerSection = document.createElement('div');
+      bannerSection.id = bannerSectionId;
+      appearanceBlock.insertBefore(bannerSection, appearanceBlock.firstChild);
+    }
+    bannerSection.innerHTML = renderClanBannerSettingsBlock(clan, canManageSettings);
+    appearanceBlock.style.display = canManageSettings ? '' : 'none';
+  }
   const appearanceLocked = document.getElementById('clan-settings-locked-hint');
   if (appearanceLocked) appearanceLocked.style.display = canManageSettings ? 'none' : '';
   const motdBlock = document.getElementById('clan-settings-motd-block');
@@ -1155,6 +1315,14 @@ function renderClanView(clan){
     if (pubTog) pubTog.classList.toggle('on', clan.is_public !== false);
     const curTog = document.getElementById('cs-cursor-toggle');
     if (curTog) curTog.classList.toggle('on', !!clan.share_cursor);
+
+    // Синхронизируем состояние баннера
+    clanBannerUrl = clan.banner_url || null;
+    clanBannerCrop = {
+      x: clan.banner_crop_x ?? 0, y: clan.banner_crop_y ?? 0,
+      w: clan.banner_crop_w ?? 1, h: clan.banner_crop_h ?? 1,
+    };
+    refreshClanBannerUploadUI();
   }
   if (canEditMotd) {
     const motdInput = document.getElementById('cs-motd');
@@ -1180,7 +1348,262 @@ function renderClanView(clan){
   renderClanOverview();
   renderClanMemberPage();
   if (document.getElementById('clan-inner-ranks')?.style.display !== 'none') renderClanRanksTab();
+  // Инициализируем чат v2, если ещё не сделан
+  initClanChatV2();
 }
+
+// ─────────────────────────────────────────────
+// Секция баннера внутри настроек клана
+// ─────────────────────────────────────────────
+function renderClanBannerSettingsBlock(clan, canEdit) {
+  if (!canEdit) return '';
+  const bannerUrl = clan.banner_url || clanBannerUrl || null;
+  const bannerCrop = clanBannerUrl ? clanBannerCrop : {
+    x: clan.banner_crop_x ?? 0, y: clan.banner_crop_y ?? 0,
+    w: clan.banner_crop_w ?? 1, h: clan.banner_crop_h ?? 1,
+  };
+  const previewStyle = bannerUrl ? clanBannerComputeBgStyle(bannerUrl, bannerCrop) : '';
+
+  return `<div style="margin-bottom:16px;">
+      <div class="clan-settings-card-title" style="margin-bottom:10px;">🖼️ Баннер клана</div>
+      <div class="clan-banner-upload-zone" id="clan-banner-upload-zone" data-onclick="document.getElementById('clan-banner-file-input').click()">
+          <div class="clan-banner-upload-preview" id="clan-banner-upload-preview" style="${escapeHtml(previewStyle)};display:${bannerUrl ? '' : 'none'}"></div>
+          <div class="clan-banner-upload-label">
+              <div class="clan-banner-upload-label-icon">
+                  <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg>
+              </div>
+              <span class="clan-banner-upload-label-text" id="clan-banner-upload-lbl">${bannerUrl ? 'Нажмите для замены' : 'Загрузите баннер (JPG/PNG до 5 МБ)'}</span>
+              <span class="clan-banner-upload-label-sub">Рекомендуем: 900×148 px или шире</span>
+          </div>
+      </div>
+      <input type="file" id="clan-banner-file-input" accept="image/*" style="display:none" data-onchange="handleClanBannerFile(event)">
+      <div id="clan-banner-act-row" style="display:${bannerUrl ? 'flex' : 'none'};gap:8px;margin-top:6px;">
+          <button class="btn btn-primary btn-sm" data-onclick="openClanBannerCropModal()" style="flex:1;">🎯 Позиционирование</button>
+          <button class="btn btn-danger btn-sm" data-onclick="clearClanBanner()" style="flex:1;">Убрать</button>
+      </div>
+      <p style="font-size:10px;color:var(--text3);margin-top:6px;">Баннер виден всем участникам в шапке страницы клана</p>
+  </div>`;
+}
+
+// ─────────────────────────────────────────────
+// Баннер: crop-хелперы и логика загрузки/редактирования
+// ─────────────────────────────────────────────
+function getClanBannerAspect() { return 916 / 148; }
+
+function clanBannerComputeDefaultCrop(imgAspect, targetAspect) {
+  if (!imgAspect || !isFinite(imgAspect)) return { x: 0, y: 0, w: 1, h: 1 };
+  if (imgAspect > targetAspect) {
+    const w = targetAspect / imgAspect;
+    return { x: (1 - w) / 2, y: 0, w, h: 1 };
+  } else {
+    const h = imgAspect / targetAspect;
+    return { x: 0, y: (1 - h) / 2, w: 1, h };
+  }
+}
+
+function clanBannerComputeBgStyle(url, crop) {
+  if (!url) return '';
+  const c = crop || { x: 0, y: 0, w: 1, h: 1 };
+  let { x = 0, y = 0, w = 1, h = 1 } = c;
+  w = Math.min(1, Math.max(0.02, w));
+  h = Math.min(1, Math.max(0.02, h));
+  x = Math.min(1 - w, Math.max(0, x));
+  y = Math.min(1 - h, Math.max(0, y));
+  const sizeX = (100 / w).toFixed(3);
+  const sizeY = (100 / h).toFixed(3);
+  const posX = w >= 0.999 ? 50 : (x / (1 - w) * 100).toFixed(3);
+  const posY = h >= 0.999 ? 50 : (y / (1 - h) * 100).toFixed(3);
+  const proxied = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(url) : url;
+  return `background-image:url('${escapeHtml(proxied)}');background-repeat:no-repeat;background-size:${sizeX}% ${sizeY}%;background-position:${posX}% ${posY}%`;
+}
+
+function refreshClanBannerUploadUI() {
+  const zone = document.getElementById('clan-banner-upload-zone');
+  if (!zone) return;
+  const preview = document.getElementById('clan-banner-upload-preview');
+  const lbl = document.getElementById('clan-banner-upload-lbl');
+  if (preview) {
+    if (clanBannerUrl) {
+      preview.style.cssText = clanBannerComputeBgStyle(clanBannerUrl, clanBannerCrop);
+      preview.style.display = '';
+    } else {
+      preview.style.display = 'none';
+    }
+  }
+  if (lbl) {
+    if (clanBannerUploadPending) lbl.textContent = 'Загрузка...';
+    else if (clanBannerUrl) lbl.textContent = 'Нажмите для замены';
+    else lbl.textContent = 'Загрузите баннер (JPG/PNG до 5 МБ)';
+  }
+  const actRow = document.getElementById('clan-banner-act-row');
+  if (actRow) actRow.style.display = clanBannerUrl ? 'flex' : 'none';
+}
+
+function handleClanBannerFile(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('Только изображения!', 'error'); return; }
+  if (file.size > CLAN_BANNER_MAX_MB * 1024 * 1024) {
+    showToast(`Файл слишком большой! Максимум ${CLAN_BANNER_MAX_MB} МБ`, 'error'); return;
+  }
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    clanBannerUploadPending = true;
+    clanBannerImgNaturalAspect = null;
+    showToast('Загрузка баннера...', 'info');
+    refreshClanBannerUploadUI();
+    try {
+      const res = await fetch(getApiUrl() + '/upload-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: ev.target.result, name: 'clan_banner_' + currentClan, username: currentUser }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        clanBannerUrl = data.url;
+        const probe = new Image();
+        probe.onload = () => {
+          clanBannerImgNaturalAspect = probe.naturalWidth / probe.naturalHeight;
+          clanBannerCrop = clanBannerComputeDefaultCrop(clanBannerImgNaturalAspect, getClanBannerAspect());
+          clanBannerUploadPending = false;
+          refreshClanBannerUploadUI();
+        };
+        probe.src = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(data.url) : data.url;
+        showToast(data.fallback ? 'Баннер загружен (без CDN)' : '🖼️ Баннер загружен! Сохраните настройки.', data.fallback ? 'info' : 'success');
+      } else {
+        showToast('Ошибка загрузки: ' + (data.error || ''), 'error');
+        clanBannerUploadPending = false;
+        refreshClanBannerUploadUI();
+      }
+    } catch (e) {
+      showToast('Ошибка сети', 'error');
+      clanBannerUploadPending = false;
+      refreshClanBannerUploadUI();
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearClanBanner() {
+  clanBannerUrl = null;
+  clanBannerCrop = { x: 0, y: 0, w: 1, h: 1 };
+  clanBannerImgNaturalAspect = null;
+  refreshClanBannerUploadUI();
+  showToast('Баннер убран. Нажмите «Сохранить»', 'info');
+}
+
+function openClanBannerCropModal() {
+  if (!clanBannerUrl) return;
+  bcmCropSnapshot = { ...clanBannerCrop };
+  const img = document.getElementById('bcm-img');
+  if (!img) return;
+  const onReady = () => {
+    clanBannerImgNaturalAspect = img.naturalWidth / img.naturalHeight;
+    if (clanBannerCrop.w >= 0.999 && clanBannerCrop.h >= 0.999) {
+      clanBannerCrop = clanBannerComputeDefaultCrop(clanBannerImgNaturalAspect, getClanBannerAspect());
+    }
+    bcmLayoutCropBox();
+  };
+  img.onload = onReady;
+  img.src = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(clanBannerUrl) : clanBannerUrl;
+  if (img.complete && img.naturalWidth) onReady();
+  initBcmListeners();
+  document.getElementById('bcm-backdrop')?.classList.add('show');
+  document.getElementById('bcm-dialog')?.classList.add('show');
+}
+
+function closeClanBannerCropModal(apply) {
+  document.getElementById('bcm-backdrop')?.classList.remove('show');
+  document.getElementById('bcm-dialog')?.classList.remove('show');
+  bcmDragMode = null;
+  if (!apply && bcmCropSnapshot) clanBannerCrop = bcmCropSnapshot;
+  bcmCropSnapshot = null;
+  refreshClanBannerUploadUI();
+}
+
+function resetClanBannerCrop() {
+  const img = document.getElementById('bcm-img');
+  const aspect = (img && img.naturalWidth) ? img.naturalWidth / img.naturalHeight : clanBannerImgNaturalAspect;
+  clanBannerCrop = clanBannerComputeDefaultCrop(aspect, getClanBannerAspect());
+  bcmLayoutCropBox();
+}
+
+function bcmGetImgBox() {
+  const stage = document.getElementById('bcm-stage');
+  const img = document.getElementById('bcm-img');
+  if (!stage || !img) return { left: 0, top: 0, width: 1, height: 1 };
+  const sr = stage.getBoundingClientRect();
+  const ir = img.getBoundingClientRect();
+  return { left: ir.left - sr.left, top: ir.top - sr.top, width: ir.width, height: ir.height };
+}
+
+function bcmLayoutCropBox() {
+  const imgBox = bcmGetImgBox();
+  const box = document.getElementById('bcm-crop-box');
+  if (!box || imgBox.width < 1) return;
+  const c = clanBannerCrop;
+  box.style.left = (imgBox.left + c.x * imgBox.width) + 'px';
+  box.style.top = (imgBox.top + c.y * imgBox.height) + 'px';
+  box.style.width = (c.w * imgBox.width) + 'px';
+  box.style.height = (c.h * imgBox.height) + 'px';
+}
+
+function _bcmPointerDown(mode, ev) {
+  if (ev.cancelable) ev.preventDefault();
+  ev.stopPropagation();
+  bcmDragMode = mode;
+  bcmDragStart = { x: ev.clientX, y: ev.clientY };
+  bcmBoxStart = { x: clanBannerCrop.x, y: clanBannerCrop.y, w: clanBannerCrop.w, h: clanBannerCrop.h, imgBox: bcmGetImgBox() };
+}
+
+function initBcmListeners() {
+  const cropBox = document.getElementById('bcm-crop-box');
+  const handle = document.getElementById('bcm-handle');
+  if (!cropBox || cropBox.dataset.bcmOk) return;
+  cropBox.dataset.bcmOk = '1';
+  cropBox.addEventListener('pointerdown', ev => {
+    if (ev.target.id === 'bcm-handle') return;
+    _bcmPointerDown('move', ev);
+  });
+  if (handle) handle.addEventListener('pointerdown', ev => _bcmPointerDown('resize', ev));
+}
+
+document.addEventListener('pointermove', ev => {
+  if (!bcmDragMode) return;
+  const imgBox = bcmBoxStart.imgBox;
+  if (!imgBox || imgBox.width < 5) return;
+  const dxFrac = (ev.clientX - bcmDragStart.x) / imgBox.width;
+  const dyFrac = (ev.clientY - bcmDragStart.y) / imgBox.height;
+  if (bcmDragMode === 'move') {
+    clanBannerCrop.x = Math.max(0, Math.min(1 - bcmBoxStart.w, bcmBoxStart.x + dxFrac));
+    clanBannerCrop.y = Math.max(0, Math.min(1 - bcmBoxStart.h, bcmBoxStart.y + dyFrac));
+  } else {
+    const aspect = bcmBoxStart.w / bcmBoxStart.h;
+    let w = Math.abs(dxFrac) > Math.abs(dyFrac) ? bcmBoxStart.w + dxFrac : (bcmBoxStart.h + dyFrac) * aspect;
+    w = Math.max(0.05, Math.min(1, w));
+    let h = w / aspect;
+    if (h > 1) { h = 1; w = h * aspect; }
+    if (bcmBoxStart.x + w > 1) { w = 1 - bcmBoxStart.x; h = w / aspect; }
+    if (bcmBoxStart.y + h > 1) { h = 1 - bcmBoxStart.y; w = h * aspect; }
+    clanBannerCrop.w = w; clanBannerCrop.h = h;
+  }
+  bcmLayoutCropBox();
+});
+
+document.addEventListener('pointerup', () => { if (bcmDragMode) bcmDragMode = null; });
+
+document.addEventListener('DOMContentLoaded', () => {
+  setTimeout(initBcmListeners, 300);
+  document.getElementById('bcm-backdrop')?.addEventListener('click', () => closeClanBannerCropModal(false));
+  document.addEventListener('keydown', ev => {
+    if (ev.key === 'Escape' && document.getElementById('bcm-dialog')?.classList.contains('show')) {
+      closeClanBannerCropModal(false);
+    }
+  });
+  window.addEventListener('resize', () => {
+    if (document.getElementById('bcm-dialog')?.classList.contains('show')) bcmLayoutCropBox();
+  });
+});
 
 function renderClanOverview() {
   const clan = clanFullData;

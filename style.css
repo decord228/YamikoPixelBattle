@@ -1214,6 +1214,22 @@ html, body {
     font-size: 36px;
 }
 
+.news-slide-art-img,
+.news-list-item-icon-img,
+.admin-news-item-icon-img {
+    padding: 0;
+    overflow: hidden;
+}
+
+    .news-slide-art-img img,
+    .news-list-item-icon-img img,
+    .admin-news-item-icon-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+    }
+
 .news-slide-content {
     min-width: 0;
 }
@@ -2392,6 +2408,239 @@ html, body {
 #na-bg-drop:hover {
     border-color: var(--accent2);
     background: var(--accent-glow);
+}
+
+/* ── Admin: редизайн формы новости (карточки-секции) ── */
+.adm-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px;
+    margin-bottom: 10px;
+}
+
+.adm-card-head {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-bottom: 12px;
+}
+
+.adm-card-icon {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    background: var(--accent-glow);
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    font-size: 13px;
+}
+
+.adm-card-title-wrap {
+    min-width: 0;
+}
+
+.adm-card-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--text);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+}
+
+.adm-card-desc {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 1px;
+}
+
+/* Свёрнутые по умолчанию секции (Таймер / Видимость) */
+details.adm-card {
+    padding: 0;
+}
+
+    details.adm-card > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 14px;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 9px;
+    }
+
+        details.adm-card > summary::-webkit-details-marker {
+            display: none;
+        }
+
+    details.adm-card .adm-card-head {
+        margin-bottom: 0;
+        flex: 1;
+        min-width: 0;
+    }
+
+    details.adm-card .adm-card-body {
+        padding: 0 14px 16px;
+    }
+
+    details.adm-card .adm-chev {
+        margin-left: auto;
+        color: var(--text3);
+        transition: transform .25s;
+        flex-shrink: 0;
+        font-size: 12px;
+    }
+
+    details.adm-card[open] .adm-chev {
+        transform: rotate(90deg);
+        color: var(--accent2);
+    }
+
+    details.adm-card .adm-card-badge {
+        margin-left: auto;
+        font-size: 9px;
+        font-weight: 700;
+        color: var(--text3);
+        background: var(--surface3);
+        padding: 3px 8px;
+        border-radius: 999px;
+        letter-spacing: .3px;
+        white-space: nowrap;
+    }
+
+    details.adm-card[open] .adm-card-badge {
+        display: none;
+    }
+
+/* Переключатель типа иконки (эмодзи / картинка) */
+.icon-type-toggle {
+    display: flex;
+    gap: 4px;
+    background: var(--surface3);
+    padding: 3px;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
+
+.icon-type-btn {
+    flex: 1;
+    text-align: center;
+    padding: 7px 4px;
+    border-radius: 7px;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--text2);
+    cursor: pointer;
+    transition: .15s;
+    user-select: none;
+}
+
+    .icon-type-btn.active {
+        background: var(--accent);
+        color: #fff;
+    }
+
+.na-icon-row {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+}
+
+.na-icon-preview {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    flex-shrink: 0;
+    overflow: hidden;
+    position: relative;
+}
+
+    .na-icon-preview img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+.na-icon-content {
+    flex: 1;
+    min-width: 0;
+}
+
+.emoji-chip-grid {
+    display: grid;
+    grid-template-columns: repeat(8,1fr);
+    gap: 5px;
+    margin-top: 8px;
+}
+
+.emoji-chip {
+    aspect-ratio: 1;
+    border-radius: 9px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    cursor: pointer;
+    transition: .15s;
+}
+
+    .emoji-chip:hover {
+        border-color: var(--accent);
+        transform: scale(1.08);
+    }
+
+    .emoji-chip.selected {
+        border-color: var(--accent);
+        box-shadow: 0 0 10px var(--accent-glow);
+    }
+
+.na-icon-drop {
+    border: 2px dashed var(--border2);
+    border-radius: 12px;
+    padding: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: .2s;
+    font-size: 11px;
+    color: var(--text2);
+}
+
+    .na-icon-drop:hover {
+        border-color: var(--accent2);
+        background: var(--accent-glow);
+    }
+
+.na-icon-remove {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.65);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+/* Список новостей в админке — лёгкое обновление под карточный стиль */
+#admin-news-list-wrap .adm-card-title {
+    margin-bottom: 2px;
 }
 
 .user-card {
@@ -3585,6 +3834,62 @@ html, body {
     color: var(--text3);
     letter-spacing: 2px;
     text-transform: uppercase;
+}
+
+/* ── MINI MODE (Discord Activity свёрнута в маленькое окно) ── */
+#mini-mode-screen {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: var(--bg);
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    padding: 14px;
+    text-align: center;
+}
+
+body.mini-mode #mini-mode-screen {
+    display: flex;
+}
+
+/* В мини-режиме окно совсем крошечное — прячем весь обычный интерфейс
+       под экраном (он и так перекрыт, но так надёжнее гасим лишние анимации/
+       обработчики курсора, которые ловят события в фоне). */
+body.mini-mode #ui,
+body.mini-mode #game-root,
+body.mini-mode #overlay-canvas,
+body.mini-mode #cursors-layer,
+body.mini-mode #backdrop {
+    visibility: hidden;
+}
+
+#mini-mode-logo {
+    font-size: 20px;
+    line-height: 1.15;
+}
+
+#mini-mode-expand-icon {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border2);
+    color: var(--accent2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    margin-top: 2px;
+}
+
+#mini-mode-sub {
+    font-size: 10px;
+    line-height: 1.4;
+    color: var(--text2);
+    letter-spacing: .3px;
 }
 
 /* ── SCROLLBAR ── */

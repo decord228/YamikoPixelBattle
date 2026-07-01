@@ -1763,9 +1763,17 @@ function newsStopTimerTick() { if (newsTimerInterval) { clearInterval(newsTimerI
 // ── Рендер слайда: художку/бейджик/текст можно скрыть по отдельности —
 // удобно, когда весь визуал уже сделан одной картинкой (например, из Figma)
 // и остаётся только подставить её фоном без дублирующих элементов поверх. ──
+function newsIconHtml(item, cls) {
+  if (item.iconType === 'image' && item.iconImage) {
+    const url = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(item.iconImage) : item.iconImage;
+    return `<div class="${cls} ${cls}-img"><img src="${escapeHtml(url)}" alt=""></div>`;
+  }
+  return `<div class="${cls}">${escapeHtml(item.art || '📰')}</div>`;
+}
+
 function newsSlideHtml(item) {
   const bgStyle = item.bgImage ? ` style="${newsComputeBgStyle(item)}"` : '';
-  const artHtml = item.showArt !== false ? `<div class="news-slide-art">${escapeHtml(item.art || '📰')}</div>` : '';
+  const artHtml = item.showArt !== false ? newsIconHtml(item, 'news-slide-art') : '';
   const tagHtml = (item.showTag !== false && item.tag) ? `<div class="news-slide-tag">${escapeHtml(item.tag)}</div>` : '';
   const textHtml = item.showText !== false ? `
       <div class="news-slide-title">${escapeHtml(item.title || 'Без названия')}</div>
@@ -1800,7 +1808,7 @@ function newsRenderAll() {
   dots.innerHTML = newsItems.map((_, i) => `<div class="news-slide-dot${i===0?' active':''}" data-onclick="newsSlideGoto(${i})"></div>`).join('');
   list.innerHTML = newsItems.map((item, i) => `
     <div class="news-list-item${i===0?' active':''}" data-onclick="newsSelectItem(this, '${item.id}')">
-      <div class="news-list-item-icon">${escapeHtml(item.art || '📰')}</div>
+      ${newsIconHtml(item, 'news-list-item-icon')}
       <div class="news-list-item-info">
         <div class="news-list-item-title">${escapeHtml(item.title || 'Без названия')}</div>
         <div class="news-list-item-date">${escapeHtml(item.date || '')}</div>
@@ -1879,13 +1887,19 @@ let newsAdminShowArt = true, newsAdminShowTag = true, newsAdminShowText = true;
 let newsAdminCrop = { x: 0, y: 0, w: 1, h: 1 };
 let newsAdminImgNaturalAspect = null;
 
+// ── Иконка новости: эмодзи ИЛИ картинка ──
+let newsAdminIconType = 'emoji'; // 'emoji' | 'image'
+let newsAdminIconImage = null;   // URL картинки-иконки в облаке
+let newsAdminIconUploadPending = false;
+const NEWS_QUICK_EMOJI = ['📰','🎉','⚡','🛠️','🎨','🏆','🔥','✨','📢','🎁','🗓️','💥','🚀','⭐','🧩','🌈'];
+
 function renderAdminNewsList() {
   const box = document.getElementById('admin-news-list');
   if (!box) return;
   if (!newsItems.length) { box.innerHTML = `<div style="color:var(--text3);text-align:center;padding:20px;">Новостей ещё нет — создайте первую</div>`; return; }
   box.innerHTML = newsItems.map((item, i) => `
     <div class="admin-news-item">
-      <div class="admin-news-item-icon">${escapeHtml(item.art || '📰')}</div>
+      ${newsIconHtml(item, 'admin-news-item-icon')}
       <div class="admin-news-item-info">
         <div class="admin-news-item-title">${escapeHtml(item.title || 'Без названия')}${item.bgImage ? ' 🖼️' : ''}${item.eventTimer ? ' ⏳' : ''}</div>
         <div class="admin-news-item-sub">${escapeHtml(item.tag || '—')} · ${escapeHtml(item.date || '')}</div>
@@ -1923,6 +1937,13 @@ function openNewsAdminForm(id) {
   document.getElementById('na-text').value = item?.text || '';
   document.getElementById('na-date').value = item?.date || '';
 
+  // Иконка: тип (эмодзи/картинка) + сама картинка, если есть
+  newsAdminIconUploadPending = false;
+  newsAdminIconImage = item?.iconImage || null;
+  newsAdminSetIconType(item?.iconType === 'image' && newsAdminIconImage ? 'image' : 'emoji');
+  newsAdminBuildEmojiChips();
+  newsAdminRefreshIconPreview();
+
   newsAdminBgImage = item?.bgImage || null;
   newsAdminImgNaturalAspect = null;
   newsAdminUploadPending = false;
@@ -1957,6 +1978,12 @@ function openNewsAdminForm(id) {
   } else {
     dt.value = '';
   }
+  newsAdminUpdateTimerBadge();
+  // Свёрнутые карточки: раскрываем таймер, только если он уже был задан у новости
+  const timerCard = document.getElementById('na-card-timer');
+  if (timerCard) timerCard.open = !!item?.eventTimer;
+  const visCard = document.getElementById('na-card-visibility');
+  if (visCard) visCard.open = item ? (item.showArt === false || item.showTag === false || item.showText === false) : false;
 
   newsAdminSetToggle('art', item ? item.showArt !== false : true);
   newsAdminSetToggle('tag', item ? item.showTag !== false : true);
@@ -1964,6 +1991,102 @@ function openNewsAdminForm(id) {
 
   document.getElementById('admin-news-list-wrap').style.display = 'none';
   document.getElementById('admin-news-form').style.display = '';
+}
+
+// ── Переключатель типа иконки, живое превью, быстрый выбор эмодзи ──
+function newsAdminBuildEmojiChips() {
+  const box = document.getElementById('na-emoji-chips');
+  if (!box || box.dataset.built) return;
+  box.dataset.built = '1';
+  box.innerHTML = NEWS_QUICK_EMOJI.map(em => `<div class="emoji-chip" data-onclick="newsAdminPickEmoji('${em}')">${em}</div>`).join('');
+}
+
+function newsAdminPickEmoji(em) {
+  document.getElementById('na-art').value = em;
+  newsAdminOnArtInput();
+}
+
+function newsAdminOnArtInput() {
+  document.querySelectorAll('#na-emoji-chips .emoji-chip').forEach(chip => {
+    chip.classList.toggle('selected', chip.textContent === document.getElementById('na-art').value.trim());
+  });
+  newsAdminRefreshIconPreview();
+  newsAdminRefreshBgPreview();
+}
+
+function newsAdminSetIconType(type) {
+  newsAdminIconType = type;
+  document.getElementById('na-icon-type-emoji')?.classList.toggle('active', type === 'emoji');
+  document.getElementById('na-icon-type-image')?.classList.toggle('active', type === 'image');
+  document.getElementById('na-icon-emoji-block').style.display = type === 'emoji' ? '' : 'none';
+  document.getElementById('na-icon-image-block').style.display = type === 'image' ? '' : 'none';
+  newsAdminOnArtInput();
+  newsAdminRefreshIconPreview();
+}
+
+function newsAdminRefreshIconPreview() {
+  const preview = document.getElementById('na-icon-preview');
+  const dropBox = document.getElementById('na-icon-image-block');
+  if (!preview) return;
+  if (newsAdminIconType === 'image' && newsAdminIconImage) {
+    const url = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(newsAdminIconImage) : newsAdminIconImage;
+    preview.innerHTML = `<img src="${escapeHtml(url)}" alt="">`;
+    if (dropBox) {
+      dropBox.innerHTML = `
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="btn btn-secondary btn-sm" data-onclick="document.getElementById('na-icon-file').click()" style="flex:1;">Заменить</button>
+          <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminIconImage()" style="flex:1;">Убрать</button>
+        </div>
+        <input type="file" id="na-icon-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminIconImage(event)">`;
+    }
+  } else if (newsAdminIconType === 'image') {
+    preview.textContent = '🖼️';
+    if (dropBox && !document.getElementById('na-icon-drop')) {
+      dropBox.innerHTML = `
+        <div class="na-icon-drop" id="na-icon-drop" data-onclick="document.getElementById('na-icon-file').click()">${newsAdminIconUploadPending ? 'Загрузка...' : 'Нажмите, чтобы загрузить иконку'}</div>
+        <input type="file" id="na-icon-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminIconImage(event)">`;
+    }
+  } else {
+    preview.textContent = document.getElementById('na-art').value.trim() || '📰';
+  }
+}
+
+function clearNewsAdminIconImage() {
+  newsAdminIconImage = null;
+  newsAdminRefreshIconPreview();
+  newsAdminRefreshBgPreview();
+}
+
+async function handleNewsAdminIconImage(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    newsAdminIconUploadPending = true;
+    newsAdminRefreshIconPreview();
+    showToast('Загрузка иконки в облако...', 'info');
+    try {
+      const res = await fetch(getApiUrl() + '/upload-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: ev.target.result, name: 'news_icon', username: currentUser }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        newsAdminIconImage = data.url;
+        showToast(data.fallback ? 'Иконка загружена (без CDN — облако не настроено)' : 'Иконка загружена!', data.fallback ? 'info' : 'success');
+      } else { showToast('Ошибка загрузки иконки: ' + (data.error || 'сервер не вернул ссылку'), 'error'); }
+    } catch (e) { showToast('Ошибка сети при загрузке иконки', 'error'); }
+    newsAdminIconUploadPending = false;
+    newsAdminRefreshIconPreview();
+    newsAdminRefreshBgPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function newsAdminUpdateTimerBadge() {
+  const badge = document.getElementById('na-timer-badge');
+  const val = document.getElementById('na-timer')?.value;
+  if (badge) { badge.textContent = val ? 'Вкл' : 'Выкл'; badge.style.color = val ? 'var(--accent2)' : ''; }
 }
 
 function closeNewsAdminForm() {
@@ -2045,6 +2168,8 @@ function newsAdminRefreshBgPreview() {
     title: document.getElementById('na-title')?.value.trim() || 'Без названия',
     tag: document.getElementById('na-tag')?.value.trim() || '',
     art: document.getElementById('na-art')?.value.trim() || '📰',
+    iconType: newsAdminIconType,
+    iconImage: newsAdminIconImage,
     desc: document.getElementById('na-desc')?.value.trim() || '',
     bgImage: newsAdminBgImage,
     bgCropX: newsAdminCrop.x, bgCropY: newsAdminCrop.y, bgCropW: newsAdminCrop.w, bgCropH: newsAdminCrop.h,
@@ -2220,10 +2345,14 @@ function saveNewsAdmin() {
   const dtVal = document.getElementById('na-timer').value;
   const eventTimer = dtVal ? new Date(dtVal).getTime() : null;
 
+  if (newsAdminIconType === 'image' && newsAdminIconUploadPending) { showToast('Дождитесь загрузки иконки...', 'info'); return; }
+
   const params = {
     title,
     tag: document.getElementById('na-tag').value.trim(),
     art: document.getElementById('na-art').value.trim() || '📰',
+    iconType: newsAdminIconType,
+    iconImage: newsAdminIconType === 'image' ? newsAdminIconImage : null,
     desc: document.getElementById('na-desc').value.trim(),
     text: document.getElementById('na-text').value.trim(),
     date: document.getElementById('na-date').value.trim() || new Date().toLocaleDateString('ru-RU'),

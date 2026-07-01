@@ -1,9 +1,27 @@
 ﻿'use strict';
 
 // ── INIT ──
-window.addEventListener('resize',()=>{applyTransform();resizeOverlay();updateAllCursorFlags();});
+window.addEventListener('resize',()=>{applyTransform();resizeOverlay();updateAllCursorFlags();checkMiniMode();});
+
+// ── MINI MODE ──
+// Discord может свернуть Activity в маленькое плавающее окно (например,
+// когда пользователь сворачивает голосовую панель). Обычный UI в такой
+// крошечной области нечитаем и неюзабелен, поэтому вместо него показываем
+// заглушку с логотипом и просьбой развернуть окно (см. #mini-mode-screen
+// в index.html). Работает только внутри Discord Activity — обычный узкий
+// браузер (мобильный режим) вход в мини-режим не триггерит, т.к. телефон
+// в портретной ориентации хоть и узкий, но высокий (высота остаётся большой).
+const MINI_MODE_MAX_W = 400;
+const MINI_MODE_MAX_H = 280;
+
+function checkMiniMode() {
+  if (typeof IS_DISCORD_ACTIVITY === 'undefined' || !IS_DISCORD_ACTIVITY) return;
+  const isMini = window.innerWidth <= MINI_MODE_MAX_W && window.innerHeight <= MINI_MODE_MAX_H;
+  document.body.classList.toggle('mini-mode', isMini);
+}
 
 async function init() {
+  checkMiniMode();
   initCanvases();
   buildColorGrid();
   buildEmojiAvatarPicker();

@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260630-16';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260630-18';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <!--
@@ -424,10 +424,10 @@
                 </div>
 
                 <div class="sub-tabs">
-                    <div class="sub-tab active" data-onclick="switchClanInnerTab('members')">Участники</div>
-                    <div class="sub-tab" data-onclick="switchClanInnerTab('chat')">Чат</div>
-                    <div class="sub-tab" data-onclick="switchClanInnerTab('requests')">Заявки</div>
-                    <div class="sub-tab" id="clan-settings-tab" data-onclick="switchClanInnerTab('settings')" style="display:none">Настройки</div>
+                    <div class="sub-tab active" data-tab="members" data-onclick="switchClanInnerTab('members')">Участники</div>
+                    <div class="sub-tab" data-tab="chat" data-onclick="switchClanInnerTab('chat')">Чат</div>
+                    <div class="sub-tab" data-tab="requests" data-onclick="switchClanInnerTab('requests')">Заявки</div>
+                    <div class="sub-tab" id="clan-settings-tab" data-tab="settings" data-onclick="switchClanInnerTab('settings')" style="display:none">Настройки</div>
                 </div>
 
                 <div id="clan-inner-members">

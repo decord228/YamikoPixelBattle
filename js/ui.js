@@ -868,7 +868,7 @@ function switchClanInnerTab(tab) {
     if (el) el.style.display = t === tab ? '' : 'none';
   });
   document.querySelectorAll('#clan-view-in-clan .sub-tab').forEach(el => {
-    el.classList.toggle('active', el.getAttribute('onclick')?.includes(tab));
+    el.classList.toggle('active', el.dataset.tab === tab);
   });
   if (tab === 'requests') sendJSON({action:'clan_get_requests'});
 }

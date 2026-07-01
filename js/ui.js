@@ -2088,7 +2088,7 @@ function renderLeaderboardPlayers(data){
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       <div style="font-size:16px">${u.emoji||'👾'}</div>
       <div class="lb-name">${esc(u.username)}</div>
-      <div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div>
+      <div class="lb-capsule"><div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div></div>
     </div>`).join('');
 }
 
@@ -2105,8 +2105,8 @@ function renderLeaderboardClans(data){
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       <span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+'22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+esc(cl.tag||'')}</span>
       <div class="lb-name">${esc(cl.name)}</div>
-      <div style="font-size:11px;color:var(--text3)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</div>
-      <div class="lb-pixels">${(cl.pixels||0).toLocaleString()} px</div>
+      <div class="lb-capsule"><div class="lb-members"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</div></div>
+      <div class="lb-capsule"><div class="lb-pixels">${(cl.pixels||0).toLocaleString()} px</div></div>
     </div>`;
   }).join('');
 }

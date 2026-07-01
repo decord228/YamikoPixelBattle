@@ -2213,11 +2213,40 @@ html, body {
     font-size: 13px;
 }
 
+.lb-capsule {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    backdrop-filter: blur(10px) saturate(160%);
+    -webkit-backdrop-filter: blur(10px) saturate(160%);
+    flex-shrink: 0;
+}
+
+.lb-row.has-banner .lb-capsule {
+    background: rgba(10,10,14,.45);
+    border-color: rgba(255,255,255,.16);
+}
+
 .lb-pixels {
     font-family: 'Space Mono',monospace;
     font-size: 11px;
     color: var(--accent2);
 }
+
+.lb-members {
+    font-family: 'Space Mono',monospace;
+    font-size: 11px;
+    color: var(--text3);
+}
+
+    .lb-members .icon {
+        width: 13px;
+        height: 13px;
+    }
 
 .lb-clan-tag {
     font-size: 10px;

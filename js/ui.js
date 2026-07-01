@@ -40,7 +40,12 @@ function onAuthSuccess(d) {
   document.querySelectorAll('.admin-tool-btn').forEach(el => el.style.display = isAdmin?'flex':'none');
   
   if (isAdmin){loadAdminUsers();}
-  if (isAdmin && typeof tlStartStatusPolling === 'function') tlStartStatusPolling();
+  // Индикатор записи тайм-лапса в топ-баре должен быть виден ВСЕМ
+  // пользователям, не только админам — раньше поллинг статуса запускался
+  // только для isAdmin, поэтому обычные пользователи никогда не видели иконку
+  // записи, даже когда она реально шла (сервер тоже теперь отвечает на
+  // timelapse_status без требования admin-роли — см. server.js).
+  if (typeof tlStartStatusPolling === 'function') tlStartStatusPolling();
   showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'success');
   loadAvatarFromStorage();
   drawAvatarCanvas(selectedEmoji);

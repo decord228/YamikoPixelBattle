@@ -1759,7 +1759,8 @@ function newsStopTimerTick() { if (newsTimerInterval) { clearInterval(newsTimerI
 // удобно, когда весь визуал уже сделан одной картинкой (например, из Figma)
 // и остаётся только подставить её фоном без дублирующих элементов поверх. ──
 function newsSlideHtml(item) {
-  const bgStyle = item.bgImage ? ` style="background-image:url('${escapeHtml(item.bgImage)}');background-position:${item.bgPosX ?? 50}% ${item.bgPosY ?? 50}%"` : '';
+  const bgUrl = item.bgImage && typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(item.bgImage) : item.bgImage;
+  const bgStyle = item.bgImage ? ` style="background-image:url('${escapeHtml(bgUrl)}');background-position:${item.bgPosX ?? 50}% ${item.bgPosY ?? 50}%"` : '';
   const artHtml = item.showArt !== false ? `<div class="news-slide-art">${escapeHtml(item.art || '📰')}</div>` : '';
   const tagHtml = (item.showTag !== false && item.tag) ? `<div class="news-slide-tag">${escapeHtml(item.tag)}</div>` : '';
   const textHtml = item.showText !== false ? `

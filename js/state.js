@@ -30,6 +30,12 @@ let serverCursorsEnabled = false;
 let clanShareCursor = false;
 let leaderboardOpen = false;
 
+// News state
+let newsItems = [];            // данные новостей с сервера (уже отсортированы по order)
+let newsAdminEditId = null;    // id новости, которая сейчас редактируется в админке (null = новая)
+let newsAdminBgImage = null;   // URL загруженной картинки фона (пока форма открыта)
+let newsAdminEventTimer = null; // выбранный таймстамп события (мс) в форме админки
+
 // Chat state
 let chatMessages = [];
 let chatUnread = 0;

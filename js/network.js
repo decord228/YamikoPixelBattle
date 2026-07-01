@@ -252,6 +252,11 @@ function handleJSON(d) {
   else if (a === 'timelapse_session_deleted') {
     if (typeof tlHandleSessionDeleted === 'function') tlHandleSessionDeleted(d.sessionId);
   }
+  else if (a === 'news_data') {
+    newsItems = (d.items || []).slice().sort((x, y) => (x.order || 0) - (y.order || 0));
+    if (typeof newsRenderAll === 'function') newsRenderAll();
+    if (typeof renderAdminNewsList === 'function') renderAdminNewsList();
+  }
 }
 
 function applyServerSettings(s) {

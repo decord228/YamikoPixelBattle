@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260630-3';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260630-4';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <!--
@@ -313,66 +313,18 @@
 
             <div id="news-slideshow">
                 <div id="news-slides-track">
-                    <div class="news-slide">
-                        <div class="news-slide-art">📰</div>
-                        <div class="news-slide-content">
-                            <div class="news-slide-tag">Анонс</div>
-                            <div class="news-slide-title">Заголовок новости-заглушки №1</div>
-                            <div class="news-slide-desc">Здесь будет короткое описание новости — пара строк текста, которые анонсируют главное событие или обновление проекта.</div>
-                        </div>
-                    </div>
-                    <div class="news-slide">
-                        <div class="news-slide-art">🚀</div>
-                        <div class="news-slide-content">
-                            <div class="news-slide-tag">Обновление</div>
-                            <div class="news-slide-title">Заголовок новости-заглушки №2</div>
-                            <div class="news-slide-desc">Текст заглушки про второе обновление: новые инструменты, улучшения и исправления, которые сделали холст ещё лучше.</div>
-                        </div>
-                    </div>
-                    <div class="news-slide">
-                        <div class="news-slide-art">🎉</div>
-                        <div class="news-slide-content">
-                            <div class="news-slide-tag">Событие</div>
-                            <div class="news-slide-title">Заголовок новости-заглушки №3</div>
-                            <div class="news-slide-desc">Заглушка для анонса ивента или конкурса — здесь появится текст с условиями участия и наградами.</div>
-                        </div>
-                    </div>
+                    <div class="news-slide news-slide-empty"><div class="news-slide-content"><div class="news-slide-art">📭</div><div class="news-slide-title">Загрузка новостей...</div></div></div>
                 </div>
                 <div class="news-slide-nav news-slide-prev" data-onclick="newsSlidePrev()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M15 18l-6-6 6-6" /></svg></div>
                 <div class="news-slide-nav news-slide-next" data-onclick="newsSlideNext()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 18l6-6-6-6" /></svg></div>
-                <div id="news-slide-dots">
-                    <div class="news-slide-dot active" data-onclick="newsSlideGoto(0)"></div>
-                    <div class="news-slide-dot" data-onclick="newsSlideGoto(1)"></div>
-                    <div class="news-slide-dot" data-onclick="newsSlideGoto(2)"></div>
-                </div>
+                <div id="news-slide-dots"></div>
             </div>
 
             <div id="news-lower">
                 <div id="news-list-col">
-                    <div id="news-list">
-                        <div class="news-list-item active" data-onclick="newsSelectItem(this, 0)">
-                            <div class="news-list-item-icon">🛠️</div>
-                            <div class="news-list-item-info">
-                                <div class="news-list-item-title">Новость-заглушка №1</div>
-                                <div class="news-list-item-date">— дата —</div>
-                            </div>
-                        </div>
-                        <div class="news-list-item" data-onclick="newsSelectItem(this, 1)">
-                            <div class="news-list-item-icon">📢</div>
-                            <div class="news-list-item-info">
-                                <div class="news-list-item-title">Новость-заглушка №2</div>
-                                <div class="news-list-item-date">— дата —</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div id="news-list"><div class="news-empty">Загрузка...</div></div>
                 </div>
-                <div id="news-detail-col">
-                    <div class="news-detail-tag">Заглушка</div>
-                    <div class="news-detail-title">Новость-заглушка №1</div>
-                    <div class="news-detail-date">— дата —</div>
-                    <div class="news-detail-sep"></div>
-                    <div class="news-detail-text">Здесь появится полный текст выбранной новости. Пока что это место — заглушка для предпросмотра дизайна: текст, абзацы и возможное изображение будут добавлены позже вместе с реальным функционалом ленты новостей.</div>
-                </div>
+                <div id="news-detail-col"></div>
             </div>
 
         </div>
@@ -544,6 +496,7 @@
                 <div class="admin-tab" data-onclick="switchAdminTab('broadcast')">Сообщение</div>
                 <div class="admin-tab" data-onclick="switchAdminTab('stats')">Статистика</div>
                 <div class="admin-tab" data-onclick="switchAdminTab('clans')">Кланы</div>
+                <div class="admin-tab" data-onclick="switchAdminTab('news')">📰 Новости</div>
                 <div class="admin-tab" data-onclick="switchAdminTab('timelapse')">🎬 Тайм</div>
             </div>
 
@@ -636,6 +589,62 @@
                         <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
                         Обновить
                     </button>
+                </div>
+            </div>
+
+            <div id="admin-tab-news" style="display:none">
+                <div id="admin-news-list-wrap">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Новости и события</div>
+                        <button class="btn btn-primary btn-sm" data-onclick="openNewsAdminForm(null)">+ Добавить</button>
+                    </div>
+                    <div id="admin-news-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+                </div>
+
+                <div id="admin-news-form" style="display:none">
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+                        <div id="admin-news-form-title" style="font-size:12px;font-weight:700;color:var(--text1);">Новая новость</div>
+                        <div class="panel-close" style="position:static" data-onclick="closeNewsAdminForm()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+                    </div>
+
+                    <div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="na-title" placeholder="Например: Большое обновление холста"></div>
+
+                    <div class="resize-form" style="margin-bottom:12px;">
+                        <div><label class="form-label">Бейджик (тег)</label><input class="form-input" id="na-tag" placeholder="Анонс / Обновление / Событие"></div>
+                        <div><label class="form-label">Иконка (эмодзи)</label><input class="form-input" id="na-art" placeholder="📰" maxlength="4"></div>
+                    </div>
+
+                    <div class="form-group"><label class="form-label">Краткое описание (для слайда и списка)</label><textarea class="broadcast-input" id="na-desc" rows="2" placeholder="Пара строк, анонсирующих новость..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Полный текст (для детального просмотра)</label><textarea class="broadcast-input" id="na-text" rows="4" placeholder="Полный текст новости..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Дата (необязательно, иначе — сегодня)</label><input class="form-input" id="na-date" placeholder="напр. 01.07.2026"></div>
+
+                    <div class="section-sep"></div>
+                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg> Фон панели (например, из Figma)</div>
+                    <div id="na-bg-drop" data-onclick="document.getElementById('na-bg-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
+                        <p style="font-size:12px;color:var(--text2);">Нажмите, чтобы загрузить картинку фона слайда</p>
+                        <p style="font-size:10px;color:var(--text3);margin-top:2px">Растянется на всю карточку слайда</p>
+                    </div>
+                    <input type="file" id="na-bg-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminBgImage(event)">
+                    <div id="na-bg-preview-wrap" style="display:none;margin-bottom:12px;position:relative;">
+                        <img id="na-bg-preview" alt="Фон" style="width:100%;border-radius:8px;display:block;">
+                        <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminBgImage()" style="margin-top:6px;width:100%;">Убрать фон</button>
+                    </div>
+
+                    <div class="section-sep"></div>
+                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg> Таймер события</div>
+                    <div class="form-group"><input class="form-input" id="na-timer" type="datetime-local"></div>
+                    <p style="font-size:10px;color:var(--text3);margin:-6px 0 12px;">Если указано — на слайде появится красивый обратный отсчёт до этой даты</p>
+
+                    <div class="section-sep"></div>
+                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Видимость элементов слайда</div>
+                    <p style="font-size:10px;color:var(--text3);margin:-4px 0 10px;">Выключите лишнее, если весь визуал уже нарисован на картинке фона</p>
+                    <div class="setting-row" style="padding-top:0"><div><div class="setting-label">Иконка (news-slide-art)</div></div><div class="toggle on" id="na-toggle-art" data-onclick="newsAdminToggle('art')"></div></div>
+                    <div class="setting-row"><div><div class="setting-label">Бейджик (news-slide-tag)</div></div><div class="toggle on" id="na-toggle-tag" data-onclick="newsAdminToggle('tag')"></div></div>
+                    <div class="setting-row"><div><div class="setting-label">Заголовок и описание</div></div><div class="toggle on" id="na-toggle-text" data-onclick="newsAdminToggle('text')"></div></div>
+
+                    <div class="section-sep"></div>
+                    <button class="btn btn-primary" data-onclick="saveNewsAdmin()" style="margin-bottom:8px;">💾 Сохранить</button>
+                    <button class="btn btn-secondary" data-onclick="closeNewsAdminForm()">Отмена</button>
                 </div>
             </div>
 

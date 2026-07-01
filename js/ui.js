@@ -1530,10 +1530,11 @@ function playClick(){
 }
 
 function switchAdminTab(tab){
-  ['users','canvas','broadcast','stats','clans','timelapse'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
-  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats','clans','timelapse'][i]===tab); });
+  ['users','canvas','broadcast','stats','clans','news','timelapse'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
+  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats','clans','news','timelapse'][i]===tab); });
   if (tab==='stats') loadAdminStats();
   if (tab==='clans') loadAdminClans();
+  if (tab==='news') { renderAdminNewsList(); closeNewsAdminForm(); }
   if (tab==='timelapse') tlRefreshStatus();
 }
 function showPanel(id){
@@ -1545,12 +1546,12 @@ function showPanel(id){
   if (id==='admin-panel') loadAdminStats();
   if (id==='clan-panel') { if (currentClan) sendJSON({action:'clan_get'}); else sendJSON({action:'clan_list'}); }
   if (id==='shop-panel') buildShopUI();
-  if (id==='news-panel' && typeof newsStartAutoplay === 'function') newsStartAutoplay();
+  if (id==='news-panel' && typeof newsStartAutoplay === 'function') { newsStartAutoplay(); newsStartTimerTick(); }
 }
 function hidePanel(id){
   document.getElementById(id)?.classList.remove('show');
   document.getElementById('backdrop').classList.remove('show');
-  if (id==='news-panel' && typeof newsStopAutoplay === 'function') newsStopAutoplay();
+  if (id==='news-panel' && typeof newsStopAutoplay === 'function') { newsStopAutoplay(); newsStopTimerTick(); newsCheckUnread(); }
 }
 function hideAllPanels(){
   document.querySelectorAll('.overlay-panel:not(#auth-panel)').forEach(p=>p.classList.remove('show'));
@@ -1674,10 +1675,15 @@ function filterAdminClans() {
   renderAdminClans(filtered);
 }
 // ════════════════════════════════════════════════════════════
-//  NEWS PANEL
+//  NEWS PANEL — данные приходят с сервера (newsItems[], см. network.js action:'news_data')
 // ════════════════════════════════════════════════════════════
 let newsCurrentSlide = 0;
-const newsSlideCount = 3;
+let newsSelectedId = null;
+let newsTimerInterval = null;
+
+function escapeHtml(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
 
 function openNewsPanel() {
   showPanel('news-panel');
@@ -1685,6 +1691,122 @@ function openNewsPanel() {
   newsUpdateSlidePosition(false);
   const dot = document.getElementById('news-indicator-dot');
   if (dot) dot.style.display = 'none';
+  if (newsItems.length) { try { localStorage.setItem('yamiko_news_seen', newsItems[0].id); } catch(_) {} }
+}
+
+function newsCheckUnread() {
+  const dot = document.getElementById('news-indicator-dot');
+  if (!dot) return;
+  if (!newsItems.length) { dot.style.display = 'none'; return; }
+  let seen = null;
+  try { seen = localStorage.getItem('yamiko_news_seen'); } catch(_) {}
+  const panelOpen = document.getElementById('news-panel')?.classList.contains('show');
+  dot.style.display = (!panelOpen && seen !== newsItems[0].id) ? '' : 'none';
+}
+
+// ── Красивый таймер обратного отсчёта для событий ──
+function newsFormatCountdown(target) {
+  const diff = target - Date.now();
+  if (diff <= 0) return { done: true };
+  return {
+    done: false,
+    d: Math.floor(diff / 86400000),
+    h: Math.floor((diff % 86400000) / 3600000),
+    m: Math.floor((diff % 3600000) / 60000),
+    s: Math.floor((diff % 60000) / 1000),
+  };
+}
+
+function newsTimerHtml(target) {
+  if (!target) return '';
+  const t = newsFormatCountdown(target);
+  const pad = n => String(n).padStart(2, '0');
+  if (t.done) {
+    return `<div class="news-slide-timer news-slide-timer-done" data-news-timer="${target}"><span class="news-timer-done-icon">🎉</span><span class="news-timer-done-label">Событие началось!</span></div>`;
+  }
+  return `<div class="news-slide-timer" data-news-timer="${target}">
+    <span class="news-timer-icon">⏳</span>
+    <div class="news-timer-box"><span class="news-timer-num">${pad(t.d)}</span><span class="news-timer-lbl">дн</span></div>
+    <div class="news-timer-sep">:</div>
+    <div class="news-timer-box"><span class="news-timer-num">${pad(t.h)}</span><span class="news-timer-lbl">ч</span></div>
+    <div class="news-timer-sep">:</div>
+    <div class="news-timer-box"><span class="news-timer-num">${pad(t.m)}</span><span class="news-timer-lbl">мин</span></div>
+    <div class="news-timer-sep">:</div>
+    <div class="news-timer-box"><span class="news-timer-num">${pad(t.s)}</span><span class="news-timer-lbl">сек</span></div>
+  </div>`;
+}
+
+function newsTickCountdowns() {
+  const els = document.querySelectorAll('[data-news-timer]');
+  if (!els.length) { newsStopTimerTick(); return; }
+  els.forEach(el => {
+    const target = Number(el.getAttribute('data-news-timer'));
+    if (!target) return;
+    const t = newsFormatCountdown(target);
+    if (t.done) {
+      if (!el.classList.contains('news-slide-timer-done')) el.outerHTML = newsTimerHtml(target);
+      return;
+    }
+    const pad = n => String(n).padStart(2, '0');
+    const nums = el.querySelectorAll('.news-timer-num');
+    if (nums.length === 4) { nums[0].textContent = pad(t.d); nums[1].textContent = pad(t.h); nums[2].textContent = pad(t.m); nums[3].textContent = pad(t.s); }
+  });
+}
+function newsStartTimerTick() { if (!newsTimerInterval) newsTimerInterval = setInterval(newsTickCountdowns, 1000); }
+function newsStopTimerTick() { if (newsTimerInterval) { clearInterval(newsTimerInterval); newsTimerInterval = null; } }
+
+// ── Рендер слайда: художку/бейджик/текст можно скрыть по отдельности —
+// удобно, когда весь визуал уже сделан одной картинкой (например, из Figma)
+// и остаётся только подставить её фоном без дублирующих элементов поверх. ──
+function newsSlideHtml(item) {
+  const bgStyle = item.bgImage ? ` style="background-image:url('${escapeHtml(item.bgImage)}')"` : '';
+  const artHtml = item.showArt !== false ? `<div class="news-slide-art">${escapeHtml(item.art || '📰')}</div>` : '';
+  const tagHtml = (item.showTag !== false && item.tag) ? `<div class="news-slide-tag">${escapeHtml(item.tag)}</div>` : '';
+  const textHtml = item.showText !== false ? `
+      <div class="news-slide-title">${escapeHtml(item.title || 'Без названия')}</div>
+      <div class="news-slide-desc">${escapeHtml(item.desc || '')}</div>` : '';
+  return `<div class="news-slide${item.bgImage ? ' news-slide-has-bg' : ''}"${bgStyle}>
+      ${artHtml}
+      <div class="news-slide-content">
+        ${tagHtml}
+        ${textHtml}
+        ${newsTimerHtml(item.eventTimer)}
+      </div>
+    </div>`;
+}
+
+function newsRenderAll() {
+  const track = document.getElementById('news-slides-track');
+  const dots  = document.getElementById('news-slide-dots');
+  const list  = document.getElementById('news-list');
+  const detail = document.getElementById('news-detail-col');
+  if (!track || !dots || !list || !detail) return;
+
+  if (!newsItems.length) {
+    track.innerHTML = `<div class="news-slide news-slide-empty"><div class="news-slide-content"><div class="news-slide-art">📭</div><div class="news-slide-title">Пока нет новостей</div><div class="news-slide-desc">Загляните позже — здесь появятся анонсы и события проекта</div></div></div>`;
+    dots.innerHTML = '';
+    list.innerHTML = `<div class="news-empty">Новостей пока нет</div>`;
+    detail.innerHTML = '';
+    newsCheckUnread();
+    return;
+  }
+
+  track.innerHTML = newsItems.map(newsSlideHtml).join('');
+  dots.innerHTML = newsItems.map((_, i) => `<div class="news-slide-dot${i===0?' active':''}" data-onclick="newsSlideGoto(${i})"></div>`).join('');
+  list.innerHTML = newsItems.map((item, i) => `
+    <div class="news-list-item${i===0?' active':''}" data-onclick="newsSelectItem(this, '${item.id}')">
+      <div class="news-list-item-icon">${escapeHtml(item.art || '📰')}</div>
+      <div class="news-list-item-info">
+        <div class="news-list-item-title">${escapeHtml(item.title || 'Без названия')}</div>
+        <div class="news-list-item-date">${escapeHtml(item.date || '')}</div>
+      </div>
+    </div>`).join('');
+
+  if (newsCurrentSlide >= newsItems.length) newsCurrentSlide = 0;
+  newsUpdateSlidePosition(false);
+  newsSelectItemById(newsItems[0].id);
+  newsCheckUnread();
+  newsStartTimerTick();
 }
 
 function newsUpdateSlidePosition(animate = true) {
@@ -1692,28 +1814,21 @@ function newsUpdateSlidePosition(animate = true) {
   if (!track) return;
   track.style.transition = animate ? '' : 'none';
   track.style.transform = `translateX(-${newsCurrentSlide * 100}%)`;
-  if (!animate) {
-    // форсируем reflow, чтобы следующий transform снова анимировался
-    void track.offsetHeight;
-    track.style.transition = '';
-  }
+  if (!animate) { void track.offsetHeight; track.style.transition = ''; }
   document.querySelectorAll('.news-slide-dot').forEach((d, i) => d.classList.toggle('active', i === newsCurrentSlide));
 }
 
 function newsSlideNext() {
-  newsCurrentSlide = (newsCurrentSlide + 1) % newsSlideCount;
+  if (!newsItems.length) return;
+  newsCurrentSlide = (newsCurrentSlide + 1) % newsItems.length;
   newsUpdateSlidePosition();
 }
-
 function newsSlidePrev() {
-  newsCurrentSlide = (newsCurrentSlide - 1 + newsSlideCount) % newsSlideCount;
+  if (!newsItems.length) return;
+  newsCurrentSlide = (newsCurrentSlide - 1 + newsItems.length) % newsItems.length;
   newsUpdateSlidePosition();
 }
-
-function newsSlideGoto(i) {
-  newsCurrentSlide = i;
-  newsUpdateSlidePosition();
-}
+function newsSlideGoto(i) { newsCurrentSlide = i; newsUpdateSlidePosition(); }
 
 // Автопрокрутка слайдшоу, пока панель открыта
 let newsAutoplayTimer = null;
@@ -1725,29 +1840,180 @@ function newsStartAutoplay() {
     newsSlideNext();
   }, 6000);
 }
-function newsStopAutoplay() {
-  if (newsAutoplayTimer) { clearInterval(newsAutoplayTimer); newsAutoplayTimer = null; }
-}
+function newsStopAutoplay() { if (newsAutoplayTimer) { clearInterval(newsAutoplayTimer); newsAutoplayTimer = null; } }
 
-// Заглушка-данные для списка новостей (заменить на реальные данные с сервера позже)
-const NEWS_ITEMS_STUB = [
-  {
-    icon: '🛠️', tag: 'Заглушка', title: 'Новость-заглушка №1', date: '— дата —',
-    text: 'Здесь появится полный текст выбранной новости. Пока что это место — заглушка для предпросмотра дизайна: текст, абзацы и возможное изображение будут добавлены позже вместе с реальным функционалом ленты новостей.'
-  },
-  {
-    icon: '📢', tag: 'Заглушка', title: 'Новость-заглушка №2', date: '— дата —',
-    text: 'Вторая заглушка новости — здесь так же появится реальный контент после подключения функционала ленты новостей к бэкенду.'
-  },
-];
-
-function newsSelectItem(el, idx) {
+function newsSelectItem(el, id) {
   document.querySelectorAll('.news-list-item').forEach(it => it.classList.remove('active'));
   el.classList.add('active');
-  const item = NEWS_ITEMS_STUB[idx];
-  if (!item) return;
-  document.querySelector('.news-detail-tag').textContent = item.tag;
-  document.querySelector('.news-detail-title').textContent = item.title;
-  document.querySelector('.news-detail-date').textContent = item.date;
-  document.querySelector('.news-detail-text').textContent = item.text;
+  newsSelectItemById(id);
+}
+
+function newsSelectItemById(id) {
+  const item = newsItems.find(n => n.id === id);
+  const col = document.getElementById('news-detail-col');
+  if (!col) return;
+  if (!item) { col.innerHTML = ''; return; }
+  newsSelectedId = id;
+  col.innerHTML = `
+    ${item.tag ? `<div class="news-detail-tag">${escapeHtml(item.tag)}</div>` : ''}
+    <div class="news-detail-title">${escapeHtml(item.title || 'Без названия')}</div>
+    <div class="news-detail-date">${escapeHtml(item.date || '')}</div>
+    <div class="news-detail-sep"></div>
+    <div class="news-detail-text">${escapeHtml(item.text || item.desc || '')}</div>
+    ${item.eventTimer ? newsTimerHtml(item.eventTimer) : ''}
+  `;
+  newsStartTimerTick();
+}
+
+// ════════════════════════════════════════════════════════════
+//  АДМИНКА НОВОСТЕЙ — создание/редактирование/удаление/порядок
+// ════════════════════════════════════════════════════════════
+let newsAdminShowArt = true, newsAdminShowTag = true, newsAdminShowText = true;
+
+function renderAdminNewsList() {
+  const box = document.getElementById('admin-news-list');
+  if (!box) return;
+  if (!newsItems.length) { box.innerHTML = `<div style="color:var(--text3);text-align:center;padding:20px;">Новостей ещё нет — создайте первую</div>`; return; }
+  box.innerHTML = newsItems.map((item, i) => `
+    <div class="admin-news-item">
+      <div class="admin-news-item-icon">${escapeHtml(item.art || '📰')}</div>
+      <div class="admin-news-item-info">
+        <div class="admin-news-item-title">${escapeHtml(item.title || 'Без названия')}${item.bgImage ? ' 🖼️' : ''}${item.eventTimer ? ' ⏳' : ''}</div>
+        <div class="admin-news-item-sub">${escapeHtml(item.tag || '—')} · ${escapeHtml(item.date || '')}</div>
+      </div>
+      <div class="admin-news-item-actions">
+        <button class="admin-news-mini-btn" data-onclick="moveNewsAdmin('${item.id}',-1)" ${i===0?'disabled':''} title="Выше">↑</button>
+        <button class="admin-news-mini-btn" data-onclick="moveNewsAdmin('${item.id}',1)" ${i===newsItems.length-1?'disabled':''} title="Ниже">↓</button>
+        <button class="admin-news-mini-btn" data-onclick="openNewsAdminForm('${item.id}')" title="Редактировать">✎</button>
+        <button class="admin-news-mini-btn admin-news-mini-btn-danger" data-onclick="deleteNewsAdmin('${item.id}')" title="Удалить">✕</button>
+      </div>
+    </div>`).join('');
+}
+
+function newsAdminSetToggle(field, val) {
+  if (field === 'art') newsAdminShowArt = val;
+  if (field === 'tag') newsAdminShowTag = val;
+  if (field === 'text') newsAdminShowText = val;
+  const el = document.getElementById(`na-toggle-${field}`);
+  if (el) el.classList.toggle('on', val);
+}
+function newsAdminToggle(field) {
+  const cur = field === 'art' ? newsAdminShowArt : field === 'tag' ? newsAdminShowTag : newsAdminShowText;
+  newsAdminSetToggle(field, !cur);
+}
+
+function openNewsAdminForm(id) {
+  newsAdminEditId = id || null;
+  const item = id ? newsItems.find(n => n.id === id) : null;
+
+  document.getElementById('admin-news-form-title').textContent = item ? 'Редактирование новости' : 'Новая новость';
+  document.getElementById('na-title').value = item?.title || '';
+  document.getElementById('na-tag').value = item?.tag || '';
+  document.getElementById('na-art').value = item?.art || '📰';
+  document.getElementById('na-desc').value = item?.desc || '';
+  document.getElementById('na-text').value = item?.text || '';
+  document.getElementById('na-date').value = item?.date || '';
+
+  newsAdminBgImage = item?.bgImage || null;
+  newsAdminUploadPending = false;
+  newsAdminRefreshBgPreview();
+
+  const dt = document.getElementById('na-timer');
+  if (item?.eventTimer) {
+    const d = new Date(item.eventTimer);
+    const off = d.getTimezoneOffset();
+    dt.value = new Date(d.getTime() - off * 60000).toISOString().slice(0, 16);
+  } else {
+    dt.value = '';
+  }
+
+  newsAdminSetToggle('art', item ? item.showArt !== false : true);
+  newsAdminSetToggle('tag', item ? item.showTag !== false : true);
+  newsAdminSetToggle('text', item ? item.showText !== false : true);
+
+  document.getElementById('admin-news-list-wrap').style.display = 'none';
+  document.getElementById('admin-news-form').style.display = '';
+}
+
+function closeNewsAdminForm() {
+  document.getElementById('admin-news-form').style.display = 'none';
+  document.getElementById('admin-news-list-wrap').style.display = '';
+  newsAdminEditId = null;
+}
+
+let newsAdminUploadPending = false;
+function newsAdminRefreshBgPreview() {
+  const wrap = document.getElementById('na-bg-preview-wrap');
+  const img = document.getElementById('na-bg-preview');
+  if (!wrap || !img) return;
+  if (newsAdminBgImage) { img.src = newsAdminBgImage; wrap.style.display = ''; }
+  else { img.src = ''; wrap.style.display = 'none'; }
+}
+
+async function handleNewsAdminBgImage(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    newsAdminUploadPending = true;
+    showToast('Загрузка картинки в облако...', 'info');
+    try {
+      const res = await fetch(getApiUrl() + '/upload-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: ev.target.result, name: 'news_bg', username: currentUser }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        newsAdminBgImage = data.url;
+        newsAdminRefreshBgPreview();
+        showToast('Фон загружен!', 'success');
+      } else { showToast('Ошибка загрузки фона', 'error'); }
+    } catch (e) { showToast('Ошибка сети при загрузке фона', 'error'); }
+    newsAdminUploadPending = false;
+  };
+  reader.readAsDataURL(file);
+}
+function clearNewsAdminBgImage() { newsAdminBgImage = null; newsAdminRefreshBgPreview(); }
+
+function saveNewsAdmin() {
+  if (newsAdminUploadPending) { showToast('Дождитесь загрузки картинки...', 'info'); return; }
+  const title = document.getElementById('na-title').value.trim();
+  if (!title) { showToast('Введите заголовок новости', 'error'); return; }
+
+  const dtVal = document.getElementById('na-timer').value;
+  const eventTimer = dtVal ? new Date(dtVal).getTime() : null;
+
+  const params = {
+    title,
+    tag: document.getElementById('na-tag').value.trim(),
+    art: document.getElementById('na-art').value.trim() || '📰',
+    desc: document.getElementById('na-desc').value.trim(),
+    text: document.getElementById('na-text').value.trim(),
+    date: document.getElementById('na-date').value.trim() || new Date().toLocaleDateString('ru-RU'),
+    bgImage: newsAdminBgImage,
+    eventTimer,
+    showArt: newsAdminShowArt,
+    showTag: newsAdminShowTag,
+    showText: newsAdminShowText,
+  };
+
+  if (newsAdminEditId) sendJSON({ action:'admin_cmd', cmd:'news_update', params:{ id:newsAdminEditId, ...params } });
+  else sendJSON({ action:'admin_cmd', cmd:'news_create', params });
+
+  closeNewsAdminForm();
+}
+
+async function deleteNewsAdmin(id) {
+  const ok = await showConfirm('Удалить эту новость безвозвратно?', { danger:true, confirmText:'Удалить' });
+  if (!ok) return;
+  sendJSON({ action:'admin_cmd', cmd:'news_delete', params:{ id } });
+}
+
+function moveNewsAdmin(id, dir) {
+  const idx = newsItems.findIndex(n => n.id === id);
+  const newIdx = idx + dir;
+  if (idx < 0 || newIdx < 0 || newIdx >= newsItems.length) return;
+  const ids = newsItems.map(n => n.id);
+  [ids[idx], ids[newIdx]] = [ids[newIdx], ids[idx]];
+  sendJSON({ action:'admin_cmd', cmd:'news_reorder', params:{ ids } });
 }

@@ -60,6 +60,17 @@ const SHOP_ITEMS_ADMIN = [
 // Изначальный лимит участников клана (без покупок) — должен совпадать с сервером.
 const CLAN_BASE_MEMBER_LIMIT = 5;
 
+// Расширения, которые сервер считает "анимированным" баннером (см.
+// isAnimatedBannerUrl в server.js) — используем на клиенте, чтобы
+// предупредить пользователя ДО загрузки файла, а не после отказа сервера.
+const CLAN_ANIMATED_BANNER_EXT = ['.gif', '.webp', '.apng'];
+function isAnimatedBannerFile(file) {
+  if (!file) return false;
+  const nameLower = (file.name || '').toLowerCase();
+  if (CLAN_ANIMATED_BANNER_EXT.some(ext => nameLower.endsWith(ext))) return true;
+  return file.type === 'image/gif' || file.type === 'image/webp';
+}
+
 // Тиры расширения состава клана. Каждый тир покупается один раз и заменяет предыдущий лимит.
 const CLAN_MEMBER_LIMIT_TIERS = [
   { limit:10,  cost:100,  id:'members_10'  },

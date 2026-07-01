@@ -1203,15 +1203,16 @@ function renderClanShopTab() {
       <div class="clan-shop-balance-amount">${Math.floor(treasury).toLocaleString()}🪙</div>
     </div>`;
 
-  // ── Баннеры ──
+  // ── Баннеры (компактные строки: иконка + текст + одна короткая кнопка/иконка-статус) ──
   const bannerItems = CLAN_SHOP_ITEMS.map(item => {
     const isOwned = owned.includes(item.id);
     const lockedByRequire = item.requires && !owned.includes(item.requires);
+    const requireTitle = item.requires ? esc(CLAN_SHOP_ITEMS.find(i=>i.id===item.requires)?.title||'') : '';
     let actionHtml;
-    if (isOwned) actionHtml = `<span class="shop-owned">✓ Куплено</span>`;
-    else if (!canBuy) actionHtml = `<span class="shop-lock" style="position:static;opacity:.7;font-size:11px;">🔒 Нужно право «Казна»</span>`;
-    else if (lockedByRequire) actionHtml = `<span class="shop-lock" style="position:static;opacity:.7;font-size:11px;">🔒 Сначала «${esc(CLAN_SHOP_ITEMS.find(i=>i.id===item.requires)?.title||'')}»</span>`;
-    else actionHtml = `<button class="btn btn-secondary btn-sm" data-onclick="buyClanShopItem('${item.id}')">Купить · ${item.cost}🪙</button>`;
+    if (isOwned) actionHtml = `<span class="shop-owned">✓</span>`;
+    else if (!canBuy) actionHtml = `<span class="shop-lock-inline" title="Нужно право «Казна», чтобы покупать в магазине клана">🔒</span>`;
+    else if (lockedByRequire) actionHtml = `<span class="shop-lock-inline" title="Сначала купите «${requireTitle}»">🔒</span>`;
+    else actionHtml = `<button class="btn btn-secondary btn-sm" data-onclick="buyClanShopItem('${item.id}')">${item.cost}🪙</button>`;
     return `
     <div class="clan-shop-item ${isOwned?'is-owned':''}">
       <div class="clan-shop-item-icon">${item.icon}</div>
@@ -1223,19 +1224,24 @@ function renderClanShopTab() {
     </div>`;
   }).join('');
 
-  // ── Лимит участников ──
-  const tierCells = CLAN_MEMBER_LIMIT_TIERS.map(tier => {
-    const isOwned = curLimit >= tier.limit;
-    const isNext = !isOwned && CLAN_MEMBER_LIMIT_TIERS.filter(t=>t.limit>curLimit).sort((a,b)=>a.limit-b.limit)[0]?.id === tier.id;
+  // ── Лимит участников: базовый тир + все покупные тиры в ОДНОЙ сетке ──
+  const nextTierId = CLAN_MEMBER_LIMIT_TIERS.filter(t=>t.limit>curLimit).sort((a,b)=>a.limit-b.limit)[0]?.id;
+  const tierCells = [
+    { limit: CLAN_BASE_MEMBER_LIMIT, lbl: 'базовый', owned: true, next: false, cost: 0, id: null },
+    ...CLAN_MEMBER_LIMIT_TIERS.map(tier => ({
+      limit: tier.limit, lbl: 'участников', owned: curLimit >= tier.limit,
+      next: curLimit < tier.limit && nextTierId === tier.id, cost: tier.cost, id: tier.id,
+    })),
+  ].map(tier => {
     let actionHtml;
-    if (isOwned) actionHtml = `<span class="shop-owned">✓</span>`;
-    else if (!canBuy) actionHtml = `<span style="font-size:9.5px;color:var(--text3);">🔒 Нужно право «Казна»</span>`;
-    else if (!isNext) actionHtml = `<span style="font-size:9.5px;color:var(--text3);">🔒 Сначала предыдущий тир</span>`;
+    if (!tier.id || tier.owned) actionHtml = `<span class="shop-owned">✓</span>`;
+    else if (!canBuy) actionHtml = `<span class="clan-shop-tier-locked" title="Нужно право «Казна»">🔒</span>`;
+    else if (!tier.next) actionHtml = `<span class="clan-shop-tier-locked" title="Тиры покупаются по порядку">🔒</span>`;
     else actionHtml = `<button class="btn btn-secondary btn-sm" data-onclick="buyClanMemberLimit('${tier.id}')">${tier.cost}🪙</button>`;
     return `
-    <div class="clan-shop-tier ${isOwned?'is-owned':''} ${isNext?'is-next':''}">
+    <div class="clan-shop-tier ${tier.owned?'is-owned':''} ${tier.next?'is-next':''}">
       <div class="clan-shop-tier-num">${tier.limit}</div>
-      <div class="clan-shop-tier-lbl">участников</div>
+      <div class="clan-shop-tier-lbl">${tier.lbl}</div>
       <div class="clan-shop-tier-action">${actionHtml}</div>
     </div>`;
   }).join('');
@@ -1243,13 +1249,10 @@ function renderClanShopTab() {
   box.innerHTML = `
     ${balanceRow}
     <div class="clan-shop-section-title">🖼️ Баннеры клана</div>
-    ${bannerItems}
+    <div class="clan-shop-items-list">${bannerItems}</div>
 
-    <div class="clan-shop-section-title" style="margin-top:18px;">👥 Лимит участников <span style="font-family:'Space Mono',monospace;font-weight:400;color:var(--text3);text-transform:none;">сейчас: ${memberCount}/${curLimit}</span></div>
-    <div class="clan-shop-tiers-row">
-      <div class="clan-shop-tier is-owned"><div class="clan-shop-tier-num">${CLAN_BASE_MEMBER_LIMIT}</div><div class="clan-shop-tier-lbl">базовый</div><div class="clan-shop-tier-action"><span class="shop-owned">✓</span></div></div>
-      ${tierCells}
-    </div>`;
+    <div class="clan-shop-section-title is-spaced">👥 Лимит участников <span class="clan-shop-section-sub">сейчас: ${memberCount}/${curLimit}</span></div>
+    <div class="clan-shop-tiers-row">${tierCells}</div>`;
 }
 
 function buyClanShopItem(itemId) {
@@ -1548,30 +1551,66 @@ function renderClanView(clan){
 // ─────────────────────────────────────────────
 function renderClanBannerSettingsBlock(clan, canEdit) {
   if (!canEdit) return '';
+
+  const owned = clanOwnedShopItems(clan);
+  const hasStatic = owned.includes('banner_static');
+  const hasAnimated = owned.includes('banner_animated');
+
+  // Ничего не куплено — вместо формы загрузки показываем карточку-приглашение
+  // в магазин клана (загрузка баннера всё равно будет отклонена сервером,
+  // так что раньше показывать саму форму было бессмысленно и запутывало).
+  if (!hasStatic && !hasAnimated) {
+    return `<div class="clan-settings-card" style="margin-bottom:16px;">
+        <div class="clan-settings-card-title">🖼️ Баннер клана</div>
+        <div class="clan-banner-locked-box">
+            <div class="clan-banner-locked-icon">🔒</div>
+            <div class="clan-banner-locked-text">Баннер клана открывается покупкой в «Магазине клана»: статичный — 200🪙, анимированный (GIF/WebP) — 500🪙. После покупки здесь появится загрузка.</div>
+            <button class="btn btn-primary btn-sm" data-onclick="switchClanInnerTab('shop')" style="flex-shrink:0;">В магазин</button>
+        </div>
+    </div>`;
+  }
+
   const bannerUrl = clan.banner_url || clanBannerUrl || null;
   const bannerCrop = clanBannerUrl ? clanBannerCrop : {
     x: clan.banner_crop_x ?? 0, y: clan.banner_crop_y ?? 0,
     w: clan.banner_crop_w ?? 1, h: clan.banner_crop_h ?? 1,
   };
   const previewStyle = bannerUrl ? clanBannerComputeBgStyle(bannerUrl, bannerCrop) : '';
+  // Тип купленного товара определяет, какие файлы разрешаем выбрать
+  // в системном диалоге — без анимированного тира GIF/WebP/APNG не предлагаем.
+  const accept = hasAnimated ? 'image/*' : 'image/jpeg,image/png';
+
+  const badges = `
+    <span class="clan-banner-tier-pill">✓ Статичный</span>
+    ${hasAnimated ? `<span class="clan-banner-tier-pill">✓ Анимированный</span>` : `<span class="clan-banner-tier-pill is-locked">🔒 Анимированный</span>`}`;
+
+  const upsell = !hasAnimated ? `
+    <div class="clan-banner-upsell-row">
+        <span>🎞️ Для GIF/WebP-анимации нужен доп. товар в магазине</span>
+        <button class="btn btn-secondary btn-sm" data-onclick="switchClanInnerTab('shop')">Докупить · 500🪙</button>
+    </div>` : '';
 
   return `<div style="margin-bottom:16px;">
-      <div class="clan-settings-card-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">🖼️ Баннер клана <span class="clan-banner-price-pill">🪙 200 за смену</span></div>
+      <div class="clan-settings-card-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        🖼️ Баннер клана
+        <div class="clan-banner-settings-badges">${badges}</div>
+      </div>
       <div class="clan-banner-upload-zone" id="clan-banner-upload-zone" data-onclick="document.getElementById('clan-banner-file-input').click()">
           <div class="clan-banner-upload-preview" id="clan-banner-upload-preview" style="${escapeHtml(previewStyle)};display:${bannerUrl ? '' : 'none'}"></div>
           <div class="clan-banner-upload-label">
               <div class="clan-banner-upload-label-icon">
                   <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg>
               </div>
-              <span class="clan-banner-upload-label-text" id="clan-banner-upload-lbl">${bannerUrl ? 'Нажмите для замены' : 'Загрузите баннер (JPG/PNG до 5 МБ)'}</span>
+              <span class="clan-banner-upload-label-text" id="clan-banner-upload-lbl">${bannerUrl ? 'Нажмите для замены' : (hasAnimated ? 'Загрузите баннер (JPG/PNG/GIF/WebP до 5 МБ)' : 'Загрузите баннер (JPG/PNG до 5 МБ)')}</span>
               <span class="clan-banner-upload-label-sub">Рекомендуем: 900×148 px или шире</span>
           </div>
       </div>
-      <input type="file" id="clan-banner-file-input" accept="image/*" style="display:none" data-onchange="handleClanBannerFile(event)">
+      <input type="file" id="clan-banner-file-input" accept="${accept}" style="display:none" data-onchange="handleClanBannerFile(event)">
       <div id="clan-banner-act-row" style="display:${bannerUrl ? 'flex' : 'none'};gap:8px;margin-top:6px;">
           <button class="btn btn-primary btn-sm" data-onclick="openClanBannerCropModal()" style="flex:1;">🎯 Позиционирование</button>
           <button class="btn btn-danger btn-sm" data-onclick="clearClanBanner()" style="flex:1;">Убрать</button>
       </div>
+      ${upsell}
       <p style="font-size:10px;color:var(--text3);margin-top:6px;">Баннер виден всем участникам в шапке страницы клана</p>
   </div>`;
 }
@@ -1661,6 +1700,18 @@ function handleClanBannerFile(event) {
   if (!file.type.startsWith('image/')) { showToast('Только изображения!', 'error'); return; }
   if (file.size > CLAN_BANNER_MAX_MB * 1024 * 1024) {
     showToast(`Файл слишком большой! Максимум ${CLAN_BANNER_MAX_MB} МБ`, 'error'); return;
+  }
+  // Проверяем купленный тир ДО загрузки на Cloudinary — иначе пользователь
+  // видит "успешную" загрузку, а при сохранении настроек сервер её тихо
+  // отклоняет (баннер остаётся старым без понятной причины).
+  const owned = clanOwnedShopItems(clanFullData);
+  const hasStatic = owned.includes('banner_static');
+  const hasAnimated = owned.includes('banner_animated');
+  if (!hasStatic && !hasAnimated) {
+    showToast('Баннер клана нужно сначала купить в магазине клана', 'error'); return;
+  }
+  if (!hasAnimated && isAnimatedBannerFile(file)) {
+    showToast('Анимированные баннеры (GIF/WebP) нужно докупить в магазине клана за 500🪙', 'error'); return;
   }
   const reader = new FileReader();
   reader.onload = async ev => {
@@ -2146,7 +2197,7 @@ function renderClanBrowseList(clans){
           ${cl.description?`<div class="clan-hcard-desc">${esc(cl.description)}</div>`:''}
         </div>
         <div class="clan-hcard-meta">
-          <span class="clan-hcard-meta-item"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</span>
+          <span class="clan-hcard-meta-item"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}/${cl.member_limit || CLAN_BASE_MEMBER_LIMIT}</span>
           <span class="clan-hcard-meta-item"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg>${(cl.pixels||0).toLocaleString()}</span>
           ${cl.join_type==='request'?'<span class="clan-hcard-meta-item clan-hcard-jt">📝 По заявке</span>':''}
           ${cl.join_type==='closed'?'<span class="clan-hcard-meta-item clan-hcard-jt">🔒 Закрыт</span>':''}

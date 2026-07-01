@@ -2286,20 +2286,61 @@ html, body {
 }
 
 /* ── КЛАН: МАГАЗИН ── */
+
+/* Шапка-интро магазина (иконка + заголовок + описание) — раньше эти три
+   div-а были без единого CSS-правила и просто "падали" друг под друга
+   без карточки/иконки, из-за чего верх магазина выглядел неаккуратно. */
+.clan-shop-intro {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 14px;
+}
+
+.clan-shop-intro-icon {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+}
+
+.clan-shop-intro-title {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-bottom: 2px;
+}
+
+.clan-shop-intro-desc {
+    font-size: 10.5px;
+    color: var(--text2);
+    line-height: 1.45;
+}
+
 .clan-shop-balance-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    padding: 10px 14px;
+    padding: 9px 14px;
     background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    margin-bottom: 16px;
+    margin-bottom: 14px;
 }
 
 .clan-shop-balance-label {
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--text2);
     display: flex;
     align-items: center;
@@ -2313,15 +2354,49 @@ html, body {
     color: var(--accent2);
 }
 
+.clan-shop-section-title {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 10.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+    .clan-shop-section-title.is-spaced {
+        margin-top: 14px;
+    }
+
+.clan-shop-section-sub {
+    font-family: 'Space Mono',monospace;
+    font-weight: 400;
+    color: var(--text3);
+    text-transform: none;
+    font-size: 10px;
+    letter-spacing: 0;
+}
+
+/* Компактный список товаров: gap на контейнере вместо margin-bottom на
+   каждой карточке — меньше "воздуха" между строками. */
+.clan-shop-items-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    margin-bottom: 4px;
+}
+
 .clan-shop-item {
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: 10px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px 16px;
-    margin-bottom: 10px;
+    border-radius: 12px;
+    padding: 9px 11px;
     transition: .2s;
 }
 
@@ -2335,16 +2410,16 @@ html, body {
     }
 
 .clan-shop-item-icon {
-    width: 34px;
-    height: 34px;
+    width: 28px;
+    height: 28px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 17px;
+    font-size: 14px;
     background: var(--surface3);
     border: 1px solid var(--border2);
-    border-radius: 10px;
+    border-radius: 8px;
 }
 
 .clan-shop-item-body {
@@ -2354,33 +2429,47 @@ html, body {
 
 .clan-shop-item-title {
     font-family: 'Unbounded',sans-serif;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 700;
-    margin-bottom: 3px;
+    margin-bottom: 2px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .clan-shop-item-desc {
-    font-size: 11px;
+    font-size: 10.5px;
     color: var(--text2);
-    line-height: 1.5;
+    line-height: 1.4;
 }
 
 .clan-shop-item-action {
     flex-shrink: 0;
 }
 
+    .clan-shop-item-action .btn-sm {
+        padding: 5px 10px;
+        font-size: 10.5px;
+    }
+
+.shop-lock-inline {
+    font-size: 12px;
+    opacity: .55;
+    cursor: help;
+}
+
 .clan-shop-tiers-row {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 6px;
+    margin-bottom: 4px;
 }
 
 .clan-shop-tier {
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 12px 8px;
+    border-radius: 11px;
+    padding: 9px 4px;
     text-align: center;
     transition: .2s;
 }
@@ -2400,22 +2489,36 @@ html, body {
 
 .clan-shop-tier-num {
     font-family: 'Unbounded',sans-serif;
-    font-size: 18px;
+    font-size: 15px;
     font-weight: 700;
     color: var(--text);
 }
 
 .clan-shop-tier-lbl {
-    font-size: 9px;
+    font-size: 7.5px;
     color: var(--text3);
     text-transform: uppercase;
-    letter-spacing: .3px;
-    margin-bottom: 8px;
+    letter-spacing: .2px;
+    margin-bottom: 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .clan-shop-tier-action {
     display: flex;
     justify-content: center;
+}
+
+    .clan-shop-tier-action .btn-sm {
+        padding: 4px 6px;
+        font-size: 9.5px;
+    }
+
+.clan-shop-tier-locked {
+    font-size: 11px;
+    opacity: .5;
+    cursor: help;
 }
 
 /* ── КЛАН: КАЗНА ── */
@@ -2531,7 +2634,7 @@ html, body {
 
 @media (max-width: 760px) {
     .clan-shop-tiers-row {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(3, 1fr);
     }
 
     .clan-treasury-actions {
@@ -3689,6 +3792,71 @@ details.adm-card {
     border: 1px solid rgba(251,191,36,.25);
 }
 
+/* ── Баннер клана в настройках: статус-пилюли (куплено/не куплено) ── */
+.clan-banner-tier-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(34,197,94,.12);
+    color: #4ade80;
+    border: 1px solid rgba(34,197,94,.22);
+}
+
+    .clan-banner-tier-pill.is-locked {
+        background: var(--surface3);
+        color: var(--text3);
+        border-color: var(--border2);
+    }
+
+.clan-banner-settings-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+/* CTA-карточка, когда клан ещё не купил ни один товар с баннером */
+.clan-banner-locked-box {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 14px;
+    background: var(--surface3);
+    border: 1px dashed var(--border2);
+    border-radius: 12px;
+}
+
+.clan-banner-locked-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    opacity: .8;
+}
+
+.clan-banner-locked-text {
+    flex: 1;
+    font-size: 10.5px;
+    color: var(--text2);
+    line-height: 1.45;
+}
+
+/* Подсказка-апсейл: статичный баннер куплен, анимированный — ещё нет */
+.clan-banner-upsell-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 8px;
+    padding: 8px 10px;
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-size: 10px;
+    color: var(--text3);
+}
+
 /* ── SHELL: header (hero+motd) на всю ширину, ниже — сайдбар + контент ── */
 .clan-shell {
     display: flex;
@@ -3706,8 +3874,6 @@ details.adm-card {
     display: flex;
     flex: 1;
     min-height: 0;
-    margin-top: 14px;
-    border-top: 1px solid var(--border);
 }
 
 /* ── VERTICAL SIDEBAR NAV (Discord-style) ── */

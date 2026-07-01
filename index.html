@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260631-21';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260631-20';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <!--
@@ -412,11 +412,10 @@
                 <div class="sub-tabs">
                     <div class="sub-tab active" data-onclick="switchClanSubTab('browse')">Обзор</div>
                     <div class="sub-tab" data-onclick="switchClanSubTab('create')">Создать</div>
-                    <div class="sub-tab" data-onclick="switchClanSubTab('join')">Вступить</div>
                 </div>
                 <div id="clan-sub-browse">
                     <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Топ кланов</div>
-                    <div id="clan-browse-list" class="clan-browse-grid"></div>
+                    <div id="clan-browse-list" class="clan-browse-hlist"></div>
                 </div>
                 <div id="clan-sub-create" style="display:none">
                     <div class="clan-empty-state" style="margin-bottom:14px;">🏴<div>Создай свой клан, набери команду, придумай звания и стройте вместе — быстрее и веселее!</div></div>
@@ -424,13 +423,6 @@
                     <div class="form-group"><label class="form-label">Тег (до 4 букв)</label><input class="form-input" id="clan-create-tag" placeholder="PXL" maxlength="4"></div>
                     <div class="form-group"><label class="form-label">Описание</label><input class="form-input" id="clan-create-desc" placeholder="Описание клана..."></div>
                     <button class="btn btn-primary" data-onclick="createClan()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V3" /><path d="M5 4h14l-3.2 4L19 12H5" /></svg> Создать клан (50 🪙)</button>
-                </div>
-                <div id="clan-sub-join" style="display:none">
-                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Вступить по названию</div>
-                    <div style="display:flex;gap:8px">
-                        <input class="form-input" id="clan-join-name" placeholder="Название клана" style="flex:1">
-                        <button class="btn btn-secondary btn-sm" data-onclick="joinClan()" style="flex-shrink:0">Вступить</button>
-                    </div>
                 </div>
             </div>
 

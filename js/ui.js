@@ -863,12 +863,12 @@ function sendChat() {
 }
 
 function switchClanSubTab(tab) {
-  ['browse','create','join'].forEach(t => {
+  ['browse','create'].forEach(t => {
     const el = document.getElementById(`clan-sub-${t}`);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
   document.querySelectorAll('#clan-view-no-clan .sub-tab').forEach((el, i) => {
-    el.classList.toggle('active', ['browse','create','join'][i] === tab);
+    el.classList.toggle('active', ['browse','create'][i] === tab);
   });
   if (tab === 'browse') sendJSON({action:'clan_list'});
 }
@@ -897,10 +897,23 @@ function createClan(){
   sendJSON({action:'clan_create',name,tag,description:desc});
 }
 
-function joinClan(){
-  const name=document.getElementById('clan-join-name').value.trim();
+function joinClan(explicitName){
+  const name=(explicitName||document.getElementById('clan-join-name')?.value||'').trim();
   if (!name){showToast('Введите название клана','error');return;}
   sendJSON({action:'clan_join',name});
+}
+
+// ── Определяет, может ли текущий пользователь вступить в клан из списка ──
+// Возвращает { canJoin, label, reason } — используется для рендера кнопки
+// на карточке клана в горизонтальном списке обзора.
+function clanBrowseJoinState(cl) {
+  if (!isLoggedIn) return { canJoin:false, label:'Войдите', reason:'Нужно войти в аккаунт' };
+  if (currentClan) return { canJoin:false, label:'Вы в клане', reason:'Сначала покиньте текущий клан' };
+  if (cl.join_type === 'closed') return { canJoin:false, label:'Закрыто', reason:'Вступление в этот клан закрыто' };
+  const need = cl.min_pixels || 0;
+  if (need && (currentPixels||0) < need) return { canJoin:false, label:`Нужно ${need.toLocaleString()} px`, reason:`Нужно минимум ${need} пикселей` };
+  if (cl.join_type === 'request') return { canJoin:true, label:'Запрос', reason:'' };
+  return { canJoin:true, label:'Вступить', reason:'' };
 }
 
 async function leaveClan(){
@@ -1098,17 +1111,22 @@ function renderClanRequests(requests) {
     c.innerHTML = '<div class="clan-empty-state">📭<div>Заявок на вступление нет</div></div>';
     return;
   }
-  c.innerHTML = requests.map(r => `
-    <div class="clan-request-row">
-      <div class="member-row-info">
-        <span class="member-row-emoji">🙋</span>
-        <span class="member-row-name">${esc(r)}</span>
+  c.innerHTML = `<div class="clan-req-list">` + requests.map(r => `
+    <div class="clan-req-card">
+      <div class="clan-req-avatar">🙋</div>
+      <div class="clan-req-info">
+        <div class="clan-req-name">${esc(r)}</div>
+        <div class="clan-req-sub">Хочет вступить в клан</div>
       </div>
-      <div style="display:flex;gap:5px;">
-        <button class="action-btn ab-unban" data-onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Принять</button>
-        <button class="action-btn ab-ban" data-onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg> Отказать</button>
+      <div class="clan-req-actions">
+        <button class="clan-req-btn clan-req-accept" data-onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})" title="Принять">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg>
+        </button>
+        <button class="clan-req-btn clan-req-deny" data-onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})" title="Отказать">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+        </button>
       </div>
-    </div>`).join('');
+    </div>`).join('') + `</div>`;
 }
 
 // ══════════════════════════════════════════════════
@@ -1365,7 +1383,7 @@ function renderClanBannerSettingsBlock(clan, canEdit) {
   const previewStyle = bannerUrl ? clanBannerComputeBgStyle(bannerUrl, bannerCrop) : '';
 
   return `<div style="margin-bottom:16px;">
-      <div class="clan-settings-card-title" style="margin-bottom:10px;">🖼️ Баннер клана</div>
+      <div class="clan-settings-card-title" style="margin-bottom:10px;display:flex;align-items:center;gap:8px;">🖼️ Баннер клана <span class="clan-banner-price-pill">🪙 200 за смену</span></div>
       <div class="clan-banner-upload-zone" id="clan-banner-upload-zone" data-onclick="document.getElementById('clan-banner-file-input').click()">
           <div class="clan-banner-upload-preview" id="clan-banner-upload-preview" style="${escapeHtml(previewStyle)};display:${bannerUrl ? '' : 'none'}"></div>
           <div class="clan-banner-upload-label">
@@ -1415,6 +1433,25 @@ function clanBannerComputeBgStyle(url, crop) {
   const posY = h >= 0.999 ? 50 : (y / (1 - h) * 100).toFixed(3);
   const proxied = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(url) : url;
   return `background-image:url('${escapeHtml(proxied)}');background-repeat:no-repeat;background-size:${sizeX}% ${sizeY}%;background-position:${posX}% ${posY}%`;
+}
+
+// Вариант без растягивания — для контейнеров, чья пропорция отличается от
+// пропорции, под которую подгонялся кроп баннера (например тонкие строки
+// списка кланов). Используем background-size:cover (сохраняет пропорции
+// картинки, просто обрезает лишнее) и позиционируем по центру выбранной
+// пользователем области кропа, вместо растягивания под чужой aspect ratio.
+function clanBannerComputeCoverStyle(url, crop) {
+  if (!url) return '';
+  const c = crop || { x: 0, y: 0, w: 1, h: 1 };
+  let { x = 0, y = 0, w = 1, h = 1 } = c;
+  w = Math.min(1, Math.max(0.02, w));
+  h = Math.min(1, Math.max(0.02, h));
+  x = Math.min(1 - w, Math.max(0, x));
+  y = Math.min(1 - h, Math.max(0, y));
+  const cx = ((x + w / 2) * 100).toFixed(3);
+  const cy = ((y + h / 2) * 100).toFixed(3);
+  const proxied = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(url) : url;
+  return `background-image:url('${escapeHtml(proxied)}');background-repeat:no-repeat;background-size:cover;background-position:${cx}% ${cy}%`;
 }
 
 function refreshClanBannerUploadUI() {
@@ -1904,12 +1941,46 @@ function renderNoClanView(){
 function renderClanBrowseList(clans){
   const c=document.getElementById('clan-browse-list');
   if (!clans.length){c.innerHTML='<div class="clan-empty-state">🏴 Кланов пока нет — создай первый!</div>';return;}
-  c.innerHTML=clans.slice(0,10).map(cl=>`
-    <div class="clan-card" style="cursor:pointer" data-onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}';switchClanSubTab('join')">
-      <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+ '22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+ esc(cl.tag||'')}</span></div>
-      <div class="clan-meta"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg> ${cl.members} · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg> ${(cl.pixels||0).toLocaleString()} пикс.</div>
-      ${cl.description?`<div class="clan-meta">${esc(cl.description)}</div>`:''}
-    </div>`).join('');
+  c.innerHTML=clans.map(cl=>{
+    const tc = cl.tag_color || '#818cf8';
+    const icon = cl.icon || '🏴';
+    const bannerUrl = cl.banner_url || null;
+    const bannerCrop = { x: cl.banner_crop_x??0, y: cl.banner_crop_y??0, w: cl.banner_crop_w??1, h: cl.banner_crop_h??1 };
+    const bgStyle = bannerUrl ? clanBannerComputeCoverStyle(bannerUrl, bannerCrop) : '';
+    const glowColor = tc + '38';
+    const js = clanBrowseJoinState(cl);
+    const btnClass = 'clan-hcard-join' + (js.canJoin ? (js.label==='Запрос' ? ' is-request' : '') : ' is-disabled');
+    const btnAction = js.canJoin ? `joinClan('${esc(cl.name).replace(/'/g,"\\'")}')` : '';
+    return `
+    <div class="clan-hcard">
+      <div class="clan-hcard-bg" style="${escapeHtml(bgStyle)}"></div>
+      ${!bannerUrl ? `
+      <div class="clan-hcard-glow clan-hcard-glow-1" style="background:${glowColor}"></div>
+      <div class="clan-hcard-glow clan-hcard-glow-2" style="background:${glowColor}"></div>` : ''}
+      <div class="clan-hcard-overlay"></div>
+      <div class="clan-hcard-row">
+        <div class="clan-hcard-icon">${esc(icon)}</div>
+        <div class="clan-hcard-titles">
+          <div class="clan-hcard-name-row">
+            <span class="clan-hcard-name">${esc(cl.name)}</span>
+            <span class="clan-hcard-tag" style="color:${tc};background:${tc}22;border-color:${tc}55">${esc((icon?icon+' ':'')+(cl.tag||''))}</span>
+          </div>
+          ${cl.description?`<div class="clan-hcard-desc">${esc(cl.description)}</div>`:''}
+        </div>
+        <div class="clan-hcard-meta">
+          <span class="clan-hcard-meta-item"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</span>
+          <span class="clan-hcard-meta-item"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none"/><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17"/></svg>${(cl.pixels||0).toLocaleString()}</span>
+          ${cl.join_type==='request'?'<span class="clan-hcard-meta-item clan-hcard-jt">📝 По заявке</span>':''}
+          ${cl.join_type==='closed'?'<span class="clan-hcard-meta-item clan-hcard-jt">🔒 Закрыт</span>':''}
+          ${cl.min_pixels?`<span class="clan-hcard-meta-item clan-hcard-jt">⭐ от ${cl.min_pixels.toLocaleString()} px</span>`:''}
+        </div>
+        <button class="${btnClass}" ${js.canJoin?`data-onclick="${btnAction}"`:'disabled'} ${js.reason?`title="${esc(js.reason)}"`:''}>
+          ${js.label==='Запрос' ? '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="13" height="13"><path d="M12 5v14"/><path d="M5 12l7-7 7 7"/></svg>' : ''}
+          ${esc(js.label)}
+        </button>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 function buildShopUI(){

@@ -3138,6 +3138,232 @@ details.adm-card {
     padding: 2px;
 }
 
+/* ── CLAN BROWSE: vertical list of full-width, thin horizontal clan rows ── */
+.clan-browse-hlist {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-height: 460px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 2px 4px 4px 2px;
+}
+
+    .clan-browse-hlist::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    .clan-browse-hlist::-webkit-scrollbar-thumb {
+        background: var(--border2);
+        border-radius: 10px;
+    }
+
+    .clan-browse-hlist::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+.clan-hcard {
+    position: relative;
+    width: 100%;
+    min-height: 68px;
+    border-radius: 13px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: var(--surface2);
+    transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
+}
+
+    .clan-hcard:hover {
+        transform: translateY(-2px);
+        border-color: var(--border2);
+        box-shadow: 0 8px 22px rgba(0,0,0,.32);
+    }
+
+.clan-hcard-bg {
+    position: absolute;
+    inset: 0;
+    background-color: var(--surface3);
+    filter: saturate(1.05);
+}
+
+.clan-hcard-glow {
+    position: absolute;
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    filter: blur(34px);
+    opacity: .75;
+    pointer-events: none;
+}
+
+.clan-hcard-glow-1 {
+    top: -60px;
+    left: -30px;
+}
+
+.clan-hcard-glow-2 {
+    bottom: -70px;
+    left: 30%;
+}
+
+.clan-hcard-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(10,10,14,.88) 0%, rgba(10,10,14,.72) 40%, rgba(10,10,14,.5) 100%);
+}
+
+.clan-hcard-row {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    min-height: 68px;
+}
+
+.clan-hcard-icon {
+    font-size: 18px;
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+    border-radius: 11px;
+    background: rgba(20,20,24,.55);
+    border: 1px solid rgba(255,255,255,.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+}
+
+.clan-hcard-titles {
+    min-width: 0;
+    flex-shrink: 0;
+    width: 168px;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.clan-hcard-name-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-width: 0;
+}
+
+.clan-hcard-name {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+.clan-hcard-tag {
+    flex-shrink: 0;
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    border: 1px solid;
+}
+
+.clan-hcard-desc {
+    font-size: 10.5px;
+    color: rgba(255,255,255,.65);
+    line-height: 1.3;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clan-hcard-meta {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 8px;
+    min-width: 0;
+}
+
+.clan-hcard-meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(255,255,255,.85);
+    white-space: nowrap;
+}
+
+    .clan-hcard-meta-item .icon {
+        width: 12px;
+        height: 12px;
+    }
+
+.clan-hcard-jt {
+    padding: 2px 7px;
+    border-radius: var(--radius-pill);
+    background: rgba(255,255,255,.1);
+    color: rgba(255,255,255,.85);
+}
+
+.clan-hcard-join {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 9px 16px;
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    color: #fff;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 4px 14px rgba(99,102,241,.4);
+    transition: transform .15s ease, box-shadow .15s ease, filter .15s ease;
+}
+
+    .clan-hcard-join:hover {
+        transform: scale(1.05);
+        filter: brightness(1.08);
+    }
+
+    .clan-hcard-join.is-request {
+        background: linear-gradient(135deg, #fbbf24, #f59e0b);
+        box-shadow: 0 4px 14px rgba(245,158,11,.35);
+        color: #1a1200;
+    }
+
+    .clan-hcard-join.is-disabled {
+        background: var(--surface3);
+        color: var(--text3);
+        box-shadow: none;
+        cursor: not-allowed;
+        opacity: .75;
+    }
+
+        .clan-hcard-join.is-disabled:hover {
+            transform: none;
+            filter: none;
+        }
+
+.clan-banner-price-pill {
+    font-size: 9.5px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: var(--radius-pill);
+    background: rgba(251,191,36,.14);
+    color: #fbbf24;
+    border: 1px solid rgba(251,191,36,.25);
+}
+
 /* ── SHELL: header (hero+motd) на всю ширину, ниже — сайдбар + контент ── */
 .clan-shell {
     display: flex;
@@ -3692,6 +3918,107 @@ details.adm-card {
     background: var(--surface2);
     border: 1px solid var(--border);
 }
+
+/* ── CLAN JOIN REQUESTS — redesign ── */
+.clan-req-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.clan-req-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 12px;
+    border-radius: 13px;
+    background: linear-gradient(135deg, rgba(99,102,241,.06), var(--surface2));
+    border: 1px solid var(--border);
+    transition: border-color .15s, background .15s;
+}
+
+    .clan-req-card:hover {
+        border-color: rgba(99,102,241,.35);
+        background: linear-gradient(135deg, rgba(99,102,241,.1), var(--surface2));
+    }
+
+.clan-req-avatar {
+    flex-shrink: 0;
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+    background: rgba(99,102,241,.12);
+    border: 1px solid rgba(99,102,241,.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+}
+
+.clan-req-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.clan-req-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.clan-req-sub {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 1px;
+}
+
+.clan-req-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
+.clan-req-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform .15s, background .15s, color .15s;
+}
+
+    .clan-req-btn .icon {
+        width: 15px;
+        height: 15px;
+    }
+
+    .clan-req-btn:hover {
+        transform: scale(1.08);
+    }
+
+.clan-req-accept {
+    background: rgba(34,197,94,.14);
+    color: #4ade80;
+}
+
+    .clan-req-accept:hover {
+        background: rgba(34,197,94,.26);
+    }
+
+.clan-req-deny {
+    background: rgba(239,68,68,.12);
+    color: #f87171;
+}
+
+    .clan-req-deny:hover {
+        background: rgba(239,68,68,.24);
+    }
 
 /* ── RANKS TAB ── */
 .clan-ranks-toolbar {

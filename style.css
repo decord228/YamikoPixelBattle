@@ -2285,6 +2285,260 @@ html, body {
     background: var(--surface2);
 }
 
+/* ── КЛАН: МАГАЗИН ── */
+.clan-shop-balance-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 10px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 16px;
+}
+
+.clan-shop-balance-label {
+    font-size: 11px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.clan-shop-balance-amount {
+    font-family: 'Space Mono',monospace;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent2);
+}
+
+.clan-shop-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 10px;
+    transition: .2s;
+}
+
+    .clan-shop-item:hover {
+        border-color: var(--border2);
+    }
+
+    .clan-shop-item.is-owned {
+        border-color: rgba(34,197,94,.2);
+        background: rgba(34,197,94,.04);
+    }
+
+.clan-shop-item-icon {
+    width: 34px;
+    height: 34px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 10px;
+}
+
+.clan-shop-item-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.clan-shop-item-title {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 3px;
+}
+
+.clan-shop-item-desc {
+    font-size: 11px;
+    color: var(--text2);
+    line-height: 1.5;
+}
+
+.clan-shop-item-action {
+    flex-shrink: 0;
+}
+
+.clan-shop-tiers-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.clan-shop-tier {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 8px;
+    text-align: center;
+    transition: .2s;
+}
+
+    .clan-shop-tier:hover {
+        border-color: var(--border2);
+    }
+
+    .clan-shop-tier.is-owned {
+        border-color: rgba(34,197,94,.2);
+        background: rgba(34,197,94,.04);
+    }
+
+    .clan-shop-tier.is-next {
+        border-color: var(--accent);
+    }
+
+.clan-shop-tier-num {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text);
+}
+
+.clan-shop-tier-lbl {
+    font-size: 9px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .3px;
+    margin-bottom: 8px;
+}
+
+.clan-shop-tier-action {
+    display: flex;
+    justify-content: center;
+}
+
+/* ── КЛАН: КАЗНА ── */
+.clan-treasury-balance-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.clan-treasury-balance-icon {
+    font-size: 22px;
+    margin-bottom: 6px;
+}
+
+.clan-treasury-balance-label {
+    font-size: 10px;
+    color: var(--text3);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 6px;
+}
+
+.clan-treasury-balance-amount {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 26px;
+    font-weight: 700;
+    color: var(--accent2);
+}
+
+.clan-treasury-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.clan-treasury-input-row {
+    display: flex;
+    gap: 8px;
+}
+
+    .clan-treasury-input-row .form-input {
+        flex: 1;
+        min-width: 0;
+    }
+
+.clan-treasury-log-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 6px;
+}
+
+.clan-treasury-log-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 7px;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    font-size: 12px;
+}
+
+    .clan-treasury-log-icon.plus {
+        background: rgba(34,197,94,.12);
+        color: #4ade80;
+    }
+
+    .clan-treasury-log-icon.minus {
+        background: rgba(239,68,68,.12);
+        color: #f87171;
+    }
+
+.clan-treasury-log-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.clan-treasury-log-text {
+    font-size: 11.5px;
+    color: var(--text);
+}
+
+.clan-treasury-log-time {
+    font-size: 9.5px;
+    color: var(--text3);
+    margin-top: 1px;
+}
+
+.clan-treasury-log-amount {
+    font-family: 'Space Mono',monospace;
+    font-size: 11.5px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+    .clan-treasury-log-amount.plus {
+        color: #4ade80;
+    }
+
+    .clan-treasury-log-amount.minus {
+        color: #f87171;
+    }
+
+@media (max-width: 760px) {
+    .clan-shop-tiers-row {
+        grid-template-columns: repeat(2, 1fr);
+    }
+
+    .clan-treasury-actions {
+        grid-template-columns: 1fr;
+    }
+}
+
 /* ── SETTINGS ── */
 .setting-row {
     display: flex;
@@ -2834,6 +3088,15 @@ details.adm-card {
 
     .ab-msg:hover {
         background: var(--border2);
+    }
+
+.ab-warn {
+    background: rgba(129,140,248,.12);
+    color: #a5b4fc;
+}
+
+    .ab-warn:hover {
+        background: rgba(129,140,248,.24);
     }
 
 .admin-stats-grid {

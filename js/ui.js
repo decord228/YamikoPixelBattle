@@ -873,7 +873,7 @@ function switchClanSubTab(tab) {
   if (tab === 'browse') sendJSON({action:'clan_list'});
 }
 
-const CLAN_INNER_TABS = ['overview','members','ranks','requests','chat','settings'];
+const CLAN_INNER_TABS = ['overview','members','ranks','requests','chat','shop','treasury','settings'];
 
 function switchClanInnerTab(tab) {
   CLAN_INNER_TABS.forEach(t => {
@@ -887,6 +887,8 @@ function switchClanInnerTab(tab) {
   if (tab === 'ranks') { clanRanksEditingId = null; renderClanRanksTab(); }
   if (tab === 'members') renderClanMemberPage();
   if (tab === 'overview') renderClanOverview();
+  if (tab === 'shop') renderClanShopTab();
+  if (tab === 'treasury') renderClanTreasuryTab();
 }
 
 function createClan(){
@@ -1170,6 +1172,169 @@ function clanPermBadges(rank) {
 }
 
 // ─────────────────────────────────────────────
+// КЛАН: МАГАЗИН (баннеры + расширение лимита участников)
+// Оплата — только из казны клана.
+// ─────────────────────────────────────────────
+function clanOwnedShopItems(clan) {
+  return (clan && (clan.shop_items || clan.purchased_shop_items)) || [];
+}
+function clanCurrentMemberLimit(clan) {
+  if (clan && clan.member_limit) return clan.member_limit;
+  const owned = clanOwnedShopItems(clan);
+  let limit = CLAN_BASE_MEMBER_LIMIT;
+  CLAN_MEMBER_LIMIT_TIERS.forEach(t => { if (owned.includes(t.id)) limit = Math.max(limit, t.limit); });
+  return limit;
+}
+
+function renderClanShopTab() {
+  const clan = clanFullData;
+  const box = document.getElementById('clan-shop-content');
+  if (!box || !clan) return;
+
+  const canBuy = clanHasPermUser(clan, currentUser, 'manage_treasury');
+  const treasury = clan.treasury || 0;
+  const owned = clanOwnedShopItems(clan);
+  const memberCount = (clan.members || []).length;
+  const curLimit = clanCurrentMemberLimit(clan);
+
+  const balanceRow = `
+    <div class="clan-shop-balance-row">
+      <div class="clan-shop-balance-label">💰 Оплата — из казны клана</div>
+      <div class="clan-shop-balance-amount">${Math.floor(treasury).toLocaleString()}🪙</div>
+    </div>`;
+
+  // ── Баннеры ──
+  const bannerItems = CLAN_SHOP_ITEMS.map(item => {
+    const isOwned = owned.includes(item.id);
+    const lockedByRequire = item.requires && !owned.includes(item.requires);
+    let actionHtml;
+    if (isOwned) actionHtml = `<span class="shop-owned">✓ Куплено</span>`;
+    else if (!canBuy) actionHtml = `<span class="shop-lock" style="position:static;opacity:.7;font-size:11px;">🔒 Нужно право «Казна»</span>`;
+    else if (lockedByRequire) actionHtml = `<span class="shop-lock" style="position:static;opacity:.7;font-size:11px;">🔒 Сначала «${esc(CLAN_SHOP_ITEMS.find(i=>i.id===item.requires)?.title||'')}»</span>`;
+    else actionHtml = `<button class="btn btn-secondary btn-sm" data-onclick="buyClanShopItem('${item.id}')">Купить · ${item.cost}🪙</button>`;
+    return `
+    <div class="clan-shop-item ${isOwned?'is-owned':''}">
+      <div class="clan-shop-item-icon">${item.icon}</div>
+      <div class="clan-shop-item-body">
+        <div class="clan-shop-item-title">${esc(item.title)}</div>
+        <div class="clan-shop-item-desc">${esc(item.desc)}</div>
+      </div>
+      <div class="clan-shop-item-action">${actionHtml}</div>
+    </div>`;
+  }).join('');
+
+  // ── Лимит участников ──
+  const tierCells = CLAN_MEMBER_LIMIT_TIERS.map(tier => {
+    const isOwned = curLimit >= tier.limit;
+    const isNext = !isOwned && CLAN_MEMBER_LIMIT_TIERS.filter(t=>t.limit>curLimit).sort((a,b)=>a.limit-b.limit)[0]?.id === tier.id;
+    let actionHtml;
+    if (isOwned) actionHtml = `<span class="shop-owned">✓</span>`;
+    else if (!canBuy) actionHtml = `<span style="font-size:9.5px;color:var(--text3);">🔒 Нужно право «Казна»</span>`;
+    else if (!isNext) actionHtml = `<span style="font-size:9.5px;color:var(--text3);">🔒 Сначала предыдущий тир</span>`;
+    else actionHtml = `<button class="btn btn-secondary btn-sm" data-onclick="buyClanMemberLimit('${tier.id}')">${tier.cost}🪙</button>`;
+    return `
+    <div class="clan-shop-tier ${isOwned?'is-owned':''} ${isNext?'is-next':''}">
+      <div class="clan-shop-tier-num">${tier.limit}</div>
+      <div class="clan-shop-tier-lbl">участников</div>
+      <div class="clan-shop-tier-action">${actionHtml}</div>
+    </div>`;
+  }).join('');
+
+  box.innerHTML = `
+    ${balanceRow}
+    <div class="clan-shop-section-title">🖼️ Баннеры клана</div>
+    ${bannerItems}
+
+    <div class="clan-shop-section-title" style="margin-top:18px;">👥 Лимит участников <span style="font-family:'Space Mono',monospace;font-weight:400;color:var(--text3);text-transform:none;">сейчас: ${memberCount}/${curLimit}</span></div>
+    <div class="clan-shop-tiers-row">
+      <div class="clan-shop-tier is-owned"><div class="clan-shop-tier-num">${CLAN_BASE_MEMBER_LIMIT}</div><div class="clan-shop-tier-lbl">базовый</div><div class="clan-shop-tier-action"><span class="shop-owned">✓</span></div></div>
+      ${tierCells}
+    </div>`;
+}
+
+function buyClanShopItem(itemId) {
+  sendJSON({action:'clan_shop_buy', item_id: itemId, source: 'treasury'});
+}
+
+function buyClanMemberLimit(tierId) {
+  sendJSON({action:'clan_shop_buy', item_id: tierId, source: 'treasury'});
+}
+
+// ─────────────────────────────────────────────
+// КЛАН: КАЗНА
+// ─────────────────────────────────────────────
+function renderClanTreasuryTab() {
+  const clan = clanFullData;
+  const box = document.getElementById('clan-treasury-content');
+  if (!box || !clan) return;
+
+  const balance = clan.treasury || 0;
+  const canManage = clanHasPermUser(clan, currentUser, 'manage_treasury');
+  const log = (clan.treasury_log || []).slice(0, 30);
+
+  const navAmount = document.getElementById('clan-treasury-nav-amount');
+  if (navAmount) navAmount.textContent = Math.floor(balance).toLocaleString();
+
+  box.innerHTML = `
+    <div class="clan-treasury-balance-card">
+      <div class="clan-treasury-balance-icon">💰</div>
+      <div class="clan-treasury-balance-label">Баланс казны клана</div>
+      <div class="clan-treasury-balance-amount">${Math.floor(balance).toLocaleString()}🪙</div>
+    </div>
+    ${!canManage ? '<div class="clan-perm-hint" style="margin-bottom:14px;">🔒 У твоего звания нет права «Казна» — ты можешь только пополнять казну.</div>' : ''}
+
+    <div class="clan-treasury-actions">
+      <div class="clan-settings-card">
+        <div class="clan-settings-card-title">📥 Пополнить</div>
+        <div class="clan-treasury-input-row">
+          <input type="number" min="1" class="form-input" id="clan-treasury-deposit-amount" placeholder="Сумма">
+          <button class="btn btn-primary btn-sm" data-onclick="clanTreasuryDeposit()">Внести</button>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px;">Личный кошелёк: ${Math.floor(currentCoins)}🪙</div>
+      </div>
+
+      <div class="clan-settings-card" ${!canManage?'style="opacity:.6"':''}>
+        <div class="clan-settings-card-title">📤 Снять</div>
+        <div class="clan-treasury-input-row">
+          <input type="number" min="1" class="form-input" id="clan-treasury-withdraw-amount" placeholder="Сумма" ${!canManage?'disabled':''}>
+          <button class="btn btn-secondary btn-sm" data-onclick="clanTreasuryWithdraw()" ${!canManage?'disabled':''}>Снять</button>
+        </div>
+        <div style="font-size:10px;color:var(--text3);margin-top:6px;">${canManage ? 'На личный счёт' : 'Нужно право «Казна»'}</div>
+      </div>
+    </div>
+
+    <div class="clan-shop-section-title">🧾 История операций</div>
+    ${log.length ? log.map(l => `
+      <div class="clan-treasury-log-row">
+        <div class="clan-treasury-log-icon ${l.amount>=0?'plus':'minus'}">${l.amount>=0?'+':'−'}</div>
+        <div class="clan-treasury-log-body">
+          <div class="clan-treasury-log-text">${esc(l.text || (l.amount>=0 ? `${esc(l.username||'?')} пополнил казну` : `${esc(l.username||'?')} снял из казны`))}</div>
+          <div class="clan-treasury-log-time">${l.time ? new Date(l.time).toLocaleString('ru-RU') : ''}</div>
+        </div>
+        <div class="clan-treasury-log-amount ${l.amount>=0?'plus':'minus'}">${l.amount>=0?'+':''}${Math.floor(l.amount||0)}🪙</div>
+      </div>`).join('') : '<div style="color:var(--text3);text-align:center;padding:16px;font-size:11px;">Операций пока не было</div>'}`;
+}
+
+async function clanTreasuryDeposit() {
+  const input = document.getElementById('clan-treasury-deposit-amount');
+  const amount = Math.floor(Number(input?.value || 0));
+  if (!amount || amount <= 0) { showToast('Введите сумму больше нуля', 'error'); return; }
+  if (amount > currentCoins) { showToast('Недостаточно монет', 'error'); return; }
+  sendJSON({action:'clan_treasury_deposit', amount});
+  if (input) input.value = '';
+}
+
+async function clanTreasuryWithdraw() {
+  const input = document.getElementById('clan-treasury-withdraw-amount');
+  const amount = Math.floor(Number(input?.value || 0));
+  if (!amount || amount <= 0) { showToast('Введите сумму больше нуля', 'error'); return; }
+  const ok = await showConfirm(`Снять ${amount}🪙 из казны клана на свой личный счёт?`, { title: 'Снять из казны', icon: '💸' });
+  if (!ok) return;
+  sendJSON({action:'clan_treasury_withdraw', amount});
+  if (input) input.value = '';
+}
+
+// ─────────────────────────────────────────────
 // Рендер шапки-баннера клана
 // ─────────────────────────────────────────────
 function renderClanBannerHeader(clan, canManageSettings) {
@@ -1208,6 +1373,10 @@ function renderClanBannerHeader(clan, canManageSettings) {
                 <div class="clan-banner-stat">
                     <span class="clan-banner-stat-num">${(clan.pixels || 0).toLocaleString()}</span>
                     <span class="clan-banner-stat-lbl">пикселей</span>
+                </div>
+                <div class="clan-banner-stat">
+                    <span class="clan-banner-stat-num">${Math.floor(clan.treasury || 0).toLocaleString()}🪙</span>
+                    <span class="clan-banner-stat-lbl">казна</span>
                 </div>
             </div>
         </div>
@@ -1366,6 +1535,10 @@ function renderClanView(clan){
   renderClanOverview();
   renderClanMemberPage();
   if (document.getElementById('clan-inner-ranks')?.style.display !== 'none') renderClanRanksTab();
+  if (document.getElementById('clan-inner-shop')?.style.display !== 'none') renderClanShopTab();
+  if (document.getElementById('clan-inner-treasury')?.style.display !== 'none') renderClanTreasuryTab();
+  const treasuryNav = document.getElementById('clan-treasury-nav-amount');
+  if (treasuryNav) treasuryNav.textContent = Math.floor(clan.treasury || 0).toLocaleString();
   // Инициализируем чат v2, если ещё не сделан
   initClanChatV2();
 }
@@ -2485,17 +2658,55 @@ function renderAdminClans(clans) {
         ${cl.description ? '&middot; ' + esc(cl.description.slice(0,50)) : ''}
       </div>
       <div class="user-actions">
+        <button class="action-btn ab-warn" data-onclick="adminEditClan('${esc(cl.name)}')">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14.5 4.5l3.5 3.5L7 19l-4 1 1-4z"/></svg>
+          Изменить
+        </button>
+        ${cl.banner_url ? `<button class="action-btn ab-warn" data-onclick="adminRemoveClanBanner('${esc(cl.name)}')">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 6l9 6 9-6"/><path d="M4 20l16-16" stroke="currentColor"/></svg>
+          Убрать баннер
+        </button>` : ''}
         <button class="action-btn ab-ban" data-onclick="adminDeleteClan('${esc(cl.name)}')">
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
-          \u0423\u0434\u0430\u043b\u0438\u0442\u044c
+          Удалить
         </button>
         <button class="action-btn ab-msg" data-onclick="adminBroadcastToClan('${esc(cl.name)}')">
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg>
-          \u0421\u043e\u043e\u0431\u0449\u0435\u043d\u0438\u0435
+          Сообщение
         </button>
       </div>
     </div>`;
   }).join('');
+}
+
+async function adminEditClan(name) {
+  const cl = adminClansData.find(c => c.name === name);
+  if (!cl) return;
+
+  const newName = await showPrompt('Название клана:', cl.name, { title: `Изменить клан «${cl.name}»`, icon: '🏴' });
+  if (newName === null) return;
+  const newTag = await showPrompt('Тег клана (до 4 символов):', cl.tag || '', { title: `Изменить клан «${cl.name}»`, icon: '🏷️' });
+  if (newTag === null) return;
+  const newDesc = await showPrompt('Описание клана:', cl.description || '', { title: `Изменить клан «${cl.name}»`, icon: '📝' });
+  if (newDesc === null) return;
+
+  const params = { name: cl.name };
+  if (newName.trim() && newName.trim() !== cl.name) params.new_name = newName.trim();
+  if (newTag.trim() !== (cl.tag || '')) params.tag = newTag.trim().slice(0,4);
+  if (newDesc !== (cl.description || '')) params.description = newDesc;
+
+  if (Object.keys(params).length <= 1) { showToast('Изменений нет', 'info'); return; }
+  sendJSON({action:'admin_cmd', cmd:'edit_clan', params});
+  showToast('Изменения отправлены', 'success');
+  setTimeout(() => loadAdminClans(), 400);
+}
+
+async function adminRemoveClanBanner(name) {
+  const ok = await showConfirm(`Убрать баннер клана «${name}»? Это действие для модерации запрещённого контента.`, { title: 'Убрать баннер', icon: '🚫', danger: true, confirmText: 'Убрать' });
+  if (!ok) return;
+  sendJSON({action:'admin_cmd', cmd:'remove_clan_banner', params:{name}});
+  showToast('Баннер удалён', 'success');
+  setTimeout(() => loadAdminClans(), 400);
 }
 
 async function adminDeleteClan(name) {

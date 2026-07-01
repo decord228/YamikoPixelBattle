@@ -29,6 +29,7 @@ const CLAN_PERMISSIONS = [
   { key:'manage_settings', name:'Настройки',     desc:'Менять значок, тег, тип вступления и правила',    icon:'⚙️' },
   { key:'manage_stencil',  name:'Трафарет',      desc:'Публиковать общий трафарет клана на холсте',      icon:'🖼️' },
   { key:'edit_motd',       name:'Сообщение дня', desc:'Редактировать приветственное сообщение клана',    icon:'📌' },
+  { key:'manage_treasury', name:'Казна',         desc:'Снимать деньги из казны и покупать товары клана за счёт казны', icon:'💰' },
 ];
 
 // Готовые цвета-пресеты для быстрого выбора цвета звания
@@ -55,7 +56,31 @@ const SHOP_ITEMS_ADMIN = [
   {id:'admin_rainbow',title:'🌈 Радужный шторм',desc:'Заливает весь холст случайными цветами.',icon:'🌈',cost:0,type:'admin_tool'},
 ];
 
-const DISCORD_CLIENT_ID = '1521337257938911283';
+// ── КЛАН: МАГАЗИН ──
+// Изначальный лимит участников клана (без покупок) — должен совпадать с сервером.
+const CLAN_BASE_MEMBER_LIMIT = 5;
+
+// Тиры расширения состава клана. Каждый тир покупается один раз и заменяет предыдущий лимит.
+const CLAN_MEMBER_LIMIT_TIERS = [
+  { limit:10,  cost:100,  id:'members_10'  },
+  { limit:25,  cost:300,  id:'members_25'  },
+  { limit:50,  cost:1000, id:'members_50'  },
+  { limit:100, cost:5000, id:'members_100' },
+];
+
+// Разовые товары клана (не зависят от тиров лимита)
+const CLAN_SHOP_ITEMS = [
+  {
+    id:'banner_static', title:'Статичный баннер клана', icon:'🖼️',
+    desc:'Открывает возможность загрузить собственную картинку-баннер клана (JPG/PNG), которая отображается в шапке клана и в лидерборде.',
+    cost:200, type:'banner', requiresPerm:'manage_settings',
+  },
+  {
+    id:'banner_animated', title:'Анимированный баннер клана', icon:'🎞️',
+    desc:'Открывает загрузку анимированного баннера (GIF, WebP и т.д.) — выделит клан среди остальных в лидерборде и шапке.',
+    cost:500, type:'banner', requiresPerm:'manage_settings', requires:'banner_static',
+  },
+];
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');
 
 // WS_URL вычисляется в момент вызова connect(), после patchUrlMappings

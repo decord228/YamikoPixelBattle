@@ -1435,23 +1435,29 @@ function clanBannerComputeBgStyle(url, crop) {
   return `background-image:url('${escapeHtml(proxied)}');background-repeat:no-repeat;background-size:${sizeX}% ${sizeY}%;background-position:${posX}% ${posY}%`;
 }
 
-// Вариант без растягивания — для контейнеров, чья пропорция отличается от
-// пропорции, под которую подгонялся кроп баннера (например тонкие строки
-// списка кланов). Используем background-size:cover (сохраняет пропорции
-// картинки, просто обрезает лишнее) и позиционируем по центру выбранной
-// пользователем области кропа, вместо растягивания под чужой aspect ratio.
-function clanBannerComputeCoverStyle(url, crop) {
-  if (!url) return '';
+// Надёжный вариант кропа баннера без риска растягивания: рендерит
+// настоящий <img> с object-fit:cover (браузер гарантированно сохраняет
+// пропорции картинки, просто обрезая лишнее) вместо CSS background-size
+// с ручным расчётом процентов. Используем там, где пропорция контейнера
+// заранее неизвестна/отличается от той, под которую подгонялся кроп
+// (тонкие строки списка кланов, лидерборд).
+function clanBannerObjectPosition(crop) {
   const c = crop || { x: 0, y: 0, w: 1, h: 1 };
   let { x = 0, y = 0, w = 1, h = 1 } = c;
   w = Math.min(1, Math.max(0.02, w));
   h = Math.min(1, Math.max(0.02, h));
   x = Math.min(1 - w, Math.max(0, x));
   y = Math.min(1 - h, Math.max(0, y));
-  const cx = ((x + w / 2) * 100).toFixed(3);
-  const cy = ((y + h / 2) * 100).toFixed(3);
+  const cx = ((x + w / 2) * 100).toFixed(2);
+  const cy = ((y + h / 2) * 100).toFixed(2);
+  return `${cx}% ${cy}%`;
+}
+
+function clanBannerImgTag(url, crop, extraClass) {
+  if (!url) return '';
   const proxied = typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(url) : url;
-  return `background-image:url('${escapeHtml(proxied)}');background-repeat:no-repeat;background-size:cover;background-position:${cx}% ${cy}%`;
+  const pos = clanBannerObjectPosition(crop);
+  return `<img class="clan-banner-cover-img${extraClass ? ' ' + extraClass : ''}" src="${escapeHtml(proxied)}" style="object-position:${pos}" alt="" loading="lazy">`;
 }
 
 function refreshClanBannerUploadUI() {
@@ -1946,14 +1952,13 @@ function renderClanBrowseList(clans){
     const icon = cl.icon || '🏴';
     const bannerUrl = cl.banner_url || null;
     const bannerCrop = { x: cl.banner_crop_x??0, y: cl.banner_crop_y??0, w: cl.banner_crop_w??1, h: cl.banner_crop_h??1 };
-    const bgStyle = bannerUrl ? clanBannerComputeCoverStyle(bannerUrl, bannerCrop) : '';
     const glowColor = tc + '38';
     const js = clanBrowseJoinState(cl);
     const btnClass = 'clan-hcard-join' + (js.canJoin ? (js.label==='Запрос' ? ' is-request' : '') : ' is-disabled');
     const btnAction = js.canJoin ? `joinClan('${esc(cl.name).replace(/'/g,"\\'")}')` : '';
     return `
     <div class="clan-hcard">
-      <div class="clan-hcard-bg" style="${escapeHtml(bgStyle)}"></div>
+      ${bannerUrl ? clanBannerImgTag(bannerUrl, bannerCrop) : ''}
       ${!bannerUrl ? `
       <div class="clan-hcard-glow clan-hcard-glow-1" style="background:${glowColor}"></div>
       <div class="clan-hcard-glow clan-hcard-glow-2" style="background:${glowColor}"></div>` : ''}
@@ -2090,14 +2095,20 @@ function renderLeaderboardPlayers(data){
 function renderLeaderboardClans(data){
   const c=document.getElementById('lb-clans-list');
   if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Кланов пока нет</div>';return;}
-  c.innerHTML=data.map((cl,i)=>`
-    <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
+  c.innerHTML=data.map((cl,i)=>{
+    const bannerUrl = cl.banner_url || null;
+    const bannerCrop = { x: cl.banner_crop_x??0, y: cl.banner_crop_y??0, w: cl.banner_crop_w??1, h: cl.banner_crop_h??1 };
+    return `
+    <div class="lb-row${bannerUrl?' has-banner':''}" style="animation:float-in .3s ease ${i*0.04}s both">
+      ${bannerUrl ? clanBannerImgTag(bannerUrl, bannerCrop) : ''}
+      ${bannerUrl ? '<div class="lb-row-banner-overlay"></div>' : ''}
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       <span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+'22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+esc(cl.tag||'')}</span>
       <div class="lb-name">${esc(cl.name)}</div>
       <div style="font-size:11px;color:var(--text3)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${cl.members}</div>
       <div class="lb-pixels">${(cl.pixels||0).toLocaleString()} px</div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function cancelAdminTool() {

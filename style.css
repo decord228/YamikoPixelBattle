@@ -2225,6 +2225,37 @@ html, body {
     font-family: 'Space Mono',monospace;
 }
 
+/* ── LEADERBOARD: clan row banner background ── */
+.lb-row.has-banner {
+    position: relative;
+    overflow: hidden;
+    border-color: rgba(255,255,255,.1);
+}
+
+    .lb-row.has-banner .clan-banner-cover-img {
+        border-radius: inherit;
+    }
+
+.lb-row-banner-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, rgba(10,10,14,.85) 0%, rgba(10,10,14,.6) 55%, rgba(10,10,14,.35) 100%);
+}
+
+.lb-row.has-banner > *:not(.clan-banner-cover-img):not(.lb-row-banner-overlay) {
+    position: relative;
+    z-index: 1;
+}
+
+.lb-row.has-banner .lb-name {
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+.lb-row.has-banner:hover {
+    background: var(--surface2);
+}
+
 /* ── SETTINGS ── */
 .setting-row {
     display: flex;
@@ -3179,11 +3210,13 @@ details.adm-card {
         box-shadow: 0 8px 22px rgba(0,0,0,.32);
     }
 
-.clan-hcard-bg {
+.clan-banner-cover-img {
     position: absolute;
     inset: 0;
-    background-color: var(--surface3);
-    filter: saturate(1.05);
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
 }
 
 .clan-hcard-glow {

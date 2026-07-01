@@ -11,6 +11,8 @@ let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾';
 let currentCoins = 0, purchasedItems = [];
 let currentClan = '';
+let clanFullData = null;   // последний полный объект клана с сервера (name, ranks, member_roles, ...)
+let clanRanksEditingId = null; // id звания, которое сейчас редактируется в панели "Звания" (null = форма создания скрыта)
 let tool = 'pencil'; 
 let gridEnabled = false, smoothCamera = true, showCursors = true;
 let inspectorEnabled = true, soundEnabled = false;

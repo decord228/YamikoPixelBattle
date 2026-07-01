@@ -117,10 +117,12 @@ function handleJSON(d) {
     if (d.clan) {
       currentClan=d.clan.name||'';
       clanSharedStencil = d.clan.shared_stencil || null;
+      clanFullData = d.clan;
       renderClanView(d.clan);
     } else {
       currentClan='';
       clanSharedStencil = null;
+      clanFullData = null;
       // Если мы только что покинули клан/были исключены, а на холсте у нас
       // показан "чужой" (locked) трафарет клана — он больше не актуален.
       if (stencilLocked) cancelStencil();
@@ -134,6 +136,7 @@ function handleJSON(d) {
   else if (a==='clan_data') {
     if (d.clan) {
       clanSharedStencil = d.clan.shared_stencil || null;
+      clanFullData = d.clan;
       renderClanView(d.clan);
       if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
       if (typeof renderClanStencilsList === 'function') renderClanStencilsList();

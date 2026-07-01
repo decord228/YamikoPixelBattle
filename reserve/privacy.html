@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Privacy Policy — YamikoPixelBattle</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600&family=Space+Mono:wght@400;700&display=swap');
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0d0d1a;
+      --surface:  #13131f;
+      --border:   #23233a;
+      --accent:   #6366f1;
+      --accent2:  #818cf8;
+      --text:     #e2e2f0;
+      --muted:    #6b6b8a;
+      --pixel:    'Space Mono', monospace;
+      --body:     'Space Grotesk', sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--body);
+      font-size: 16px;
+      line-height: 1.7;
+      min-height: 100vh;
+    }
+
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 24px 0;
+      position: sticky;
+      top: 0;
+      background: rgba(13,13,26,.92);
+      backdrop-filter: blur(12px);
+      z-index: 10;
+    }
+
+    .header-inner {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-pixel {
+      display: grid;
+      grid-template-columns: repeat(3, 6px);
+      gap: 2px;
+    }
+    .logo-pixel span {
+      display: block;
+      width: 6px;
+      height: 6px;
+    }
+    .logo-pixel span:nth-child(1)  { background: #6366f1; }
+    .logo-pixel span:nth-child(2)  { background: #818cf8; }
+    .logo-pixel span:nth-child(3)  { background: #6366f1; }
+    .logo-pixel span:nth-child(4)  { background: #818cf8; }
+    .logo-pixel span:nth-child(5)  { background: #ffffff; }
+    .logo-pixel span:nth-child(6)  { background: #818cf8; }
+    .logo-pixel span:nth-child(7)  { background: #6366f1; }
+    .logo-pixel span:nth-child(8)  { background: #818cf8; }
+    .logo-pixel span:nth-child(9)  { background: #6366f1; }
+
+    .header-title {
+      font-family: var(--pixel);
+      font-size: 13px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--accent2);
+    }
+
+    .lang-switch {
+      margin-left: auto;
+      display: flex;
+      gap: 4px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 3px;
+    }
+
+    .lang-switch button {
+      font-family: var(--pixel);
+      font-size: 11px;
+      letter-spacing: 0.05em;
+      background: transparent;
+      border: none;
+      color: var(--muted);
+      padding: 5px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+
+    .lang-switch button:hover { color: var(--text); }
+
+    .lang-switch button.active {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .hero {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 64px 24px 40px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .doc-type {
+      font-family: var(--pixel);
+      font-size: 11px;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 14px;
+    }
+
+    h1 {
+      font-family: var(--pixel);
+      font-size: clamp(22px, 4vw, 32px);
+      font-weight: 700;
+      line-height: 1.2;
+      color: #fff;
+      margin-bottom: 16px;
+    }
+
+    .meta {
+      font-size: 14px;
+      color: var(--muted);
+      font-family: var(--pixel);
+    }
+
+    .content {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 48px 24px 80px;
+    }
+
+    section { margin-bottom: 48px; }
+
+    h2 {
+      font-family: var(--pixel);
+      font-size: 13px;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--accent2);
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    h2::after {
+      content: '';
+      display: block;
+      flex: 1;
+      height: 1px;
+      background: var(--border);
+    }
+
+    p { margin-bottom: 14px; color: #c8c8e0; }
+    p:last-child { margin-bottom: 0; }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin-bottom: 14px;
+    }
+
+    ul li {
+      position: relative;
+      padding-left: 20px;
+      margin-bottom: 8px;
+      color: #c8c8e0;
+    }
+
+    ul li::before {
+      content: '▸';
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-size: 12px;
+      line-height: 1.85;
+    }
+
+    /* Data table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 14px;
+    }
+
+    .data-table th {
+      text-align: left;
+      font-family: var(--pixel);
+      font-size: 11px;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 12px;
+    }
+
+    .data-table td {
+      padding: 12px 12px;
+      border-bottom: 1px solid var(--border);
+      color: #c8c8e0;
+      vertical-align: top;
+    }
+
+    .data-table tr:last-child td { border-bottom: none; }
+    .data-table tr:hover td { background: var(--surface); }
+
+    .tag {
+      display: inline-block;
+      background: rgba(99,102,241,.18);
+      color: var(--accent2);
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: var(--pixel);
+      font-size: 11px;
+    }
+
+    .callout {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--accent);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin: 20px 0;
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    a { color: var(--accent2); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px 24px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--muted);
+      font-family: var(--pixel);
+    }
+
+    footer a { color: var(--muted); }
+    footer a:hover { color: var(--accent2); }
+
+    [data-i18n] [lang="ru"] { display: none; }
+    html[data-lang="ru"] [data-i18n] [lang="en"] { display: none; }
+    html[data-lang="ru"] [data-i18n] [lang="ru"] { display: inline; }
+    html[data-lang="ru"] [data-i18n].block [lang="ru"] { display: block; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="logo-pixel">
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+      <span></span><span></span><span></span>
+    </div>
+    <span class="header-title">YamikoPixelBattle</span>
+
+    <div class="lang-switch" role="group" aria-label="Language">
+      <button type="button" data-set-lang="en" class="active">EN</button>
+      <button type="button" data-set-lang="ru">RU</button>
+    </div>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="doc-type" data-i18n>
+    <span lang="en">Legal document</span>
+    <span lang="ru">Юридический документ</span>
+  </div>
+  <h1 data-i18n>
+    <span lang="en">Privacy Policy</span>
+    <span lang="ru">Политика конфиденциальности</span>
+  </h1>
+  <div class="meta" data-i18n>
+    <span lang="en">Last updated: June 28, 2025</span>
+    <span lang="ru">Последнее обновление: 28 июня 2025 г.</span>
+  </div>
+</div>
+
+<div class="content">
+
+  <section>
+    <h2 data-i18n><span lang="en">Introduction</span><span lang="ru">Введение</span></h2>
+    <p data-i18n class="block">
+      <span lang="en">This Privacy Policy describes what data YamikoPixelBattle ("the App", "we") collects and processes when you use our service through a Discord Activity.</span>
+      <span lang="ru">Настоящая Политика конфиденциальности описывает, какие данные собирает и обрабатывает YamikoPixelBattle («Приложение», «мы»), когда вы используете наш сервис через Discord Activity.</span>
+    </p>
+    <p data-i18n class="block">
+      <span lang="en">We respect your privacy and only collect the data necessary for the App to function.</span>
+      <span lang="ru">Мы уважаем вашу конфиденциальность и собираем только те данные, которые необходимы для работы Приложения.</span>
+    </p>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">What data we collect</span><span lang="ru">Какие данные мы собираем</span></h2>
+
+    <table class="data-table">
+      <thead>
+        <tr data-i18n>
+          <th><span lang="en">Data</span><span lang="ru">Данные</span></th>
+          <th><span lang="en">Source</span><span lang="ru">Источник</span></th>
+          <th><span lang="en">Purpose</span><span lang="ru">Цель</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Discord User ID</td>
+          <td><span class="tag">Discord OAuth2</span></td>
+          <td data-i18n><span lang="en">Account identification, authorization</span><span lang="ru">Идентификация аккаунта, авторизация</span></td>
+        </tr>
+        <tr>
+          <td data-i18n><span lang="en">Discord username</span><span lang="ru">Имя пользователя Discord</span></td>
+          <td><span class="tag">Discord OAuth2</span></td>
+          <td data-i18n><span lang="en">Displayed in-game and on the leaderboard</span><span lang="ru">Отображение в игре и таблице лидеров</span></td>
+        </tr>
+        <tr>
+          <td data-i18n><span lang="en">Game data</span><span lang="ru">Игровые данные</span></td>
+          <td><span class="tag" data-i18n><span lang="en">App</span><span lang="ru">Приложение</span></span></td>
+          <td data-i18n><span lang="en">Progress, pixels, coins, rank, clan</span><span lang="ru">Прогресс, пиксели, монеты, ранг, клан</span></td>
+        </tr>
+        <tr>
+          <td data-i18n><span lang="en">Chat messages</span><span lang="ru">Сообщения чата</span></td>
+          <td><span class="tag" data-i18n><span lang="en">User</span><span lang="ru">Пользователь</span></span></td>
+          <td data-i18n><span lang="en">Displayed in the in-game chat (stored temporarily)</span><span lang="ru">Отображение в игровом чате (хранятся временно)</span></td>
+        </tr>
+        <tr>
+          <td data-i18n><span lang="en">Cursor position on canvas</span><span lang="ru">Позиция курсора на холсте</span></td>
+          <td><span class="tag" data-i18n><span lang="en">App</span><span lang="ru">Приложение</span></span></td>
+          <td data-i18n><span lang="en">Real-time display of other players' cursors</span><span lang="ru">Отображение курсоров других игроков в реальном времени</span></td>
+        </tr>
+        <tr>
+          <td data-i18n><span lang="en">Stencils (images)</span><span lang="ru">Трафареты (изображения)</span></td>
+          <td><span class="tag" data-i18n><span lang="en">User</span><span lang="ru">Пользователь</span></span></td>
+          <td data-i18n><span lang="en">Storage of personal stencils via Cloudinary</span><span lang="ru">Хранение личных трафаретов через Cloudinary</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout" data-i18n>
+      <span lang="en">We do not collect payment data, email addresses (except for voluntary registration), or any other personal information not listed above.</span>
+      <span lang="ru">Мы не собираем платёжные данные, адреса электронной почты (кроме случаев добровольной регистрации) или иную личную информацию, не перечисленную выше.</span>
+    </div>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">How we use data</span><span lang="ru">Как мы используем данные</span></h2>
+    <ul data-i18n class="block">
+      <li><span lang="en">Authorizing and identifying the user in the game</span><span lang="ru">Авторизация и идентификация пользователя в игре</span></li>
+      <li><span lang="en">Displaying progress, rankings, and game statistics</span><span lang="ru">Отображение прогресса, рейтингов и игровой статистики</span></li>
+      <li><span lang="en">Synchronizing canvas state between users in real time</span><span lang="ru">Синхронизация состояния холста между пользователями в реальном времени</span></li>
+      <li><span lang="en">Showing other players' cursors and names (only if the feature is enabled)</span><span lang="ru">Отображение курсоров и имён других игроков (только если функция включена)</span></li>
+      <li><span lang="en">Storing and displaying clan and general chat messages</span><span lang="ru">Хранение и отображение сообщений клана и общего чата</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">Data storage</span><span lang="ru">Хранение данных</span></h2>
+    <p data-i18n class="block">
+      <span lang="en">Game data (progress, coins, rank) is stored on our server to ensure continuity of gameplay. We apply reasonable technical measures to protect data from unauthorized access.</span>
+      <span lang="ru">Игровые данные (прогресс, монеты, ранг) хранятся на нашем сервере для обеспечения непрерывности игрового процесса. Мы применяем разумные технические меры для защиты данных от несанкционированного доступа.</span>
+    </p>
+    <p data-i18n class="block">
+      <span lang="en">Stencil images are stored via the Cloudinary service. Their processing is governed by <a href="https://cloudinary.com/privacy" target="_blank" rel="noopener">Cloudinary's Privacy Policy</a>.</span>
+      <span lang="ru">Изображения трафаретов хранятся через сервис Cloudinary. Их обработка регулируется <a href="https://cloudinary.com/privacy" target="_blank" rel="noopener">политикой конфиденциальности Cloudinary</a>.</span>
+    </p>
+    <ul data-i18n class="block">
+      <li><span lang="en">Chat data is stored in limited volume (most recent messages)</span><span lang="ru">Данные чата хранятся в ограниченном объёме (последние сообщения)</span></li>
+      <li><span lang="en">Cursor positions are transmitted in real time and are not stored</span><span lang="ru">Позиции курсоров передаются в реальном времени и не сохраняются</span></li>
+      <li><span lang="en">We do not sell or transfer your data to third parties for commercial purposes</span><span lang="ru">Мы не передаём ваши данные третьим лицам в коммерческих целях</span></li>
+    </ul>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">Discord and third parties</span><span lang="ru">Discord и третьи стороны</span></h2>
+    <p data-i18n class="block">
+      <span lang="en">The App uses Discord OAuth2 for authorization. By signing in with Discord, you also agree to Discord's <a href="https://discord.com/privacy" target="_blank" rel="noopener">Privacy Policy</a>.</span>
+      <span lang="ru">Приложение использует Discord OAuth2 для авторизации. При входе через Discord вы также соглашаетесь с <a href="https://discord.com/privacy" target="_blank" rel="noopener">Политикой конфиденциальности Discord</a>.</span>
+    </p>
+    <p data-i18n class="block">
+      <span lang="en">We only receive the data from Discord that's necessary for authorization (User ID and username). We do not request access to your messages, servers, or other Discord data.</span>
+      <span lang="ru">Мы получаем от Discord только те данные, которые необходимы для авторизации (User ID и имя пользователя). Мы не запрашиваем доступ к вашим сообщениям, серверам или другим данным Discord.</span>
+    </p>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">User rights</span><span lang="ru">Права пользователей</span></h2>
+    <p data-i18n><span lang="en">You have the right to:</span><span lang="ru">Вы имеете право:</span></p>
+    <ul data-i18n class="block">
+      <li><span lang="en">Request deletion of your game data</span><span lang="ru">Запросить удаление ваших игровых данных</span></li>
+      <li><span lang="en">Revoke the App's access via Discord settings (Authorized Apps)</span><span lang="ru">Отозвать доступ приложения через настройки Discord (Авторизованные приложения)</span></li>
+      <li><span lang="en">Get information about the data we store by contacting us</span><span lang="ru">Получить информацию о хранимых данных, связавшись с нами</span></li>
+    </ul>
+    <p data-i18n class="block">
+      <span lang="en">To delete your account and associated data, contact us via our Discord server or by email.</span>
+      <span lang="ru">Для удаления аккаунта и связанных данных обратитесь к нам через Discord-сервер или по электронной почте.</span>
+    </p>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">Children</span><span lang="ru">Дети</span></h2>
+    <p data-i18n class="block">
+      <span lang="en">The App is not intended for users under the age of 13. We do not knowingly collect data from children. If you believe a child has provided us with their data, please contact us so we can delete it.</span>
+      <span lang="ru">Приложение не предназначено для пользователей младше 13 лет. Мы не собираем данные о детях намеренно. Если вам известно, что ребёнок передал нам свои данные, пожалуйста, свяжитесь с нами для их удаления.</span>
+    </p>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">Changes to this policy</span><span lang="ru">Изменения политики</span></h2>
+    <p data-i18n class="block">
+      <span lang="en">We may update this Privacy Policy from time to time. The current version is always available at this address. Continued use of the App after changes are published means you accept the updated policy.</span>
+      <span lang="ru">Мы можем обновлять настоящую Политику конфиденциальности. Актуальная версия всегда доступна по этому адресу. Продолжение использования Приложения после изменений означает согласие с обновлённой политикой.</span>
+    </p>
+  </section>
+
+  <section>
+    <h2 data-i18n><span lang="en">Contact</span><span lang="ru">Контакты</span></h2>
+    <p data-i18n class="block">
+      <span lang="en">For privacy questions or data deletion requests, contact us via our official Discord server, Discord direct message (<strong>d3cord</strong>), or by email at <a href="mailto:d3cord228@gmail.com">d3cord228@gmail.com</a>.</span>
+      <span lang="ru">По вопросам конфиденциальности и запросам на удаление данных свяжитесь с нами через официальный Discord-сервер, в личных сообщениях Discord (<strong>d3cord</strong>) или по электронной почте <a href="mailto:d3cord228@gmail.com">d3cord228@gmail.com</a>.</span>
+    </p>
+  </section>
+
+</div>
+
+<footer>
+  <p>© 2025 YamikoPixelBattle &nbsp;·&nbsp; <a href="terms.html" data-i18n><span lang="en">Terms of Service</span><span lang="ru">Условия использования</span></a></p>
+</footer>
+
+<script>
+  (function () {
+    var STORAGE_KEY = 'ypb-lang';
+    var html = document.documentElement;
+    var buttons = document.querySelectorAll('[data-set-lang]');
+
+    function applyLang(lang) {
+      html.setAttribute('lang', lang);
+      html.setAttribute('data-lang', lang);
+      buttons.forEach(function (btn) {
+        btn.classList.toggle('active', btn.getAttribute('data-set-lang') === lang);
+      });
+      try { window.localStorage.setItem(STORAGE_KEY, lang); } catch (e) {}
+    }
+
+    var saved = null;
+    try { saved = window.localStorage.getItem(STORAGE_KEY); } catch (e) {}
+    applyLang(saved === 'ru' ? 'ru' : 'en');
+
+    buttons.forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        applyLang(btn.getAttribute('data-set-lang'));
+      });
+    });
+  })();
+</script>
+
+</body>
+</html>

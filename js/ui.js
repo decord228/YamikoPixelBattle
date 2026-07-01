@@ -862,15 +862,20 @@ function switchClanSubTab(tab) {
   if (tab === 'browse') sendJSON({action:'clan_list'});
 }
 
+const CLAN_INNER_TABS = ['overview','members','ranks','requests','chat','settings'];
+
 function switchClanInnerTab(tab) {
-  ['members','chat','requests','settings'].forEach(t => {
+  CLAN_INNER_TABS.forEach(t => {
     const el = document.getElementById(`clan-inner-${t}`);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
-  document.querySelectorAll('#clan-view-in-clan .sub-tab').forEach(el => {
+  document.querySelectorAll('#clan-view-in-clan .clan-tabs .sub-tab').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   if (tab === 'requests') sendJSON({action:'clan_get_requests'});
+  if (tab === 'ranks') { clanRanksEditingId = null; renderClanRanksTab(); }
+  if (tab === 'members') renderClanMemberPage();
+  if (tab === 'overview') renderClanOverview();
 }
 
 function createClan(){
@@ -888,7 +893,9 @@ function joinClan(){
 }
 
 async function leaveClan(){
-  const ok = await showConfirm('Покинуть клан?', { title: 'Выйти из клана', icon: '🚪' });
+  const isLdr = currentClan && clanFullData && clanFullData.leader === currentUser;
+  const msg = isLdr ? 'Вы лидер клана. При выходе лидерство перейдёт участнику с самым высоким званием. Покинуть клан?' : 'Покинуть клан?';
+  const ok = await showConfirm(msg, { title: 'Выйти из клана', icon: '🚪' });
   if (!ok) return;
   sendJSON({action:'clan_leave'});
 }
@@ -898,8 +905,6 @@ async function disbandClan(){
   if (!ok) return;
   sendJSON({action:'clan_disband'});
 }
-
-function toggleClanCursor(){ sendJSON({action:'clan_toggle_cursor'}); }
 
 function sendClanChat() {
   const input = document.getElementById('clan-chat-input');
@@ -917,21 +922,6 @@ function addClanChatMessage(user, text, emoji) {
   msgs.appendChild(el);
   if (msgs.children.length > 100) msgs.removeChild(msgs.firstChild);
   msgs.scrollTop = msgs.scrollHeight;
-}
-
-function saveClanMotd() {
-  const text = document.getElementById('clan-motd-input').value.trim();
-  if (!text) return;
-  sendJSON({action:'clan_set_motd', motd: text});
-  document.getElementById('clan-motd-text').textContent = text;
-}
-
-function saveClanMotdFromSettings() {
-  const text = document.getElementById('clan-motd-input-s').value.trim();
-  if (!text) return;
-  sendJSON({action:'clan_set_motd', motd: text});
-  document.getElementById('clan-motd-text').textContent = text;
-  showToast('Сообщение дня обновлено','success');
 }
 
 function buildClanIconPicker(current) {
@@ -978,40 +968,56 @@ function saveClanSettings() {
   const min_pixels = parseInt(document.getElementById('cs-min-pixels').value) || 0;
   const is_public  = document.getElementById('cs-public-toggle').classList.contains('on');
   const share_cursor = document.getElementById('cs-cursor-toggle').classList.contains('on');
-  const message_of_day = (document.getElementById('cs-motd').value || '').trim().slice(0, 200);
+  // MOTD теперь сохраняется отдельной кнопкой (saveClanMotdInline), т.к. у неё
+  // может быть своё, более узкое право (edit_motd) — шлём текущее значение,
+  // чтобы сервер (у которого есть право manage_settings) его не затирал пустотой.
+  const message_of_day = (document.getElementById('cs-motd')?.value || '').trim().slice(0, 200);
 
   sendJSON({
     action: 'clan_update_settings',
     settings: { icon, tag_color, join_type, min_pixels, is_public, share_cursor, message_of_day }
   });
+  showToast('Настройки клана сохранены ✓', 'success');
+}
 
-  // Update display immediately (optimistic)
-  const dispTag = document.getElementById('clan-disp-tag');
-  if (dispTag) {
-    const rawTag = dispTag.dataset.tag || dispTag.textContent.replace(/^\S+\s+/, '');
-    dispTag.textContent = icon + ' ' + rawTag;
-    dispTag.style.color = tag_color;
-    dispTag.style.background = tag_color + '22';
-    dispTag.style.borderColor = tag_color + '55';
-  }
-  const iconPreview = document.getElementById('cs-icon-preview');
-  if (iconPreview) iconPreview.textContent = icon;
-  if (message_of_day) {
-    const motdEl = document.getElementById('clan-motd-text');
-    if (motdEl) motdEl.textContent = message_of_day;
-  }
-  showToast('\u041d\u0430\u0441\u0442\u0440\u043e\u0439\u043a\u0438 \u043a\u043b\u0430\u043d\u0430 \u0441\u043e\u0445\u0440\u0430\u043d\u0435\u043d\u044b \u2713', 'success');
+function saveClanMotdInline() {
+  const text = (document.getElementById('cs-motd')?.value || '').trim().slice(0, 200);
+  sendJSON({action:'clan_set_motd', motd: text});
+  const motdEl = document.getElementById('clan-motd-text');
+  if (motdEl) motdEl.textContent = text || 'Добро пожаловать в клан!';
+  showToast('Сообщение дня обновлено ✓', 'success');
+}
+
+async function transferLeadership(username) {
+  if (!username) return;
+  const ok = await showConfirm(`Передать лидерство клана участнику ${username}? Вы станете обычным участником.`, { title: 'Передача лидерства', icon: '👑', danger: true, confirmText: 'Передать' });
+  if (!ok) return;
+  sendJSON({action:'clan_transfer_leadership', username});
+}
+
+function transferLeadershipFromSettings() {
+  const sel = document.getElementById('cs-transfer-select');
+  if (!sel || !sel.value) { showToast('Выберите участника', 'error'); return; }
+  transferLeadership(sel.value);
 }
 
 function renderClanRequests(requests) {
   const c = document.getElementById('clan-requests-list');
+  const badge = document.getElementById('clan-req-count');
+  if (badge) {
+    if (requests.length) { badge.textContent = requests.length; badge.style.display = ''; }
+    else badge.style.display = 'none';
+  }
   if (!requests.length) {
-    c.innerHTML = '<div style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">Заявок нет</div>';
+    c.innerHTML = '<div class="clan-empty-state">📭<div>Заявок на вступление нет</div></div>';
     return;
   }
   c.innerHTML = requests.map(r => `
-    <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);">
-      <span style="font-size:12px;font-weight:600;">${esc(r)}</span>
+    <div class="clan-request-row">
+      <div class="member-row-info">
+        <span class="member-row-emoji">🙋</span>
+        <span class="member-row-name">${esc(r)}</span>
+      </div>
       <div style="display:flex;gap:5px;">
         <button class="action-btn ab-unban" data-onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Принять</button>
         <button class="action-btn ab-ban" data-onclick="sendJSON({action:'clan_deny_request',username:'${esc(r)}'})"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg> Отказать</button>
@@ -1019,10 +1025,54 @@ function renderClanRequests(requests) {
     </div>`).join('');
 }
 
+// ══════════════════════════════════════════════════
+//  CLAN RANKS / PERMISSIONS — клиентские хелперы
+//  (зеркалят логику сервера для мгновенного отклика UI;
+//   сервер всё равно перепроверяет права на каждое действие)
+// ══════════════════════════════════════════════════
+function clanDefaultRanks() {
+  return [
+    { id:'leader', name:'Лидер', icon:'👑', color:'#fbbf24', priority:100, isLeader:true, isDefault:true,
+      permissions:{invite:true,kick:true,manage_ranks:true,manage_settings:true,manage_stencil:true,edit_motd:true} },
+    { id:'member', name:'Участник', icon:'⚔️', color:'#818cf8', priority:0, isDefault:true,
+      permissions:{invite:false,kick:false,manage_ranks:false,manage_settings:false,manage_stencil:false,edit_motd:false} },
+  ];
+}
+function clanGetRanks(clan) {
+  if (!clan || !Array.isArray(clan.ranks) || !clan.ranks.some(r=>r.id==='leader') || !clan.ranks.some(r=>r.id==='member')) return clanDefaultRanks();
+  return clan.ranks;
+}
+function clanRankOfUser(clan, username) {
+  const ranks = clanGetRanks(clan);
+  if (!clan) return ranks[1];
+  if (clan.leader === username) return ranks.find(r=>r.id==='leader') || ranks[0];
+  const rid = (clan.member_roles||{})[username] || 'member';
+  return ranks.find(r=>r.id===rid) || ranks.find(r=>r.id==='member') || ranks[1];
+}
+function clanHasPermUser(clan, username, perm) {
+  if (!clan || !username) return false;
+  if (clan.leader === username) return true;
+  const rank = clanRankOfUser(clan, username);
+  return !!(rank && rank.permissions && rank.permissions[perm]);
+}
+function clanPriorityOfUser(clan, username) {
+  const rank = clanRankOfUser(clan, username);
+  return rank ? (rank.priority || 0) : 0;
+}
+function clanPermBadges(rank) {
+  const granted = CLAN_PERMISSIONS.filter(p => rank.permissions && rank.permissions[p.key]);
+  if (!granted.length) return '<span class="clan-perm-none">без особых прав</span>';
+  return granted.map(p => `<span class="clan-perm-pill" title="${esc(p.name)}: ${esc(p.desc)}">${p.icon} ${esc(p.name)}</span>`).join('');
+}
+
 function renderClanView(clan){
-  currentClan=clan.name||'';
+  currentClan = clan.name || '';
+  clanFullData = clan;
   document.getElementById('clan-view-no-clan').style.display='none';
   document.getElementById('clan-view-in-clan').style.display='';
+
+  const heroIcon = document.getElementById('clan-hero-icon');
+  if (heroIcon) heroIcon.textContent = clan.icon || '🏴';
   document.getElementById('clan-disp-name').textContent=clan.name||'';
   const dispTag = document.getElementById('clan-disp-tag');
   dispTag.textContent = (clan.icon ? clan.icon + ' ' : '') + (clan.tag||'');
@@ -1030,28 +1080,51 @@ function renderClanView(clan){
   dispTag.style.color = tc;
   dispTag.style.background = tc + '22';
   dispTag.style.borderColor = tc + '55';
-  document.getElementById('clan-disp-desc').textContent=clan.description||'';
-  document.getElementById('clan-disp-leader').textContent=clan.leader||'';
+  document.getElementById('clan-disp-desc').textContent=clan.description||'Описание не указано';
   document.getElementById('clan-disp-members').textContent=(clan.members||[]).length;
-  if (clan.motd||clan.message_of_day) document.getElementById('clan-motd-text').textContent = clan.motd||clan.message_of_day;
-  
-  const isLeader=currentUser===clan.leader;
-  const settingsTab = document.getElementById('clan-settings-tab');
-  if (settingsTab) settingsTab.style.display = isLeader ? '' : 'none';
-  
-  const tog=document.getElementById('clan-cursor-toggle');
-  if (tog){clanShareCursor=!!clan.share_cursor;tog.classList.toggle('on',clanShareCursor);}
+  const pxEl = document.getElementById('clan-disp-pixels');
+  if (pxEl) pxEl.textContent = (clan.pixels||0).toLocaleString();
+  if (clan.motd||clan.message_of_day) document.getElementById('clan-motd-text').textContent = clan.motd||clan.message_of_day || 'Добро пожаловать в клан!';
 
-  // Show disband button only for leader
+  const isLeader = currentUser === clan.leader;
+  const myRank = clanRankOfUser(clan, currentUser);
+  const canManageSettings = clanHasPermUser(clan, currentUser, 'manage_settings');
+  const canEditMotd = clanHasPermUser(clan, currentUser, 'edit_motd') || canManageSettings;
+  const canInvite = clanHasPermUser(clan, currentUser, 'invite');
+
+  const settingsTab = document.getElementById('clan-settings-tab');
+  if (settingsTab) settingsTab.style.display = (canManageSettings || canEditMotd || isLeader) ? '' : 'none';
+  const requestsTab = document.getElementById('clan-requests-tab');
+  if (requestsTab) requestsTab.style.display = canInvite ? '' : 'none';
+  const reqBadge = document.getElementById('clan-req-count');
+  if (reqBadge) {
+    const n = (clan.join_requests||[]).length;
+    if (canInvite && n) { reqBadge.textContent = n; reqBadge.style.display = ''; } else reqBadge.style.display = 'none';
+  }
+
+  clanShareCursor = !!clan.share_cursor;
+
+  // Danger zone
   const disbandBtn = document.getElementById('clan-disband-btn');
   const leaveBtn = document.getElementById('clan-leave-btn');
   if (disbandBtn && leaveBtn) {
     disbandBtn.style.display = isLeader ? '' : 'none';
-    leaveBtn.style.display = isLeader ? 'none' : '';
+    leaveBtn.style.display = '';
   }
 
-  // Populate settings form for leader
-  if (isLeader) {
+  // Settings form (visible section toggling by permission)
+  const appearanceBlock = document.getElementById('clan-settings-appearance');
+  if (appearanceBlock) appearanceBlock.style.display = canManageSettings ? '' : 'none';
+  const appearanceLocked = document.getElementById('clan-settings-locked-hint');
+  if (appearanceLocked) appearanceLocked.style.display = canManageSettings ? 'none' : '';
+  const motdBlock = document.getElementById('clan-settings-motd-block');
+  if (motdBlock) motdBlock.style.display = canEditMotd ? '' : 'none';
+  const leadershipSep = document.getElementById('clan-settings-leadership-sep');
+  const leadershipBlock = document.getElementById('clan-settings-leadership');
+  if (leadershipSep) leadershipSep.style.display = isLeader ? '' : 'none';
+  if (leadershipBlock) leadershipBlock.style.display = isLeader ? '' : 'none';
+
+  if (canManageSettings) {
     const icon = clan.icon || '🏴';
     const tagColor = clan.tag_color || '#818cf8';
     const minPx = clan.min_pixels || 0;
@@ -1080,66 +1153,324 @@ function renderClanView(clan){
     if (pubTog) pubTog.classList.toggle('on', clan.is_public !== false);
     const curTog = document.getElementById('cs-cursor-toggle');
     if (curTog) curTog.classList.toggle('on', !!clan.share_cursor);
-
+  }
+  if (canEditMotd) {
     const motdInput = document.getElementById('cs-motd');
     if (motdInput) motdInput.value = clan.message_of_day || clan.motd || '';
   }
-  
-  // Store members + leader for paginated rendering
+  if (isLeader && leadershipBlock) {
+    const sel = document.getElementById('cs-transfer-select');
+    if (sel) {
+      const others = (clan.members||[]).filter(m => m !== currentUser);
+      sel.innerHTML = others.length
+        ? others.map(m => `<option value="${esc(m)}">${esc(m)} — ${esc(clanRankOfUser(clan,m).icon)} ${esc(clanRankOfUser(clan,m).name)}</option>`).join('')
+        : `<option value="">Нет других участников</option>`;
+    }
+  }
+
+  // Store for member list rendering
   _clanMembers = clan.members || [];
-  _clanLeader = clan.leader || '';
-  _clanIsLeader = isLeader;
+  _clanMemberSearch = '';
+  const searchInput = document.getElementById('clan-member-search');
+  if (searchInput) searchInput.value = '';
   _clanMemberPage = 1;
+
+  renderClanOverview();
   renderClanMemberPage();
+  if (document.getElementById('clan-inner-ranks')?.style.display !== 'none') renderClanRanksTab();
+}
+
+function renderClanOverview() {
+  const clan = clanFullData;
+  const wrap = document.getElementById('clan-inner-overview');
+  if (!wrap || !clan) return;
+
+  const leaderEl = document.getElementById('clan-overview-leader');
+  if (leaderEl) leaderEl.innerHTML = `<div class="clan-overview-person">👑 <strong>${esc(clan.leader||'—')}</strong></div><div class="clan-overview-sub">Основатель и полноправный управляющий кланом</div>`;
+
+  const myRank = clanRankOfUser(clan, currentUser);
+  const myRankEl = document.getElementById('clan-overview-myrank');
+  if (myRankEl) myRankEl.innerHTML = `
+    <div class="clan-overview-person"><span class="clan-rank-dot" style="background:${myRank.color}"></span> ${myRank.icon} <strong>${esc(myRank.name)}</strong></div>
+    <div class="clan-perm-row">${clanPermBadges(myRank)}</div>`;
+
+  const topWrap = document.getElementById('clan-overview-top-members');
+  if (topWrap) {
+    const sorted = (clan.members||[]).slice().sort((a,b)=>clanPriorityOfUser(clan,b)-clanPriorityOfUser(clan,a)).slice(0,5);
+    topWrap.innerHTML = sorted.map(m => {
+      const r = clanRankOfUser(clan, m);
+      return `<div class="clan-mini-member"><span class="clan-rank-dot" style="background:${r.color}"></span>${r.icon} <span>${esc(m)}</span><span class="clan-mini-member-rank">${esc(r.name)}</span></div>`;
+    }).join('') || '<div class="clan-empty-state">Пока никого нет</div>';
+  }
+
+  const joinEl = document.getElementById('clan-overview-jointype');
+  if (joinEl) {
+    const jt = clan.join_type || 'open';
+    const jtLabel = jt === 'open' ? '🟢 Открытый — вступает любой' : jt === 'request' ? '🟡 По заявкам — одобряет лидерство' : '🔴 Закрытый — набор не идёт';
+    const minPx = clan.min_pixels || 0;
+    joinEl.innerHTML = `<div>${jtLabel}</div><div class="clan-overview-sub">${minPx ? `Минимум ${minPx.toLocaleString()} пикселей для вступления` : 'Без ограничения по пикселям'}</div>`;
+  }
+
+  const stencilEl = document.getElementById('clan-overview-stencil');
+  if (stencilEl) {
+    if (clan.shared_stencil) stencilEl.innerHTML = `<div>🖼️ Делится: <strong>${esc(clan.shared_stencil.owner)}</strong></div><div class="clan-overview-sub">Открой панель «Трафарет», чтобы включить его</div>`;
+    else stencilEl.innerHTML = `<div class="clan-overview-sub">Сейчас никто не делится общим трафаретом клана</div>`;
+  }
 }
 
 // ── CLAN MEMBER PAGINATION ──
-let _clanMembers = [], _clanLeader = '', _clanIsLeader = false, _clanMemberPage = 1;
+let _clanMembers = [], _clanMemberPage = 1, _clanMemberSearch = '';
 const CLAN_PAGE_SIZE = 10;
 
 function renderClanMemberPage() {
   const ml = document.getElementById('clan-member-list');
   const pg = document.getElementById('clan-member-pagination');
-  if (!ml) return;
+  if (!ml || !clanFullData) return;
+  const clan = clanFullData;
 
-  const total = _clanMembers.length;
+  const searchInput = document.getElementById('clan-member-search');
+  _clanMemberSearch = (searchInput?.value || '').trim().toLowerCase();
+
+  let list = _clanMembers.slice().sort((a,b)=>clanPriorityOfUser(clan,b)-clanPriorityOfUser(clan,a) || a.localeCompare(b));
+  if (_clanMemberSearch) list = list.filter(m => m.toLowerCase().includes(_clanMemberSearch));
+
+  const total = list.length;
   const totalPages = Math.max(1, Math.ceil(total / CLAN_PAGE_SIZE));
   _clanMemberPage = Math.max(1, Math.min(_clanMemberPage, totalPages));
   const start = (_clanMemberPage - 1) * CLAN_PAGE_SIZE;
-  const page = _clanMembers.slice(start, start + CLAN_PAGE_SIZE);
+  const page = list.slice(start, start + CLAN_PAGE_SIZE);
 
-  ml.innerHTML = page.map(m => {
-    const isLdr = m === _clanLeader;
-    const canKick = _clanIsLeader && m !== currentUser && !isLdr;
-    return `<div class="member-row">
-      <div class="member-row-info">
-        <span class="member-row-emoji">${isLdr ? '\u{1F451}' : '\u{1F464}'}</span>
-        <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}</span>
-        ${isLdr ? '<span class="member-leader-badge">\u041b\u0438\u0434\u0435\u0440</span>' : ''}
-      </div>
-      ${canKick ? `<button class="member-kick-btn" data-onclick="kickClanMember('${esc(m)}')" title="\u041a\u0438\u043a\u043d\u0443\u0442\u044c">
-        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
-      </button>` : ''}
-    </div>`;
-  }).join('');
+  const myPriority = clanPriorityOfUser(clan, currentUser);
+  const isLeader = currentUser === clan.leader;
+  const iCanManageRanks = clanHasPermUser(clan, currentUser, 'manage_ranks');
+  const iCanKick = clanHasPermUser(clan, currentUser, 'kick');
+  const ranks = clanGetRanks(clan);
+  const assignableRanks = ranks.filter(r => r.id !== 'leader' && r.priority < myPriority);
+
+  if (!page.length) {
+    ml.innerHTML = `<div class="clan-empty-state">${_clanMemberSearch ? '🔍 Никого не найдено' : '👥 Пока нет участников'}</div>`;
+  } else {
+    ml.innerHTML = page.map(m => {
+      const isLdr = m === clan.leader;
+      const rank = clanRankOfUser(clan, m);
+      const targetPriority = clanPriorityOfUser(clan, m);
+      const isMe = m === currentUser;
+      const canChangeRank = !isMe && !isLdr && iCanManageRanks && myPriority > targetPriority;
+      const canKick = !isMe && !isLdr && iCanKick && myPriority > targetPriority;
+      const canTransfer = isLeader && !isMe && !isLdr;
+
+      const rankSelect = canChangeRank ? `
+        <select class="member-rank-select" data-onchange="assignClanMemberRank('${esc(m)}', this.value)" title="Изменить звание">
+          ${assignableRanks.map(r => `<option value="${esc(r.id)}" ${r.id===rank.id?'selected':''}>${esc(r.icon)} ${esc(r.name)}</option>`).join('')}
+        </select>` : `<span class="member-rank-badge" style="color:${rank.color};background:${rank.color}1e;border-color:${rank.color}55;">${esc(rank.icon)} ${esc(rank.name)}</span>`;
+
+      return `<div class="member-row${isLdr?' member-row-is-leader':''}">
+        <div class="member-row-info">
+          <span class="member-row-emoji">${isLdr ? '👑' : '👤'}</span>
+          <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}${isMe?' <span class="member-row-you">(вы)</span>':''}</span>
+        </div>
+        <div class="member-row-actions">
+          ${rankSelect}
+          ${canTransfer ? `<button class="member-action-btn member-transfer-btn" data-onclick="transferLeadership('${esc(m)}')" title="Передать лидерство">👑</button>` : ''}
+          ${canKick ? `<button class="member-kick-btn" data-onclick="kickClanMember('${esc(m)}')" title="Исключить">
+            <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
+          </button>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+  }
 
   if (!pg) return;
   if (totalPages <= 1) { pg.style.display = 'none'; return; }
   pg.style.display = 'flex';
   pg.innerHTML = `
-    <button class="page-btn" data-onclick="_clanMemberPage--;renderClanMemberPage()" ${_clanMemberPage<=1?'disabled':''}>&#8249; \u041f\u0440\u0435\u0434</button>
+    <button class="page-btn" data-onclick="_clanMemberPage--;renderClanMemberPage()" ${_clanMemberPage<=1?'disabled':''}>&#8249; Пред</button>
     <span class="page-info">${_clanMemberPage} / ${totalPages}</span>
-    <button class="page-btn" data-onclick="_clanMemberPage++;renderClanMemberPage()" ${_clanMemberPage>=totalPages?'disabled':''}>\u0421\u043b\u0435\u0434 &#8250;</button>`;
+    <button class="page-btn" data-onclick="_clanMemberPage++;renderClanMemberPage()" ${_clanMemberPage>=totalPages?'disabled':''}>След &#8250;</button>`;
+}
+
+function assignClanMemberRank(username, rankId) {
+  sendJSON({action:'clan_rank_assign', username, rankId});
 }
 
 async function kickClanMember(username) {
-  const ok = await showConfirm(`Кикнуть ${username} из клана?`, { title: 'Исключить участника', icon: '👋' });
+  const ok = await showConfirm(`Исключить ${username} из клана?`, { title: 'Исключить участника', icon: '👋', danger: true, confirmText: 'Исключить' });
   if (!ok) return;
   sendJSON({action:'clan_kick', username});
 }
 
+// ══════════════════════════════════════════════════
+//  CLAN RANKS TAB — управление званиями
+// ══════════════════════════════════════════════════
+function renderClanRanksTab() {
+  const clan = clanFullData;
+  const list = document.getElementById('clan-ranks-list');
+  if (!list || !clan) return;
+
+  const myPriority = clanPriorityOfUser(clan, currentUser);
+  const iCanManage = clanHasPermUser(clan, currentUser, 'manage_ranks');
+  const addBtn = document.getElementById('clan-rank-add-btn');
+  if (addBtn) addBtn.style.display = iCanManage ? '' : 'none';
+
+  const ranks = clanGetRanks(clan).slice().sort((a,b)=>b.priority-a.priority);
+  const counts = {};
+  (clan.members||[]).forEach(m => { const r = clanRankOfUser(clan, m); counts[r.id] = (counts[r.id]||0)+1; });
+  if (clan.leader) counts['leader'] = 1;
+
+  list.innerHTML = ranks.map(r => {
+    const canEdit = iCanManage && (r.id === 'leader' ? false : r.priority < myPriority || r.id === 'member');
+    const canDelete = iCanManage && !r.isDefault && r.priority < myPriority;
+    const memberCount = counts[r.id] || 0;
+    return `<div class="clan-rank-card" style="--rank-color:${r.color}">
+      <div class="clan-rank-card-icon" style="background:${r.color}22;border-color:${r.color}55;color:${r.color}">${esc(r.icon)}</div>
+      <div class="clan-rank-card-body">
+        <div class="clan-rank-card-title">${esc(r.name)} ${r.isDefault ? `<span class="clan-rank-sys-tag">${r.id==='leader'?'системное':'базовое'}</span>` : ''}</div>
+        <div class="clan-rank-card-meta">${memberCount} ${memberCount===1?'участник':'участников'} · приоритет ${r.priority}</div>
+        <div class="clan-perm-row">${clanPermBadges(r)}</div>
+      </div>
+      <div class="clan-rank-card-actions">
+        ${canEdit ? `<button class="member-action-btn" data-onclick="openClanRankEditor('${esc(r.id)}')" title="Редактировать">✏️</button>` : ''}
+        ${canDelete ? `<button class="member-action-btn member-kick-btn" data-onclick="deleteClanRank('${esc(r.id)}')" title="Удалить">🗑️</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openClanRankEditor(rankId) {
+  clanRanksEditingId = rankId;
+  const clan = clanFullData;
+  const editor = document.getElementById('clan-rank-editor');
+  if (!editor || !clan) return;
+
+  const isNew = !rankId;
+  const rank = isNew ? { id:null, name:'', icon:'⭐', color:'#818cf8', priority: Math.max(1, clanPriorityOfUser(clan, currentUser) - 1), permissions:{} } : clanGetRanks(clan).find(r=>r.id===rankId);
+  if (!rank) return;
+  const isSystem = rank.id === 'leader' || rank.id === 'member';
+  const myPriority = clanPriorityOfUser(clan, currentUser);
+  const maxPriority = Math.max(1, myPriority - 1);
+
+  editor.style.display = '';
+  editor.innerHTML = `
+    <div class="clan-rank-editor-header">${isNew ? '✨ Новое звание' : `✏️ Редактирование: ${esc(rank.name)}`}</div>
+    <div class="clan-rank-editor-row">
+      <div class="form-group" style="flex:2;min-width:140px;">
+        <label class="form-label">Название</label>
+        <input class="form-input" id="cre-name" maxlength="20" value="${esc(rank.name)}" placeholder="Например: Модератор">
+      </div>
+      <div class="form-group" style="flex:1;min-width:90px;">
+        <label class="form-label">Значок</label>
+        <div id="cre-icon-preview" class="clan-rank-icon-preview">${esc(rank.icon)}</div>
+      </div>
+      <div class="form-group" style="flex:1;min-width:90px;">
+        <label class="form-label">Цвет</label>
+        <div id="cre-color-preview" class="clan-rank-color-preview" style="background:${rank.color}"></div>
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Значок звания</label>
+      <div id="cre-icon-grid" class="clan-icon-grid"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Цвет звания</label>
+      <div id="cre-color-grid" class="clan-color-grid"></div>
+    </div>
+    ${!isSystem ? `
+    <div class="form-group">
+      <label class="form-label">Приоритет: <span id="cre-priority-val" style="color:var(--accent2);font-family:'Space Mono',monospace;">${rank.priority}</span> <span style="color:var(--text3);font-weight:400;">(чем выше — тем старше звание)</span></label>
+      <input type="range" class="admin-range" id="cre-priority" min="1" max="${maxPriority}" step="1" value="${Math.min(rank.priority||1, maxPriority)}"
+        data-oninput="document.getElementById('cre-priority-val').textContent=this.value" style="width:100%;margin-top:6px;">
+    </div>` : `<div class="clan-rank-sys-hint">${rank.id==='leader' ? '👑 Лидер всегда обладает всеми правами — это нельзя изменить.' : '⚔️ Базовое звание получают все новые участники. У него нет приоритета — оно всегда самое младшее.'}</div>`}
+    <div class="form-group">
+      <label class="form-label">Права звания</label>
+      <div class="clan-perm-grid" id="cre-perms">
+        ${CLAN_PERMISSIONS.map(p => `
+          <label class="clan-perm-toggle-row ${isSystem && rank.id==='leader' ? 'disabled' : ''}">
+            <input type="checkbox" data-perm="${p.key}" ${rank.permissions && rank.permissions[p.key] ? 'checked' : ''} ${rank.id==='leader' ? 'disabled checked' : ''}>
+            <span class="clan-perm-toggle-icon">${p.icon}</span>
+            <span class="clan-perm-toggle-text"><strong>${esc(p.name)}</strong><small>${esc(p.desc)}</small></span>
+          </label>`).join('')}
+      </div>
+    </div>
+    <div class="clan-rank-editor-footer">
+      <button class="btn btn-secondary btn-sm" data-onclick="closeClanRankEditor()">Отмена</button>
+      <button class="btn btn-primary btn-sm" data-onclick="saveClanRankEditor(${isNew ? 'null' : `'${esc(rank.id)}'`})">${isNew ? 'Создать звание' : 'Сохранить'}</button>
+    </div>
+  `;
+
+  // icon grid
+  const iconGrid = document.getElementById('cre-icon-grid');
+  let selIcon = rank.icon;
+  CLAN_RANK_ICONS.forEach(em => {
+    const d = document.createElement('div');
+    d.className = 'av-opt' + (em === selIcon ? ' selected' : '');
+    d.textContent = em;
+    d.onclick = () => {
+      selIcon = em;
+      document.getElementById('cre-icon-preview').textContent = em;
+      iconGrid.querySelectorAll('.av-opt').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    iconGrid.appendChild(d);
+  });
+  editor.dataset.icon = selIcon;
+  iconGrid.addEventListener('click', () => { editor.dataset.icon = selIcon; });
+
+  // color grid
+  const colorGrid = document.getElementById('cre-color-grid');
+  let selColor = rank.color;
+  CLAN_RANK_COLORS.forEach(c => {
+    const d = document.createElement('div');
+    d.className = 'color-cell' + (c === selColor ? ' selected' : '');
+    d.style.background = c;
+    d.onclick = () => {
+      selColor = c;
+      document.getElementById('cre-color-preview').style.background = c;
+      colorGrid.querySelectorAll('.color-cell').forEach(x => x.classList.remove('selected'));
+      d.classList.add('selected');
+    };
+    colorGrid.appendChild(d);
+  });
+
+  editor._getIcon = () => selIcon;
+  editor._getColor = () => selColor;
+  editor.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function closeClanRankEditor() {
+  clanRanksEditingId = null;
+  const editor = document.getElementById('clan-rank-editor');
+  if (editor) { editor.style.display = 'none'; editor.innerHTML = ''; }
+}
+
+function saveClanRankEditor(rankId) {
+  const editor = document.getElementById('clan-rank-editor');
+  if (!editor) return;
+  const name = document.getElementById('cre-name').value.trim();
+  if (!name) { showToast('Введите название звания', 'error'); return; }
+  const icon = editor._getIcon ? editor._getIcon() : '⭐';
+  const color = editor._getColor ? editor._getColor() : '#818cf8';
+  const priorityEl = document.getElementById('cre-priority');
+  const priority = priorityEl ? parseInt(priorityEl.value) : undefined;
+  const permissions = {};
+  editor.querySelectorAll('#cre-perms input[type=checkbox]').forEach(cb => { permissions[cb.dataset.perm] = cb.checked; });
+
+  if (!rankId) {
+    sendJSON({action:'clan_rank_create', name, icon, color, priority, permissions});
+  } else {
+    sendJSON({action:'clan_rank_update', id: rankId, name, icon, color, priority, permissions});
+  }
+  closeClanRankEditor();
+}
+
+async function deleteClanRank(rankId) {
+  const ok = await showConfirm('Удалить звание? Все участники с этим званием станут «Участник».', { title: 'Удалить звание', icon: '🗑️', danger: true, confirmText: 'Удалить' });
+  if (!ok) return;
+  sendJSON({action:'clan_rank_delete', id: rankId});
+}
+
 function renderNoClanView(){
   currentClan='';
+  clanFullData = null;
   document.getElementById('clan-view-no-clan').style.display='';
   document.getElementById('clan-view-in-clan').style.display='none';
   sendJSON({action:'clan_list'});
@@ -1147,7 +1478,7 @@ function renderNoClanView(){
 
 function renderClanBrowseList(clans){
   const c=document.getElementById('clan-browse-list');
-  if (!clans.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:10px;">Кланов пока нет</div>';return;}
+  if (!clans.length){c.innerHTML='<div class="clan-empty-state">🏴 Кланов пока нет — создай первый!</div>';return;}
   c.innerHTML=clans.slice(0,10).map(cl=>`
     <div class="clan-card" style="cursor:pointer" data-onclick="document.getElementById('clan-join-name').value='${esc(cl.name)}';switchClanSubTab('join')">
       <div class="clan-name"><span>${esc(cl.name)}</span><span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+ '22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+ esc(cl.tag||'')}</span></div>

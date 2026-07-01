@@ -393,10 +393,10 @@
                 </div>
                 <div id="clan-sub-browse">
                     <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Топ кланов</div>
-                    <div id="clan-browse-list" style="max-height:320px;overflow-y:auto"></div>
+                    <div id="clan-browse-list" style="max-height:380px;overflow-y:auto"></div>
                 </div>
                 <div id="clan-sub-create" style="display:none">
-                    <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;letter-spacing:.5px;text-transform:uppercase;">Создать клан (50 🪙)</div>
+                    <div class="clan-empty-state" style="margin-bottom:14px;">🏴<div>Создай свой клан, набери команду, придумай звания и стройте вместе — быстрее и веселее!</div></div>
                     <div class="form-group"><label class="form-label">Название клана</label><input class="form-input" id="clan-create-name" placeholder="2–24 символа"></div>
                     <div class="form-group"><label class="form-label">Тег (до 4 букв)</label><input class="form-input" id="clan-create-tag" placeholder="PXL" maxlength="4"></div>
                     <div class="form-group"><label class="form-label">Описание</label><input class="form-input" id="clan-create-desc" placeholder="Описание клана..."></div>
@@ -412,10 +412,17 @@
             </div>
 
             <div id="clan-view-in-clan" style="display:none">
-                <div class="clan-card">
-                    <div class="clan-name"><span id="clan-disp-name">—</span><span class="clan-tag" id="clan-disp-tag">—</span></div>
-                    <div class="clan-meta" id="clan-disp-desc"></div>
-                    <div class="clan-meta" style="margin-top:8px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18h18l-1.6-7.2-3.6 4-2.8-6.4-2.8 6.4-3.6-4L3 18z" /><path d="M5 21h14" /></svg> Лидер: <strong id="clan-disp-leader">—</strong> · <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5" /><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1" /><path d="M16 14c2.4 0 4.5 1.8 4.5 5" /></svg> <span id="clan-disp-members">0</span> участников</div>
+                <!-- ── HERO HEADER ── -->
+                <div class="clan-hero">
+                    <div class="clan-hero-icon" id="clan-hero-icon">🏴</div>
+                    <div class="clan-hero-info">
+                        <div class="clan-hero-name-row"><span class="clan-hero-name" id="clan-disp-name">—</span><span class="clan-tag" id="clan-disp-tag">—</span></div>
+                        <div class="clan-hero-desc" id="clan-disp-desc"></div>
+                    </div>
+                    <div class="clan-hero-stats">
+                        <div class="clan-stat-chip"><span class="clan-stat-num" id="clan-disp-members">0</span><span class="clan-stat-label">участников</span></div>
+                        <div class="clan-stat-chip"><span class="clan-stat-num" id="clan-disp-pixels">0</span><span class="clan-stat-label">пикселей</span></div>
+                    </div>
                 </div>
 
                 <div class="clan-motd">
@@ -423,92 +430,158 @@
                     <div id="clan-motd-text">Добро пожаловать в клан!</div>
                 </div>
 
-                <div class="sub-tabs">
-                    <div class="sub-tab active" data-tab="members" data-onclick="switchClanInnerTab('members')">Участники</div>
+                <div class="sub-tabs clan-tabs" id="clan-tabs">
+                    <div class="sub-tab active" data-tab="overview" data-onclick="switchClanInnerTab('overview')">Обзор</div>
+                    <div class="sub-tab" data-tab="members" data-onclick="switchClanInnerTab('members')">Участники</div>
+                    <div class="sub-tab" data-tab="ranks" data-onclick="switchClanInnerTab('ranks')">Звания</div>
+                    <div class="sub-tab" id="clan-requests-tab" data-tab="requests" data-onclick="switchClanInnerTab('requests')" style="display:none">Заявки<span class="clan-badge-count" id="clan-req-count" style="display:none"></span></div>
                     <div class="sub-tab" data-tab="chat" data-onclick="switchClanInnerTab('chat')">Чат</div>
-                    <div class="sub-tab" data-tab="requests" data-onclick="switchClanInnerTab('requests')">Заявки</div>
                     <div class="sub-tab" id="clan-settings-tab" data-tab="settings" data-onclick="switchClanInnerTab('settings')" style="display:none">Настройки</div>
                 </div>
 
-                <div id="clan-inner-members">
+                <!-- ── OVERVIEW ── -->
+                <div id="clan-inner-overview">
+                    <div class="clan-grid-2">
+                        <div class="clan-info-card">
+                            <div class="clan-info-card-title">👑 Лидер клана</div>
+                            <div class="clan-info-card-body" id="clan-overview-leader">—</div>
+                        </div>
+                        <div class="clan-info-card">
+                            <div class="clan-info-card-title">🎖️ Твоё звание</div>
+                            <div class="clan-info-card-body" id="clan-overview-myrank">—</div>
+                        </div>
+                    </div>
+                    <div class="clan-info-card" style="margin-top:10px;">
+                        <div class="clan-info-card-title-row">
+                            <div class="clan-info-card-title">👥 Топ по званию</div>
+                            <span class="clan-info-card-link" data-onclick="switchClanInnerTab('members')">Все участники →</span>
+                        </div>
+                        <div id="clan-overview-top-members"></div>
+                    </div>
+                    <div class="clan-grid-2" style="margin-top:10px;">
+                        <div class="clan-info-card">
+                            <div class="clan-info-card-title">🚪 Условия вступления</div>
+                            <div class="clan-info-card-body" id="clan-overview-jointype">—</div>
+                        </div>
+                        <div class="clan-info-card">
+                            <div class="clan-info-card-title">🖼️ Общий трафарет</div>
+                            <div class="clan-info-card-body" id="clan-overview-stencil">—</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── MEMBERS ── -->
+                <div id="clan-inner-members" style="display:none">
+                    <input class="form-input search-box" id="clan-member-search" placeholder="🔍 Поиск участника..." data-oninput="renderClanMemberPage()" style="margin-bottom:10px;">
                     <div class="member-list" id="clan-member-list"></div>
                     <div class="pagination" id="clan-member-pagination" style="display:none;margin-top:8px;"></div>
                 </div>
 
+                <!-- ── RANKS ── -->
+                <div id="clan-inner-ranks" style="display:none">
+                    <div class="clan-ranks-toolbar">
+                        <div class="clan-ranks-toolbar-hint">Звания определяют, что может делать каждый участник клана</div>
+                        <button class="btn btn-primary btn-sm" id="clan-rank-add-btn" data-onclick="openClanRankEditor(null)" style="display:none;flex-shrink:0;">+ Новое звание</button>
+                    </div>
+                    <div id="clan-rank-editor" class="clan-rank-editor" style="display:none"></div>
+                    <div id="clan-ranks-list" class="clan-ranks-list"></div>
+                </div>
+
+                <!-- ── REQUESTS ── -->
+                <div id="clan-inner-requests" style="display:none">
+                    <div id="clan-requests-list" class="clan-empty-state">Заявок нет</div>
+                </div>
+
+                <!-- ── CHAT ── -->
                 <div id="clan-inner-chat" style="display:none">
-                    <div id="clan-chat-messages" style="height:200px;overflow-y:auto;margin-bottom:8px;"></div>
+                    <div id="clan-chat-messages" style="height:260px;overflow-y:auto;margin-bottom:8px;"></div>
                     <div style="display:flex;gap:6px;">
                         <input class="form-input" id="clan-chat-input" placeholder="Сообщение клану..." style="flex:1;font-size:12px;" data-onkeydown="if(event.key==='Enter')sendClanChat()">
                         <button class="btn btn-primary btn-sm" data-onclick="sendClanChat()"><svg class="icon icon-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg></button>
                     </div>
                 </div>
 
-                <div id="clan-inner-requests" style="display:none">
-                    <div id="clan-requests-list" style="color:var(--text3);font-size:12px;text-align:center;padding:20px;">Заявок нет</div>
-                </div>
-
+                <!-- ── SETTINGS ── -->
                 <div id="clan-inner-settings" style="display:none">
 
-                    <!-- Clan icon emoji picker -->
-                    <div class="form-group">
-                        <label class="form-label">Значок клана</label>
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                            <div id="cs-icon-preview" style="font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:12px;border:1px solid var(--border2);">🏴</div>
-                            <div style="font-size:11px;color:var(--text2);">Выберите значок ниже</div>
+                    <div id="clan-settings-locked-hint" class="clan-perm-hint" style="display:none">🔒 У твоего звания нет права <strong>«Настройки»</strong> — эти поля доступны только для просмотра.</div>
+
+                    <div id="clan-settings-appearance">
+                        <!-- Clan icon emoji picker -->
+                        <div class="form-group">
+                            <label class="form-label">Значок клана</label>
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <div id="cs-icon-preview" style="font-size:28px;width:44px;height:44px;display:flex;align-items:center;justify-content:center;background:var(--surface2);border-radius:12px;border:1px solid var(--border2);">🏴</div>
+                                <div style="font-size:11px;color:var(--text2);">Выберите значок ниже</div>
+                            </div>
+                            <div id="cs-icon-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;"></div>
+                            <input type="hidden" id="cs-icon" value="🏴">
                         </div>
-                        <div id="cs-icon-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;"></div>
-                        <input type="hidden" id="cs-icon" value="🏴">
-                    </div>
 
-                    <div class="section-sep"></div>
+                        <div class="section-sep"></div>
 
-                    <!-- Tag color palette picker -->
-                    <div class="form-group">
-                        <label class="form-label">Цвет тега</label>
-                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
-                            <div id="cs-tag-color-preview" style="width:44px;height:24px;border-radius:6px;background:#818cf8;border:1px solid var(--border2);"></div>
-                            <div style="font-size:11px;color:var(--text2);">Выберите цвет из палитры</div>
+                        <!-- Tag color palette picker -->
+                        <div class="form-group">
+                            <label class="form-label">Цвет тега</label>
+                            <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px;">
+                                <div id="cs-tag-color-preview" style="width:44px;height:24px;border-radius:6px;background:#818cf8;border:1px solid var(--border2);"></div>
+                                <div style="font-size:11px;color:var(--text2);">Выберите цвет из палитры</div>
+                            </div>
+                            <div id="cs-tag-color-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;"></div>
+                            <input type="hidden" id="cs-tag-color" value="#818cf8">
                         </div>
-                        <div id="cs-tag-color-grid" style="display:grid;grid-template-columns:repeat(8,1fr);gap:4px;"></div>
-                        <input type="hidden" id="cs-tag-color" value="#818cf8">
+
+                        <div class="section-sep"></div>
+
+                        <div class="clan-grid-2">
+                            <!-- Join type -->
+                            <div class="form-group">
+                                <label class="form-label">Тип вступления</label>
+                                <select class="form-input" id="cs-join-type">
+                                    <option value="open">Открытый — вступают все</option>
+                                    <option value="request">По заявкам — одобряет клан</option>
+                                    <option value="closed">Закрытый — никто не вступает</option>
+                                </select>
+                            </div>
+
+                            <!-- Min pixels slider -->
+                            <div class="form-group">
+                                <label class="form-label">Мин. пикселей: <span id="cs-min-pixels-label" style="color:var(--accent2);font-family:'Space Mono',monospace;">0</span></label>
+                                <input type="range" class="admin-range" id="cs-min-pixels" min="0" max="10000" step="50" value="0"
+                                       data-oninput="document.getElementById('cs-min-pixels-label').textContent=+this.value===0?'без ограничений':this.value+' пикс.'"
+                                       style="width:100%;margin-top:10px;">
+                            </div>
+                        </div>
+
+                        <div class="section-sep"></div>
+
+                        <div class="setting-row"><div><div class="setting-label">Публичный клан</div><div class="setting-desc">Показывать в списке и топе кланов</div></div><div class="toggle" id="cs-public-toggle" data-onclick="this.classList.toggle('on')"></div></div>
+                        <div class="setting-row"><div><div class="setting-label">Общий курсор</div><div class="setting-desc">Участники видят курсоры друг друга</div></div><div class="toggle" id="cs-cursor-toggle" data-onclick="this.classList.toggle('on')"></div></div>
+
+                        <button class="btn btn-primary" style="margin-top:14px;width:100%;" data-onclick="saveClanSettings()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" /><path d="M7 4v5h8V4" /><rect x="7" y="14" width="10" height="6" /></svg> Сохранить настройки</button>
                     </div>
 
-                    <div class="section-sep"></div>
+                    <div class="section-sep" id="clan-settings-motd-sep"></div>
 
-                    <!-- Join type -->
-                    <div class="form-group">
-                        <label class="form-label">Тип вступления</label>
-                        <select class="form-input" id="cs-join-type">
-                            <option value="open">Открытый — вступают все</option>
-                            <option value="request">По заявкам — одобряет лидер</option>
-                            <option value="closed">Закрытый — никто не вступает</option>
-                        </select>
-                    </div>
-
-                    <!-- Min pixels slider -->
-                    <div class="form-group">
-                        <label class="form-label">Мин. пикселей для вступления: <span id="cs-min-pixels-label" style="color:var(--accent2);font-family:'Space Mono',monospace;">0</span></label>
-                        <input type="range" class="admin-range" id="cs-min-pixels" min="0" max="10000" step="50" value="0"
-                               data-oninput="document.getElementById('cs-min-pixels-label').textContent=+this.value===0?'без ограничений':this.value+' пикс.'"
-                               style="width:100%;margin-top:6px;">
-                        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text3);margin-top:3px;"><span>Без ограничений</span><span>10 000</span></div>
-                    </div>
-
-                    <div class="section-sep"></div>
-
-                    <div class="setting-row"><div><div class="setting-label">Публичный клан</div><div class="setting-desc">Показывать в списке и топе кланов</div></div><div class="toggle" id="cs-public-toggle" data-onclick="this.classList.toggle('on')"></div></div>
-                    <div class="setting-row"><div><div class="setting-label">Общий курсор</div><div class="setting-desc">Участники видят курсоры друг друга</div></div><div class="toggle" id="cs-cursor-toggle" data-onclick="this.classList.toggle('on')"></div></div>
-
-                    <div class="section-sep"></div>
-
-                    <!-- MOTD -->
-                    <div class="form-group">
-                        <label class="form-label">Сообщение дня (MOTD)</label>
+                    <!-- MOTD (отдельное право edit_motd) -->
+                    <div class="form-group" id="clan-settings-motd-block">
+                        <label class="form-label">📌 Сообщение дня (MOTD)</label>
                         <textarea class="form-input" id="cs-motd" rows="3" maxlength="200" placeholder="Отображается участникам клана при входе"></textarea>
                         <div style="font-size:10px;color:var(--text3);margin-top:4px;">Макс. 200 символов. Видно всем участникам во вкладке «Клан».</div>
+                        <button class="btn btn-secondary btn-sm" style="margin-top:8px;width:100%;" data-onclick="saveClanMotdInline()">Сохранить сообщение дня</button>
                     </div>
 
-                    <button class="btn btn-primary" style="margin-top:8px;width:100%;" data-onclick="saveClanSettings()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h13l3 3v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" /><path d="M7 4v5h8V4" /><rect x="7" y="14" width="10" height="6" /></svg> Сохранить настройки</button>
+                    <div class="section-sep" id="clan-settings-leadership-sep" style="display:none"></div>
+
+                    <!-- Leadership transfer (leader only) -->
+                    <div class="form-group" id="clan-settings-leadership" style="display:none">
+                        <label class="form-label">👑 Передать лидерство</label>
+                        <div class="clan-perm-hint" style="margin-bottom:8px;">После передачи ты станешь обычным участником клана. Действие необратимо!</div>
+                        <div style="display:flex;gap:8px;">
+                            <select class="form-input" id="cs-transfer-select" style="flex:1;"></select>
+                            <button class="btn btn-danger btn-sm" data-onclick="transferLeadershipFromSettings()" style="flex-shrink:0;">Передать</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="section-sep"></div>

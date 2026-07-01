@@ -1759,7 +1759,7 @@ function newsStopTimerTick() { if (newsTimerInterval) { clearInterval(newsTimerI
 // удобно, когда весь визуал уже сделан одной картинкой (например, из Figma)
 // и остаётся только подставить её фоном без дублирующих элементов поверх. ──
 function newsSlideHtml(item) {
-  const bgStyle = item.bgImage ? ` style="background-image:url('${escapeHtml(item.bgImage)}')"` : '';
+  const bgStyle = item.bgImage ? ` style="background-image:url('${escapeHtml(item.bgImage)}');background-position:${item.bgPosX ?? 50}% ${item.bgPosY ?? 50}%"` : '';
   const artHtml = item.showArt !== false ? `<div class="news-slide-art">${escapeHtml(item.art || '📰')}</div>` : '';
   const tagHtml = (item.showTag !== false && item.tag) ? `<div class="news-slide-tag">${escapeHtml(item.tag)}</div>` : '';
   const textHtml = item.showText !== false ? `
@@ -1869,6 +1869,8 @@ function newsSelectItemById(id) {
 //  АДМИНКА НОВОСТЕЙ — создание/редактирование/удаление/порядок
 // ════════════════════════════════════════════════════════════
 let newsAdminShowArt = true, newsAdminShowTag = true, newsAdminShowText = true;
+let newsAdminBgPosX = 50, newsAdminBgPosY = 50;
+let newsAdminPreviewDragging = false;
 
 function renderAdminNewsList() {
   const box = document.getElementById('admin-news-list');
@@ -1915,6 +1917,8 @@ function openNewsAdminForm(id) {
   document.getElementById('na-date').value = item?.date || '';
 
   newsAdminBgImage = item?.bgImage || null;
+  newsAdminBgPosX = item?.bgPosX ?? 50;
+  newsAdminBgPosY = item?.bgPosY ?? 50;
   newsAdminUploadPending = false;
   newsAdminRefreshBgPreview();
 
@@ -1942,12 +1946,72 @@ function closeNewsAdminForm() {
 }
 
 let newsAdminUploadPending = false;
+
+// Строим превью ТОЧНО той же разметкой/классами, что и настоящий слайд
+// (newsSlideHtml), плюс кружок-прицел, показывающий выбранную видимую зону.
 function newsAdminRefreshBgPreview() {
   const wrap = document.getElementById('na-bg-preview-wrap');
-  const img = document.getElementById('na-bg-preview');
-  if (!wrap || !img) return;
-  if (newsAdminBgImage) { img.src = newsAdminBgImage; wrap.style.display = ''; }
-  else { img.src = ''; wrap.style.display = 'none'; }
+  const box = document.getElementById('na-bg-preview');
+  if (!wrap || !box) return;
+
+  if (!newsAdminBgImage) { wrap.style.display = 'none'; return; }
+  wrap.style.display = '';
+
+  const previewItem = {
+    title: document.getElementById('na-title')?.value.trim() || 'Без названия',
+    tag: document.getElementById('na-tag')?.value.trim() || '',
+    art: document.getElementById('na-art')?.value.trim() || '📰',
+    desc: document.getElementById('na-desc')?.value.trim() || '',
+    bgImage: newsAdminBgImage,
+    bgPosX: newsAdminBgPosX,
+    bgPosY: newsAdminBgPosY,
+    eventTimer: null,
+    showArt: newsAdminShowArt,
+    showTag: newsAdminShowTag,
+    showText: newsAdminShowText,
+  };
+
+  // Переиспользуем newsSlideHtml — гарантирует, что превью 1-в-1 совпадает
+  // с тем, что увидят игроки на слайде.
+  box.innerHTML = newsSlideHtml(previewItem) + '<div id="na-bg-preview-crosshair"></div>';
+
+  const cross = document.getElementById('na-bg-preview-crosshair');
+  if (cross) {
+    Object.assign(cross.style, {
+      position: 'absolute', width: '22px', height: '22px',
+      left: newsAdminBgPosX + '%', top: newsAdminBgPosY + '%',
+      transform: 'translate(-50%,-50%)', border: '2px solid #fff', borderRadius: '50%',
+      boxShadow: '0 0 0 1px rgba(0,0,0,.6), 0 2px 6px rgba(0,0,0,.5)', pointerEvents: 'none',
+    });
+  }
+}
+
+function _newsAdminPreviewSetPosFromEvent(ev) {
+  const box = document.getElementById('na-bg-preview');
+  if (!box) return;
+  const r = box.getBoundingClientRect();
+  const clientX = ev.touches ? ev.touches[0].clientX : ev.clientX;
+  const clientY = ev.touches ? ev.touches[0].clientY : ev.clientY;
+  const x = Math.max(0, Math.min(100, ((clientX - r.left) / r.width) * 100));
+  const y = Math.max(0, Math.min(100, ((clientY - r.top) / r.height) * 100));
+  newsAdminBgPosX = Math.round(x);
+  newsAdminBgPosY = Math.round(y);
+  newsAdminRefreshBgPreview();
+}
+
+function newsAdminPreviewPointerDown(ev) {
+  if (!newsAdminBgImage) return;
+  ev.preventDefault();
+  newsAdminPreviewDragging = true;
+  _newsAdminPreviewSetPosFromEvent(ev);
+}
+document.addEventListener('pointermove', ev => { if (newsAdminPreviewDragging) _newsAdminPreviewSetPosFromEvent(ev); });
+document.addEventListener('pointerup', () => { newsAdminPreviewDragging = false; });
+document.getElementById('na-bg-preview')?.addEventListener('pointerdown', newsAdminPreviewPointerDown);
+
+function resetNewsAdminBgPos() {
+  newsAdminBgPosX = 50; newsAdminBgPosY = 50;
+  newsAdminRefreshBgPreview();
 }
 
 async function handleNewsAdminBgImage(event) {
@@ -1965,9 +2029,10 @@ async function handleNewsAdminBgImage(event) {
       const data = await res.json();
       if (data.url) {
         newsAdminBgImage = data.url;
+        newsAdminBgPosX = 50; newsAdminBgPosY = 50;
         newsAdminRefreshBgPreview();
-        showToast('Фон загружен!', 'success');
-      } else { showToast('Ошибка загрузки фона', 'error'); }
+        showToast(data.fallback ? 'Фон загружен (без CDN — облако не настроено)' : 'Фон загружен!', data.fallback ? 'info' : 'success');
+      } else { showToast('Ошибка загрузки фона: ' + (data.error || 'сервер не вернул ссылку'), 'error'); }
     } catch (e) { showToast('Ошибка сети при загрузке фона', 'error'); }
     newsAdminUploadPending = false;
   };
@@ -1991,6 +2056,8 @@ function saveNewsAdmin() {
     text: document.getElementById('na-text').value.trim(),
     date: document.getElementById('na-date').value.trim() || new Date().toLocaleDateString('ru-RU'),
     bgImage: newsAdminBgImage,
+    bgPosX: newsAdminBgPosX,
+    bgPosY: newsAdminBgPosY,
     eventTimer,
     showArt: newsAdminShowArt,
     showTag: newsAdminShowTag,

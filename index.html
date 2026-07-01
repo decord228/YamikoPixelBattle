@@ -607,14 +607,14 @@
                         <div class="panel-close" style="position:static" data-onclick="closeNewsAdminForm()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
                     </div>
 
-                    <div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="na-title" placeholder="Например: Большое обновление холста"></div>
+                    <div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="na-title" placeholder="Например: Большое обновление холста" data-oninput="newsAdminRefreshBgPreview()"></div>
 
                     <div class="resize-form" style="margin-bottom:12px;">
-                        <div><label class="form-label">Бейджик (тег)</label><input class="form-input" id="na-tag" placeholder="Анонс / Обновление / Событие"></div>
-                        <div><label class="form-label">Иконка (эмодзи)</label><input class="form-input" id="na-art" placeholder="📰" maxlength="4"></div>
+                        <div><label class="form-label">Бейджик (тег)</label><input class="form-input" id="na-tag" placeholder="Анонс / Обновление / Событие" data-oninput="newsAdminRefreshBgPreview()"></div>
+                        <div><label class="form-label">Иконка (эмодзи)</label><input class="form-input" id="na-art" placeholder="📰" maxlength="4" data-oninput="newsAdminRefreshBgPreview()"></div>
                     </div>
 
-                    <div class="form-group"><label class="form-label">Краткое описание (для слайда и списка)</label><textarea class="broadcast-input" id="na-desc" rows="2" placeholder="Пара строк, анонсирующих новость..."></textarea></div>
+                    <div class="form-group"><label class="form-label">Краткое описание (для слайда и списка)</label><textarea class="broadcast-input" id="na-desc" rows="2" placeholder="Пара строк, анонсирующих новость..." data-oninput="newsAdminRefreshBgPreview()"></textarea></div>
                     <div class="form-group"><label class="form-label">Полный текст (для детального просмотра)</label><textarea class="broadcast-input" id="na-text" rows="4" placeholder="Полный текст новости..."></textarea></div>
                     <div class="form-group"><label class="form-label">Дата (необязательно, иначе — сегодня)</label><input class="form-input" id="na-date" placeholder="напр. 01.07.2026"></div>
 
@@ -625,9 +625,15 @@
                         <p style="font-size:10px;color:var(--text3);margin-top:2px">Растянется на всю карточку слайда</p>
                     </div>
                     <input type="file" id="na-bg-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminBgImage(event)">
-                    <div id="na-bg-preview-wrap" style="display:none;margin-bottom:12px;position:relative;">
-                        <img id="na-bg-preview" alt="Фон" style="width:100%;border-radius:8px;display:block;">
-                        <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminBgImage()" style="margin-top:6px;width:100%;">Убрать фон</button>
+                    <div id="na-bg-preview-wrap" style="display:none;margin-bottom:12px;">
+                        <p style="font-size:10px;color:var(--text3);margin:0 0 6px;">Так это будет выглядеть на посту. Кликните/потяните по картинке, чтобы выбрать видимую зону:</p>
+                        <div id="na-bg-preview" style="position:relative;width:100%;aspect-ratio:2.7/1;border-radius:8px;overflow:hidden;cursor:crosshair;border:1px solid var(--border2);background:#0c0c0f;user-select:none;">
+                            <div id="na-bg-preview-crosshair" style="position:absolute;width:22px;height:22px;left:50%;top:50%;transform:translate(-50%,-50%);border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.6),0 2px 6px rgba(0,0,0,.5);pointer-events:none;"></div>
+                        </div>
+                        <div style="display:flex;gap:8px;margin-top:8px;">
+                            <button class="btn btn-secondary btn-sm" data-onclick="resetNewsAdminBgPos()" style="flex:1;">Сбросить в центр</button>
+                            <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminBgImage()" style="flex:1;">Убрать фон</button>
+                        </div>
                     </div>
 
                     <div class="section-sep"></div>
@@ -638,9 +644,9 @@
                     <div class="section-sep"></div>
                     <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Видимость элементов слайда</div>
                     <p style="font-size:10px;color:var(--text3);margin:-4px 0 10px;">Выключите лишнее, если весь визуал уже нарисован на картинке фона</p>
-                    <div class="setting-row" style="padding-top:0"><div><div class="setting-label">Иконка (news-slide-art)</div></div><div class="toggle on" id="na-toggle-art" data-onclick="newsAdminToggle('art')"></div></div>
-                    <div class="setting-row"><div><div class="setting-label">Бейджик (news-slide-tag)</div></div><div class="toggle on" id="na-toggle-tag" data-onclick="newsAdminToggle('tag')"></div></div>
-                    <div class="setting-row"><div><div class="setting-label">Заголовок и описание</div></div><div class="toggle on" id="na-toggle-text" data-onclick="newsAdminToggle('text')"></div></div>
+                    <div class="setting-row" style="padding-top:0"><div><div class="setting-label">Иконка (news-slide-art)</div></div><div class="toggle on" id="na-toggle-art" data-onclick="newsAdminToggle('art');newsAdminRefreshBgPreview()"></div></div>
+                    <div class="setting-row"><div><div class="setting-label">Бейджик (news-slide-tag)</div></div><div class="toggle on" id="na-toggle-tag" data-onclick="newsAdminToggle('tag');newsAdminRefreshBgPreview()"></div></div>
+                    <div class="setting-row"><div><div class="setting-label">Заголовок и описание</div></div><div class="toggle on" id="na-toggle-text" data-onclick="newsAdminToggle('text');newsAdminRefreshBgPreview()"></div></div>
 
                     <div class="section-sep"></div>
                     <button class="btn btn-primary" data-onclick="saveNewsAdmin()" style="margin-bottom:8px;">💾 Сохранить</button>

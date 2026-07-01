@@ -869,7 +869,7 @@ function switchClanInnerTab(tab) {
     const el = document.getElementById(`clan-inner-${t}`);
     if (el) el.style.display = t === tab ? '' : 'none';
   });
-  document.querySelectorAll('#clan-view-in-clan .clan-tabs .sub-tab').forEach(el => {
+  document.querySelectorAll('#clan-view-in-clan .clan-sidenav .csn-item[data-tab]').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tab);
   });
   if (tab === 'requests') sendJSON({action:'clan_get_requests'});
@@ -1082,6 +1082,8 @@ function renderClanView(clan){
   dispTag.style.borderColor = tc + '55';
   document.getElementById('clan-disp-desc').textContent=clan.description||'Описание не указано';
   document.getElementById('clan-disp-members').textContent=(clan.members||[]).length;
+  const navMemberCount = document.getElementById('clan-nav-member-count');
+  if (navMemberCount) navMemberCount.textContent = (clan.members||[]).length;
   const pxEl = document.getElementById('clan-disp-pixels');
   if (pxEl) pxEl.textContent = (clan.pixels||0).toLocaleString();
   if (clan.motd||clan.message_of_day) document.getElementById('clan-motd-text').textContent = clan.motd||clan.message_of_day || 'Добро пожаловать в клан!';

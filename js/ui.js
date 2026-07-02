@@ -822,16 +822,44 @@ function handleStencilMove(clientX,clientY){
   return true;
 }
 
+// Кнопка чата (#chat-btn) открывает попап с редизайном чата, встроенный
+// прямо в проект (разметка — в index.html #chat-popup-panel, стили — в
+// style.css, логика — в js/chat-popup.js). Раньше это был отдельный
+// chat-popup.html, подключаемый через iframe. Старая простая панель
+// (#chat-panel) больше не показывается, но остаётся в DOM нетронутой —
+// addChatMessage() ниже по-прежнему пишет в неё сообщения с сервера, чтобы
+// ничего не сломать, пока новый чат работает на моковых данных без бэкенда.
 function toggleChat() {
-  chatOpen = !chatOpen;
-  document.getElementById('chat-panel').classList.toggle('open', chatOpen);
-  document.getElementById('chat-btn').classList.toggle('active', chatOpen);
-  if (chatOpen) {
-    chatUnread = 0;
-    document.getElementById('chat-unread').style.display = 'none';
-    document.getElementById('chat-messages').scrollTop = document.getElementById('chat-messages').scrollHeight;
-  }
+  const overlay = document.getElementById('chat-popup-overlay');
+  if (overlay.classList.contains('show')) closeChatPopup();
+  else openChatPopup();
 }
+
+function openChatPopup() {
+  const overlay = document.getElementById('chat-popup-overlay');
+  // Инициализируем разметку попапа лениво — только при первом открытии.
+  if (typeof initChatPopup === 'function') initChatPopup();
+  // А данные (друзья/ЛС/онлайн) подтягиваем с сервера при каждом открытии,
+  // чтобы список не был протухшим, если попап долго не открывали.
+  if (typeof cpRefreshAll === 'function') cpRefreshAll();
+  overlay.classList.add('show');
+  document.getElementById('chat-btn').classList.add('active');
+  chatOpen = true;
+  chatUnread = 0;
+  document.getElementById('chat-unread').style.display = 'none';
+}
+
+function closeChatPopup() {
+  document.getElementById('chat-popup-overlay').classList.remove('show');
+  document.getElementById('chat-btn').classList.remove('active');
+  chatOpen = false;
+}
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && document.getElementById('chat-popup-overlay')?.classList.contains('show')) {
+    closeChatPopup();
+  }
+});
 
 function addChatMessage(user, text, emoji) {
   const msgDiv = document.createElement('div');
@@ -3487,3 +3515,483 @@ function moveNewsAdmin(id, dir) {
   [ids[idx], ids[newIdx]] = [ids[newIdx], ids[idx]];
   sendJSON({ action:'admin_cmd', cmd:'news_reorder', params:{ ids } });
 }
+// ══════════════════════════════════════════════════════════════
+//  SOCIAL HUB — попап чата (друзья, ЛС, онлайн, каналы)
+// ══════════════════════════════════════════════════════════════
+// Раньше жил в отдельном js/chat-popup.js и работал на моковых данных
+// (CP_USERS/CP_CONVERSATIONS/...). Теперь удалён как отдельный файл —
+// логика здесь, состояние в state.js, сеть в network.js. Вся разметка
+// в index.html (#chat-popup-panel) и стили в style.css не менялись,
+// поэтому все id/классы с префиксом cp- совпадают 1-в-1.
+
+function cpToast(text) { if (typeof showToast === 'function') showToast(text, 'info'); }
+
+function cpChannelsList() {
+  return [{
+    id: 'ch-general', type: 'channel', name: 'Общий чат', icon: '💬',
+    desc: 'открытое обсуждение · весь Pixel Battle',
+  }];
+}
+
+function cpDmList() {
+  return cpDmConversations.map(c => ({ id: 'dm-' + c.username, type: 'dm', user: c.username, ...c }));
+}
+
+function cpAllConversations() { return [...cpChannelsList(), ...cpDmList()]; }
+function cpGetActiveConv() { return cpAllConversations().find(c => c.id === cpActiveConvId) || cpChannelsList()[0]; }
+
+function cpUser(username) {
+  return cpUserCache[username] || { username, emoji: '👾', rank: 'Новичок', role: 'user', clan: '', online: false };
+}
+
+function cpFmtTime(ts) {
+  if (!ts) return '';
+  const d = new Date(ts), now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  if (d.toDateString() === now.toDateString()) return pad(d.getHours()) + ':' + pad(d.getMinutes());
+  const days = ['вс','пн','вт','ср','чт','пт','сб'];
+  const diffDays = Math.floor((now - d) / 86400000);
+  if (diffDays < 7) return days[d.getDay()];
+  return pad(d.getDate()) + '.' + pad(d.getMonth() + 1);
+}
+
+function initChatPopup() {
+  if (cpInited) return;
+  cpInited = true;
+  cpUpdateFreqBadge();
+  cpRenderSidebar();
+  cpSelectConversation('ch-general');
+}
+
+function cpRefreshAll() {
+  if (!isLoggedIn) return;
+  cpFetchFriends();
+  cpFetchConversations();
+  cpFetchOnline();
+}
+
+function cpRowTimePreview(conv) {
+  if (conv.type === 'channel') {
+    const last = chatMessages[chatMessages.length - 1];
+    if (!last) return { user: '', text: 'Нет сообщений' };
+    return { user: last.username === currentUser ? null : last.username, text: last.text };
+  }
+  if (!conv.lastMessage) return { user: '', text: 'Нет сообщений' };
+  return { user: conv.lastFrom === currentUser ? null : conv.lastFrom, text: conv.lastMessage };
+}
+
+function cpRenderSidebar() {
+  const root = document.getElementById('cp-sb-scroll');
+  if (!root) return;
+  root.innerHTML = '';
+
+  if (cpActiveTab === 'chats') {
+    const q = cpSearchQuery.toLowerCase();
+    const channels = cpChannelsList().filter(c => !q || c.name.toLowerCase().includes(q));
+    const dms = cpDmList().filter(c => !q || cpUser(c.user).username.toLowerCase().includes(q));
+
+    root.appendChild(cpSectionLabel('Каналы'));
+    channels.forEach(c => root.appendChild(cpChannelRow(c)));
+    root.appendChild(cpSectionLabel('Личные сообщения'));
+    if (dms.length === 0) root.appendChild(cpEmptyHint(cpDmConversations.length === 0 ? 'Пока нет переписок — добавьте друзей' : 'Ничего не найдено'));
+    dms.forEach(c => root.appendChild(cpDmRow(c)));
+  } else {
+    const q = cpSearchQuery.toLowerCase();
+    const incoming = cpIncoming.filter(u => u.username.toLowerCase().includes(q));
+    if (incoming.length) {
+      root.appendChild(cpSectionLabel(`Заявки в друзья · ${incoming.length}`));
+      incoming.forEach(u => root.appendChild(cpRequestRow(u)));
+    }
+    const friends = cpFriends.filter(u => u.username.toLowerCase().includes(q));
+    const online = friends.filter(u => u.online);
+    const offline = friends.filter(u => !u.online);
+    root.appendChild(cpSectionLabel(`В сети · ${online.length}`));
+    online.forEach(u => root.appendChild(cpFriendRow(u)));
+    root.appendChild(cpSectionLabel(`Не в сети · ${offline.length}`));
+    if (offline.length === 0 && online.length === 0 && incoming.length === 0) root.appendChild(cpEmptyHint('У вас пока нет друзей'));
+    offline.forEach(u => root.appendChild(cpFriendRow(u)));
+
+    const cta = document.createElement('div');
+    cta.className = 'cp-addfriend-cta';
+    cta.onclick = openAddFriend;
+    cta.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Добавить друга`;
+    root.appendChild(cta);
+  }
+}
+
+function cpSectionLabel(t) { const d = document.createElement('div'); d.className = 'cp-list-label'; d.textContent = t; return d; }
+function cpEmptyHint(t) { const d = document.createElement('div'); d.className = 'cp-empty-hint'; d.textContent = t; return d; }
+
+function cpAvatarEl(username, size = '') {
+  const user = cpUser(username);
+  const div = document.createElement('div');
+  div.className = `cp-avatar ${size} ${CP_RANK_CLASS[user.rank] || 'cp-rank-novice'}`;
+  div.textContent = user.emoji || '👾';
+  if (size !== 'sm') {
+    const dot = document.createElement('div');
+    dot.className = 'cp-status-dot ' + (user.online ? 'online' : '');
+    div.appendChild(dot);
+  }
+  return div;
+}
+
+function cpChannelRow(c) {
+  const row = document.createElement('div');
+  row.className = 'cp-row' + (c.id === cpActiveConvId ? ' active' : '');
+  row.onclick = () => cpSelectConversation(c.id);
+  const p = cpRowTimePreview(c);
+  const last = chatMessages[chatMessages.length - 1];
+  row.innerHTML = `
+    <div class="cp-channel-icon">${c.icon}</div>
+    <div class="cp-row-body">
+      <div class="cp-row-toprow">
+        <div class="cp-row-name">${esc(c.name)}</div>
+        <div class="cp-row-time">${last ? cpFmtTime(last.ts) : ''}</div>
+      </div>
+      <div class="cp-row-preview">${p.user ? `<span class="cp-you">${esc(p.user)}:</span> ` : ''}${esc(p.text)}</div>
+    </div>
+  `;
+  return row;
+}
+
+function cpDmRow(c) {
+  const user = cpUser(c.user);
+  const row = document.createElement('div');
+  row.className = 'cp-row' + (c.id === cpActiveConvId ? ' active' : '') + (c.unread > 0 ? ' unread' : '');
+  row.onclick = () => cpSelectConversation(c.id);
+  const p = cpRowTimePreview(c);
+  row.appendChild(cpAvatarEl(c.user));
+  const body = document.createElement('div');
+  body.className = 'cp-row-body';
+  body.innerHTML = `
+    <div class="cp-row-toprow">
+      <div class="cp-row-name">${esc(user.username)}</div>
+      <div class="cp-row-time">${cpFmtTime(c.lastTs)}</div>
+    </div>
+    <div class="cp-row-preview">${p.user ? `<span class="cp-you">${esc(p.user)}:</span> ` : ''}${esc(p.text)}</div>
+  `;
+  row.appendChild(body);
+  if (c.unread > 0) { const b = document.createElement('div'); b.className = 'cp-unread-badge'; b.textContent = c.unread; row.appendChild(b); }
+  return row;
+}
+
+function cpFriendRow(u) {
+  const row = document.createElement('div');
+  row.className = 'cp-row';
+  row.onclick = () => cpSelectConversation('dm-' + u.username);
+  row.appendChild(cpAvatarEl(u.username));
+  const body = document.createElement('div');
+  body.className = 'cp-row-body';
+  body.innerHTML = `
+    <div class="cp-row-name">${esc(u.username)}</div>
+    <div class="cp-row-preview">${CP_STATUS_LABEL[u.online ? 'online' : 'offline']}</div>
+  `;
+  row.appendChild(body);
+  return row;
+}
+
+function cpRequestRow(u) {
+  const row = document.createElement('div');
+  row.className = 'cp-freq-row';
+  row.appendChild(cpAvatarEl(u.username));
+  const body = document.createElement('div');
+  body.className = 'cp-row-body';
+  body.innerHTML = `<div class="cp-row-name">${esc(u.username)}</div><div class="cp-row-preview">хочет добавить вас в друзья</div>`;
+  row.appendChild(body);
+  const actions = document.createElement('div');
+  actions.className = 'cp-freq-actions';
+  actions.innerHTML = `
+    <button class="cp-freq-btn accept" title="Принять"><svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg></button>
+    <button class="cp-freq-btn decline" title="Отклонить"><svg class="icon" style="width:14px;height:14px" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+  `;
+  actions.children[0].onclick = (e) => { e.stopPropagation(); cpAcceptFriendReq(u.username); cpToast(`${u.username} теперь в друзьях`); };
+  actions.children[1].onclick = (e) => { e.stopPropagation(); cpDeclineFriendReq(u.username); cpToast('Заявка отклонена'); };
+  row.appendChild(actions);
+  return row;
+}
+
+function cpUpdateFreqBadge() {
+  const el = document.getElementById('cp-freq-count');
+  if (!el) return;
+  if (cpIncoming.length === 0) { el.style.display = 'none'; } else { el.style.display = ''; el.textContent = cpIncoming.length; }
+}
+
+function switchTab(tab) {
+  cpActiveTab = tab;
+  document.getElementById('cp-tab-chats').classList.toggle('active', tab === 'chats');
+  document.getElementById('cp-tab-friends').classList.toggle('active', tab === 'friends');
+  cpRenderSidebar();
+}
+
+function onSearch(v) { cpSearchQuery = v; cpRenderSidebar(); }
+
+function cpSelectConversation(id) {
+  cpActiveConvId = id;
+  const conv = cpGetActiveConv();
+  if (conv.type === 'dm') {
+    if (conv.unread) { const c = cpDmConversations.find(x => x.username === conv.user); if (c) c.unread = 0; }
+    if (!cpDmThreads[conv.user]) cpFetchDmHistory(conv.user);
+    sendJSON({ action:'dm_mark_read', with: conv.user });
+  }
+  cpRenderSidebar();
+  cpRenderHeader(conv);
+  cpRenderMessages(conv);
+  cpRenderInfoPanel(conv);
+  document.getElementById('chat-popup-panel').classList.add('cp-chat-open');
+}
+
+function closeChatMobile() { document.getElementById('chat-popup-panel').classList.remove('cp-chat-open'); }
+
+function cpRenderHeader(conv) {
+  const nameEl = document.getElementById('cp-mh-name');
+  const subEl = document.getElementById('cp-mh-sub');
+  const avEl = document.getElementById('cp-mh-avatar');
+
+  if (conv.type === 'channel') {
+    avEl.outerHTML = `<div class="cp-channel-icon" id="cp-mh-avatar">${conv.icon}</div>`;
+    nameEl.textContent = conv.name;
+    subEl.textContent = conv.desc;
+  } else {
+    const u = cpUser(conv.user);
+    const fresh = cpAvatarEl(conv.user);
+    fresh.id = 'cp-mh-avatar';
+    document.getElementById('cp-mh-avatar').replaceWith(fresh);
+    nameEl.textContent = u.username;
+    subEl.innerHTML = `<span class="cp-sqdot" style="background:${u.online ? 'var(--green)' : 'var(--text3)'}"></span>${CP_STATUS_LABEL[u.online ? 'online' : 'offline']}`;
+  }
+}
+
+function cpCanvasCardHTML(cx, cy) {
+  let cells = '';
+  const seed = cx + cy;
+  for (let i = 0; i < 100; i++) {
+    const c = PALETTE[(seed * 7 + i * 13) % PALETTE.length].c;
+    cells += `<div style="background:${c}"></div>`;
+  }
+  return `
+    <div class="cp-canvas-card">
+      <div class="cc-grid">${cells}</div>
+      <div class="cc-foot">
+        <div class="cc-coords">X:${cx} Y:${cy}</div>
+        <div class="cc-go" data-onclick="jumpToCanvas(${cx},${cy})">Перейти →</div>
+      </div>
+    </div>`;
+}
+
+const CP_CANVAS_MARK_RE = /\[\[canvas:(-?\d+):(-?\d+)\]\]/;
+function cpMsgBodyHTML(text) {
+  const m = text.match(CP_CANVAS_MARK_RE);
+  if (!m) return esc(text);
+  const rest = text.replace(CP_CANVAS_MARK_RE, '').trim();
+  return (rest ? esc(rest) + '<div style="height:6px"></div>' : '') + cpCanvasCardHTML(+m[1], +m[2]);
+}
+
+function cpRenderMessages(conv) {
+  const root = document.getElementById('cp-messages');
+  if (!root) return;
+  root.innerHTML = '';
+  const isChannel = conv.type === 'channel';
+  const thread = isChannel ? chatMessages : (cpDmThreads[conv.user] || []);
+
+  root.appendChild(cpDaySeparator(isChannel ? 'Сегодня' : 'Начало переписки'));
+
+  if (thread.length === 0) {
+    root.appendChild(cpEmptyHint(isChannel ? 'Пока нет сообщений — начните разговор' : 'Напишите первое сообщение'));
+  } else if (isChannel) {
+    let lastUser = null;
+    thread.forEach(m => {
+      const uname = m.username;
+      if (uname !== lastUser) {
+        const g = document.createElement('div');
+        g.className = 'cp-msg-group';
+        g.appendChild(cpAvatarEl(uname));
+        const col = document.createElement('div');
+        col.className = 'cp-msg-col';
+        col.innerHTML = `
+          <div class="cp-msg-headline"><span class="cp-msg-user">${esc(uname)}</span><span class="cp-msg-time">${cpFmtTime(m.ts)}</span></div>
+          <div class="cp-msg-text">${cpMsgBodyHTML(m.text)}</div>
+        `;
+        g.appendChild(col);
+        root.appendChild(g);
+      } else {
+        const g = document.createElement('div');
+        g.className = 'cp-msg-continued-row cp-msg-continued';
+        g.innerHTML = `
+          <div class="cp-msg-time-hover">${cpFmtTime(m.ts)}</div>
+          <div class="cp-msg-col"><div class="cp-msg-text">${cpMsgBodyHTML(m.text)}</div></div>`;
+        root.appendChild(g);
+      }
+      lastUser = uname;
+    });
+  } else {
+    thread.forEach(m => {
+      const own = m.from === currentUser;
+      const row = document.createElement('div');
+      row.className = 'cp-bubble-row' + (own ? ' own' : '');
+      row.appendChild(cpAvatarEl(own ? currentUser : m.from));
+      const bub = document.createElement('div');
+      bub.className = 'cp-bubble';
+      bub.innerHTML = `${cpMsgBodyHTML(m.text)}<span class="cp-msg-time">${cpFmtTime(m.ts)}</span>`;
+      row.appendChild(bub);
+      root.appendChild(row);
+    });
+  }
+
+  root.scrollTop = root.scrollHeight + 999;
+}
+
+function cpOnGlobalMessage(msg) {
+  if (cpActiveConvId === 'ch-general') cpRenderMessages(cpGetActiveConv());
+  if (chatOpen) cpRenderSidebar();
+}
+
+function cpDaySeparator(t) { const d = document.createElement('div'); d.className = 'cp-day-sep'; d.textContent = t; return d; }
+
+function toggleInfo() {
+  cpInfoOpen = !cpInfoOpen;
+  document.getElementById('chat-popup-panel').classList.toggle('cp-info-open', cpInfoOpen);
+  document.getElementById('cp-info-toggle-btn').classList.toggle('active', cpInfoOpen);
+}
+
+function cpRenderInfoPanel(conv) {
+  const root = document.getElementById('cp-info-inner');
+  if (!root) return;
+  if (conv.type === 'channel') {
+    root.innerHTML = `
+      <div class="cp-ip-close"><button class="cp-modal-x" data-onclick="toggleInfo()"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="cp-ip-profile">
+        <div class="cp-channel-icon" style="width:72px;height:72px;border-radius:20px;font-size:30px;margin:0 auto 12px;">${conv.icon}</div>
+        <div class="cp-ip-name">${esc(conv.name)}</div>
+        <div class="cp-ip-rank">${esc(conv.desc)}</div>
+      </div>
+      <div class="cp-ip-section-label">Правила</div>
+      <div style="font-size:12.5px;color:var(--text2);line-height:1.6;background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:11px 12px;">
+        Без спама, уважайте чужие работы на холсте
+      </div>
+    `;
+    return;
+  }
+
+  const u = cpUser(conv.user);
+  const isFriend = cpFriends.some(f => f.username === conv.user);
+  const requestSent = cpOutgoing.some(f => f.username === conv.user);
+  root.innerHTML = `
+    <div class="cp-ip-close"><button class="cp-modal-x" data-onclick="toggleInfo()"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+    <div class="cp-ip-profile">
+      ${cpAvatarEl(conv.user, 'lg').outerHTML}
+      <div class="cp-ip-name">${esc(u.username)}</div>
+      <div class="cp-ip-rank">${esc(u.rank || 'Новичок')}${u.clan ? ' · ' + esc(u.clan) : ''}</div>
+    </div>
+    <div class="cp-ip-stats">
+      <div class="cp-ip-stat"><div class="v mono">${(u.pixels||0).toLocaleString('ru-RU')}</div><div class="l">пикселей</div></div>
+      <div class="cp-ip-stat"><div class="v mono">${u.online ? 'в сети' : 'офлайн'}</div><div class="l">статус</div></div>
+    </div>
+    <div class="cp-ip-actions">
+      ${isFriend
+        ? `<button class="cp-ip-btn danger" data-onclick="cpRemoveFriendUI('${esc(conv.user)}')"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 8l5 5M22 8l-5 5"/></svg> Удалить из друзей</button>`
+        : requestSent
+          ? `<button class="cp-ip-btn" data-onclick="cpCancelFriendReq('${esc(conv.user)}')">Отменить заявку</button>`
+          : `<button class="cp-ip-btn" data-onclick="cpSendFriendRequest('${esc(conv.user)}')"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Добавить в друзья</button>`}
+    </div>
+  `;
+}
+
+function cpRemoveFriendUI(username) {
+  cpRemoveFriendReq(username);
+  cpToast(`${username} удалён из друзей`);
+}
+
+function jumpToCanvas(x, y) {
+  closeChatPopup();
+  const vw = window.innerWidth, vh = window.innerHeight;
+  targetCamZoom = Math.max(targetCamZoom, 4);
+  targetCamX = vw / 2 - x * targetCamZoom;
+  targetCamY = vh / 2 - y * targetCamZoom;
+  if (!smoothCamera) { camX = targetCamX; camY = targetCamY; camZoom = targetCamZoom; applyTransform(); updateAllCursorFlags(); }
+  else startSmoothAnim();
+  cpToast(`Переход к холсту: ${x}, ${y}`);
+}
+
+function autoGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
+
+function onComposerKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+function sendMessage() {
+  if (!isLoggedIn) { cpToast('Сначала войдите в аккаунт'); return; }
+  const input = document.getElementById('cp-composer-input');
+  const text = input.value.trim();
+  if (!text) return;
+  const conv = cpGetActiveConv();
+  if (conv.type === 'channel') sendJSON({ action:'chat_send', text });
+  else sendJSON({ action:'dm_send', to: conv.user, text });
+  input.value = ''; input.style.height = 'auto';
+}
+
+function attachCanvasSnippet() {
+  if (!isLoggedIn) { cpToast('Сначала войдите в аккаунт'); return; }
+  const conv = cpGetActiveConv();
+  const x = hoveredPixel && hoveredPixel.x >= 0 ? hoveredPixel.x : Math.floor(canvasW / 2);
+  const y = hoveredPixel && hoveredPixel.y >= 0 ? hoveredPixel.y : Math.floor(canvasH / 2);
+  const text = `смотри что я нарисовал [[canvas:${x}:${y}]]`;
+  if (conv.type === 'channel') sendJSON({ action:'chat_send', text });
+  else sendJSON({ action:'dm_send', to: conv.user, text });
+  cpToast('Место на холсте прикреплено');
+}
+
+function quickEmoji() {
+  const input = document.getElementById('cp-composer-input');
+  const emojis = ['🔥', '👍', '✨'];
+  input.value += emojis[Math.floor(Math.random() * emojis.length)];
+  input.focus();
+}
+
+function openAddFriend() {
+  document.getElementById('cp-add-friend-backdrop').classList.add('show');
+  document.getElementById('cp-modal-search-input').value = '';
+  cpSearchResults = [];
+  cpRenderSearchResults();
+  setTimeout(() => document.getElementById('cp-modal-search-input').focus(), 80);
+}
+function closeAddFriend() { document.getElementById('cp-add-friend-backdrop').classList.remove('show'); }
+
+function filterSuggestions(q) {
+  clearTimeout(cpSearchDebounceTimer);
+  if (!q.trim()) { cpSearchResults = []; cpRenderSearchResults(); return; }
+  cpSearchDebounceTimer = setTimeout(() => cpSearchUsers(q.trim()), 250);
+}
+
+function cpRenderSearchResults() {
+  const root = document.getElementById('cp-suggest-list');
+  if (!root) return;
+  root.innerHTML = '';
+  const q = document.getElementById('cp-modal-search-input')?.value || '';
+  if (!q.trim()) return;
+  if (cpSearchResults.length === 0) { root.appendChild(cpEmptyHint('Пользователь не найден')); return; }
+  cpSearchResults.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'cp-suggest-row';
+    const isFriend = u.isFriend;
+    const label = isFriend ? 'В друзьях' : u.requestSent ? 'Отправлено' : u.requestReceived ? 'Принять' : 'Добавить';
+    row.innerHTML = `
+      ${cpAvatarEl(u.username, 'sm').outerHTML}
+      <div class="cp-row-body"><div class="cp-row-name">${esc(u.username)}</div><div class="cp-row-preview">${esc(u.rank || 'Новичок')}</div></div>
+      <div class="cp-suggest-add ${isFriend || u.requestSent ? 'added' : ''}">${label}</div>
+    `;
+    if (!isFriend) {
+      row.querySelector('.cp-suggest-add').onclick = () => {
+        if (u.requestReceived) cpAcceptFriendReq(u.username);
+        else if (!u.requestSent) cpSendFriendRequest(u.username);
+        else return;
+        cpToast(u.requestReceived ? `Вы подружились с ${u.username}` : `Заявка отправлена: ${u.username}`);
+        setTimeout(() => cpSearchUsers(q.trim()), 150);
+      };
+    }
+    root.appendChild(row);
+  });
+}
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && document.getElementById('cp-add-friend-backdrop')?.classList.contains('show')) closeAddFriend();
+});

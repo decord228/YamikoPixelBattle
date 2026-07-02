@@ -44,6 +44,29 @@ let chatUnread = 0;
 let chatOpen = false;
 let clanChatMessages = [];
 
+// ── SOCIAL HUB (попап чата: друзья, ЛС, онлайн) ──
+// Раньше это была отдельная js/chat-popup.js с моковыми данными (CP_*).
+// Теперь она удалена, а состояние живёт здесь и питается настоящим бэкендом
+// (friends_get/friends_update, dm_conversations/dm_message, online_users_get и т.д.)
+const CP_RANK_CLASS = { 'Новичок':'cp-rank-novice', 'Художник':'cp-rank-artist', 'Маэстро':'cp-rank-maestro', 'Легенда':'cp-rank-legend', 'Архитектор':'cp-rank-architect', 'Бог Пикселей':'cp-rank-god' };
+const CP_STATUS_LABEL = { online: 'в сети', offline: 'не в сети' };
+
+let cpActiveTab = 'chats';       // 'chats' | 'friends'
+let cpActiveConvId = 'ch-general';
+let cpSearchQuery = '';
+let cpInfoOpen = true;
+let cpInited = false;
+
+let cpFriends = [];              // [userCard]
+let cpIncoming = [];             // входящие заявки в друзья [userCard]
+let cpOutgoing = [];             // исходящие заявки [userCard]
+let cpDmConversations = [];      // [{username, emoji, rank, online, lastMessage, lastFrom, lastTs, unread, ...}]
+let cpDmThreads = {};            // username -> [{from, text, ts}]
+let cpOnlineUsers = [];          // [{username, emoji, role, rank, clan}]
+let cpUserCache = {};            // username -> последняя известная карточка (для аватарок где угодно)
+let cpSearchResults = [];        // результаты user_search в модалке "Добавить друга"
+let cpSearchDebounceTimer = null;
+
 // Admin Image Tool
 let adminImageData = null;
 let adminImgObj = null;

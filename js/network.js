@@ -204,12 +204,69 @@ function handleJSON(d) {
     renderClanRequests(d.requests || []);
   }
   else if (a==='chat_message') {
-    if (d.msg) addChatMessage(d.msg.username, d.msg.text, d.msg.emoji || '👾');
+    if (d.msg) {
+      addChatMessage(d.msg.username, d.msg.text, d.msg.emoji || '👾');
+      chatMessages.push(d.msg);
+      if (chatMessages.length > 200) chatMessages.shift();
+      if (typeof cpOnGlobalMessage === 'function') cpOnGlobalMessage(d.msg);
+    }
   }
   else if (a==='chat_history') {
     if (d.messages && Array.isArray(d.messages)) {
       d.messages.forEach(m => addChatMessage(m.username, m.text, m.emoji || '👾'));
+      chatMessages = d.messages.slice(-200);
+      if (typeof cpRenderMessages === 'function' && cpActiveConvId === 'ch-general') cpRenderMessages(cpGetActiveConv());
     }
+  }
+  // ── SOCIAL HUB: друзья / ЛС / онлайн ──
+  else if (a==='friends_update') {
+    cpFriends  = d.friends  || [];
+    cpIncoming = d.incoming || [];
+    cpOutgoing = d.outgoing || [];
+    [...cpFriends, ...cpIncoming, ...cpOutgoing].forEach(cpCacheUser);
+    if (typeof cpUpdateFreqBadge === 'function') cpUpdateFreqBadge();
+    if (typeof cpRenderSidebar === 'function') cpRenderSidebar();
+    if (typeof cpRenderInfoPanel === 'function' && cpActiveConvId !== 'ch-general') cpRenderInfoPanel(cpGetActiveConv());
+  }
+  else if (a==='friend_presence') {
+    if (cpUserCache[d.username]) cpUserCache[d.username].online = !!d.online;
+    const f = cpFriends.find(u => u.username === d.username);
+    if (f) f.online = !!d.online;
+    const c = cpDmConversations.find(u => u.username === d.username);
+    if (c) c.online = !!d.online;
+    if (typeof cpRenderSidebar === 'function') cpRenderSidebar();
+    if (typeof cpRenderHeader === 'function' && cpActiveConvId === 'dm-' + d.username) cpRenderHeader(cpGetActiveConv());
+  }
+  else if (a==='dm_message') {
+    if (!d.msg || !d.peer) return;
+    if (!cpDmThreads[d.peer]) cpDmThreads[d.peer] = [];
+    cpDmThreads[d.peer].push(d.msg);
+    const isActive = cpActiveConvId === 'dm-' + d.peer;
+    if (isActive) {
+      if (typeof cpRenderMessages === 'function') cpRenderMessages(cpGetActiveConv());
+      sendJSON({ action:'dm_mark_read', with: d.peer });
+    } else if (d.msg.from !== currentUser && chatOpen === false) {
+      showToast(`Новое сообщение от ${d.peer}`, 'info');
+    }
+    sendJSON({ action:'dm_conversations' }); // обновляем превью/непрочитанные в списке
+  }
+  else if (a==='dm_history_data') {
+    cpDmThreads[d.with] = d.messages || [];
+    if (typeof cpRenderMessages === 'function' && cpActiveConvId === 'dm-' + d.with) cpRenderMessages(cpGetActiveConv());
+  }
+  else if (a==='dm_conversations_data') {
+    cpDmConversations = d.conversations || [];
+    cpDmConversations.forEach(cpCacheUser);
+    if (typeof cpRenderSidebar === 'function') cpRenderSidebar();
+  }
+  else if (a==='online_users_data') {
+    cpOnlineUsers = d.users || [];
+    cpOnlineUsers.forEach(cpCacheUser);
+  }
+  else if (a==='user_search_results') {
+    cpSearchResults = d.results || [];
+    cpSearchResults.forEach(cpCacheUser);
+    if (typeof cpRenderSearchResults === 'function') cpRenderSearchResults();
   }
   else if (a==='purchase_update' || a==='stencil_level_update') {
     purchasedItems=d.purchased_items||d.purchased_levels||[];
@@ -272,6 +329,20 @@ function applyServerSettings(s) {
   const slider = document.getElementById('admin-cooldown-slider');
   if (slider && s.cooldownMs) { slider.value = s.cooldownMs; updateCooldownLabel(s.cooldownMs); }
 }
+
+// ── SOCIAL HUB: исходящие запросы к серверу ──
+function cpCacheUser(card) { if (card && card.username) cpUserCache[card.username] = { ...cpUserCache[card.username], ...card }; }
+
+function cpFetchFriends()      { sendJSON({ action:'friends_get' }); }
+function cpFetchConversations(){ sendJSON({ action:'dm_conversations' }); }
+function cpFetchOnline()       { sendJSON({ action:'online_users_get' }); }
+function cpFetchDmHistory(withUser) { sendJSON({ action:'dm_history', with: withUser }); }
+function cpSendFriendRequest(to)    { sendJSON({ action:'friend_request', to }); }
+function cpAcceptFriendReq(from)    { sendJSON({ action:'friend_accept', from }); }
+function cpDeclineFriendReq(from)   { sendJSON({ action:'friend_decline', from }); }
+function cpCancelFriendReq(to)      { sendJSON({ action:'friend_cancel', to }); }
+function cpRemoveFriendReq(username){ sendJSON({ action:'friend_remove', username }); }
+function cpSearchUsers(query) { sendJSON({ action:'user_search', query }); }
 
 function updateCoinsUI(coins) {
   document.getElementById('phud-coins').textContent = '🪙 ' + Math.floor(coins);

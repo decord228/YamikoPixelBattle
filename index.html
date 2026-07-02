@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script>window.BUILD_V = '20260631-29';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -271,6 +271,105 @@
             <div id="chat-input-row">
                 <input id="chat-input" placeholder="Введите сообщение..." maxlength="150" data-onkeydown="if(event.key==='Enter')sendChat()">
                 <button id="chat-send" data-onclick="sendChat()"><svg class="icon icon-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg></button>
+            </div>
+        </div>
+
+        <!-- ── ПОПАП ЧАТА (редизайн) ──
+             Разметка тут, стили в style.css (секция "#chat-popup-panel"),
+             логика — в js/state.js (состояние cp*), js/network.js (WS-обмен
+             с бэкендом: friends_get/friends_update, dm_conversations,
+             dm_send/dm_message, online_users_get и т.д.) и js/ui.js (функции
+             с префиксом cp*, отрисовка). Все id и классы внутри с префиксом
+             cp-, чтобы не пересекаться с остальным приложением. Работает на
+             реальных данных с сервера (друзья, ЛС, онлайн-статусы). -->
+        <div id="chat-popup-overlay" data-onclick="if(event.target===this)closeChatPopup()">
+            <div id="chat-popup-box">
+                <button id="chat-popup-close-btn" data-onclick="closeChatPopup()" title="Закрыть">
+                    <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg>
+                </button>
+
+                <div id="chat-popup-panel" class="cp-chat-open">
+                    <aside class="cp-sidebar">
+                        <div class="cp-sb-top">
+                            <div class="cp-sb-title"><span class="cp-dot"></span>Сообщения</div>
+                            <button class="cp-sb-newbtn" title="Новый чат" data-onclick="openAddFriend()">
+                                <svg class="icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14" /></svg>
+                            </button>
+                        </div>
+
+                        <div class="cp-tab-switch">
+                            <button class="cp-tab-btn active" id="cp-tab-chats" data-onclick="switchTab('chats')">Чаты</button>
+                            <button class="cp-tab-btn" id="cp-tab-friends" data-onclick="switchTab('friends')">Друзья <span class="cp-badge" id="cp-freq-count">2</span></button>
+                        </div>
+
+                        <div class="cp-search-box">
+                            <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                            <input id="cp-search-input" placeholder="Поиск чатов и людей…" data-oninput="onSearch(this.value)">
+                        </div>
+
+                        <div class="cp-sb-scroll" id="cp-sb-scroll"><!-- заполняется js/ui.js (cp*) --></div>
+                    </aside>
+
+                    <main class="cp-main">
+                        <div class="cp-mh">
+                            <div class="cp-mh-left">
+                                <button class="cp-mh-back" data-onclick="closeChatMobile()">
+                                    <svg class="icon" viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6" /></svg>
+                                </button>
+                                <div class="cp-avatar cp-rank-artist" id="cp-mh-avatar">🦊</div>
+                                <div class="cp-mh-info">
+                                    <div class="cp-mh-name" id="cp-mh-name">Луна_рисует</div>
+                                    <div class="cp-mh-sub" id="cp-mh-sub"><span class="cp-sqdot"></span>в сети</div>
+                                </div>
+                            </div>
+                            <div class="cp-mh-actions">
+                                <button class="cp-mh-icon-btn" title="Поиск по чату">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                                </button>
+                                <button class="cp-mh-icon-btn active" id="cp-info-toggle-btn" data-onclick="toggleInfo()" title="Информация">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M12 16v-5M12 8h.01" /></svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="cp-messages" id="cp-messages"><!-- заполняется js/ui.js (cp*) --></div>
+
+                        <div class="cp-composer-wrap">
+                            <div class="cp-composer">
+                                <button class="cp-composer-btn" title="Прикрепить место на холсте" data-onclick="attachCanvasSnippet()">
+                                    <svg class="icon" viewBox="0 0 24 24"><path d="M21.44 11.05l-9.19 9.19a5.5 5.5 0 0 1-7.78-7.78l9.2-9.19a3.67 3.67 0 0 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 0 1-2.6-2.6l8.49-8.48" /></svg>
+                                </button>
+                                <textarea class="cp-composer-input" id="cp-composer-input" rows="1" placeholder="Написать сообщение…" data-onkeydown="onComposerKey(event)" data-oninput="autoGrow(this)"></textarea>
+                                <button class="cp-composer-btn" title="Вставить эмодзи" data-onclick="quickEmoji()">
+                                    <svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" /><path d="M8 14s1.5 2 4 2 4-2 4-2M9 9h.01M15 9h.01" /></svg>
+                                </button>
+                                <button class="cp-composer-btn cp-send-btn" data-onclick="sendMessage()" title="Отправить">
+                                    <svg class="icon" viewBox="0 0 24 24" style="width:16px;height:16px"><path d="M12 19V5" /><path d="M6 11l6-6 6 6" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    </main>
+
+                    <aside class="cp-info-panel">
+                        <div class="cp-info-inner" id="cp-info-inner"><!-- заполняется js/ui.js (cp*) --></div>
+                    </aside>
+
+                    <div class="cp-modal-backdrop" id="cp-add-friend-backdrop" data-onclick="if(event.target===this)closeAddFriend()">
+                        <div class="cp-modal-card">
+                            <div class="cp-modal-head">
+                                <div class="cp-modal-title">Добавить друга</div>
+                                <button class="cp-modal-x" data-onclick="closeAddFriend()">
+                                    <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                                </button>
+                            </div>
+                            <div class="cp-modal-search">
+                                <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;color:var(--text3)"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                                <input placeholder="Введите имя пользователя…" id="cp-modal-search-input" data-oninput="filterSuggestions(this.value)">
+                            </div>
+                            <div id="cp-suggest-list"></div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 

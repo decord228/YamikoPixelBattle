@@ -54,7 +54,7 @@ const CP_STATUS_LABEL = { online: 'в сети', offline: 'не в сети' };
 let cpActiveTab = 'chats';       // 'chats' | 'friends'
 let cpActiveConvId = 'ch-general';
 let cpSearchQuery = '';
-let cpInfoOpen = true;
+let cpInfoOpen = false;      // синхронизировано с DOM: изначально .cp-info-open не навешан в HTML
 let cpInited = false;
 
 let cpFriends = [];              // [userCard]

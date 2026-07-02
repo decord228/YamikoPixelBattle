@@ -775,6 +775,7 @@ html, body {
     height: 100%;
     display: grid;
     grid-template-columns: 300px 1fr;
+    grid-auto-flow: column;
     background: var(--bg);
 }
 
@@ -1237,6 +1238,13 @@ html, body {
     padding: 0 18px;
     border-bottom: 1px solid var(--border);
     gap: 12px;
+}
+
+/* Когда инфо-панель закрыта, .cp-main упирается в правый край #chat-popup-box,
+   где поверх всего (position:absolute) висит крестик закрытия попапа —
+   резервируем под него место, чтобы кнопки поиска/инфо не перекрывались с ним. */
+#chat-popup-panel:not(.cp-info-open) .cp-mh {
+    padding-right: 54px;
 }
 
 #chat-popup-panel .cp-mh-left {

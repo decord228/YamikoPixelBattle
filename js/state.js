@@ -36,6 +36,14 @@ let serverCursorsEnabled = false;
 let clanShareCursor = false;
 let leaderboardOpen = false;
 
+// ── ЭТАП 3: профиль любого пользователя ──
+// viewingProfileUsername — чей профиль сейчас открыт в #profile-panel
+// (null/currentUser = свой). viewingProfileData — последние полученные
+// от сервера publичные данные ЧУЖОГО профиля (profile_data), null пока
+// смотрим свой профиль. См. openProfile()/renderProfileData() в ui.js.
+let viewingProfileUsername = null;
+let viewingProfileData = null;
+
 // News state
 let newsItems = [];            // данные новостей с сервера (уже отсортированы по order)
 let newsAdminEditId = null;    // id новости, которая сейчас редактируется в админке (null = новая)

@@ -126,6 +126,14 @@ function handleJSON(d) {
     if (typeof updateProfileBannerDisplay === 'function') updateProfileBannerDisplay();
     if (d.message) showToast(d.message,'success');
   }
+  else if (a==='profile_data') {
+    // Ответ на profile_get — актуален, только если панель всё ещё открыта
+    // именно на этом юзере (пользователь мог успеть закрыть/переключить
+    // профиль, пока ответ летел с сервера).
+    if (viewingProfileUsername !== d.username) return;
+    if (d.notFound) { showToast('Пользователь не найден','error'); hidePanel('profile-panel'); return; }
+    if (typeof renderProfileData === 'function') renderProfileData(d);
+  }
   else if (a==='clan_update') {
     if (d.clan) {
       currentClan=d.clan.name||'';
@@ -240,6 +248,13 @@ function handleJSON(d) {
     if (typeof cpUpdateFreqBadge === 'function') cpUpdateFreqBadge();
     if (typeof cpRenderSidebar === 'function') cpRenderSidebar();
     if (typeof cpRenderInfoPanel === 'function' && cpActiveConvId !== 'ch-general') cpRenderInfoPanel(cpGetActiveConv());
+    // Если сейчас открыта вкладка "Друзья" в профиле — обновляем её тоже
+    // (иначе принятая/отклонённая заявка не пропадёт из списка без
+    // повторного открытия вкладки).
+    const friendsTabEl = document.getElementById('prof-tab-friends');
+    if (friendsTabEl && friendsTabEl.style.display !== 'none' && typeof renderProfileFriendsTab === 'function') {
+      renderProfileFriendsTab();
+    }
     // Новый друг может ещё не иметь записи в cpDmConversations (она заводится
     // только когда есть история сообщений или это уже друг) — подтягиваем
     // актуальный список ЛС сразу, чтобы открыть переписку без перезахода в чат.

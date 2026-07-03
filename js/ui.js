@@ -32,16 +32,16 @@ function onAuthSuccess(d) {
   document.getElementById('auth-panel').classList.remove('show');
   document.getElementById('backdrop').classList.remove('show');
 
-  document.getElementById('prof-name').textContent=currentUser;
-  const roleLabel = isAdmin?'Администратор':isVip?'VIP':'Пользователь';
-  const roleClass = isAdmin?'role-admin':isVip?'role-vip':'role-user';
-  document.getElementById('prof-role').textContent=roleLabel;
-  document.getElementById('prof-role').className='profile-role '+roleClass;
+  // prof-name/prof-role раньше были статичными элементами шапки профиля —
+  // с Этапа 3 шапка (баннер+аватар+имя) строится динамически в
+  // renderProfileBannerHeader() при каждом openProfile(), поэтому здесь
+  // напрямую их не трогаем (см. openProfile ниже).
   updateProfileStats(currentPixels,currentRank);
   updateCoinsUI(currentCoins);
   if (typeof updateProfileBannerDisplay === 'function') updateProfileBannerDisplay();
   if (typeof buildBannerPicker === 'function') buildBannerPicker();
 
+  const roleLabel = isAdmin ? 'Администратор' : isVip ? 'VIP' : 'Пользователь';
   document.getElementById('phud-name').textContent=currentUser;
   document.getElementById('phud-role').textContent=roleLabel;
   document.getElementById('phud-role').className='phud-role-'+(isAdmin?'admin':isVip?'vip':'user');
@@ -112,14 +112,24 @@ function saveSession(u,p){try{localStorage.setItem('pb_session',JSON.stringify({
 function loadSession(){try{const s=localStorage.getItem('pb_session');return s?JSON.parse(s):null;}catch(_){return null;}}
 function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
 
+const PROFILE_TABS = ['overview','banner','friends','clan','settings'];
+
 function switchProfileTab(tab) {
-  ['avatar','banner','account'].forEach(t=>{
-    document.getElementById(`prof-tab-${t}`).style.display=t===tab?'':'none';
+  if (!PROFILE_TABS.includes(tab)) tab = 'overview';
+  PROFILE_TABS.forEach(t=>{
+    const el = document.getElementById(`prof-tab-${t}`);
+    if (el) el.style.display = t===tab ? '' : 'none';
   });
-  document.querySelectorAll('#profile-panel .sub-tab').forEach((el,i)=>{
-    el.classList.toggle('active',['avatar','banner','account'][i]===tab);
+  document.querySelectorAll('#profile-sidenav .csn-item[data-tab]').forEach(el=>{
+    el.classList.toggle('active', el.getAttribute('data-tab')===tab);
   });
-  if (tab === 'banner' && typeof buildBannerPicker === 'function') buildBannerPicker();
+  const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
+  if (tab === 'banner') {
+    if (isSelf && typeof buildBannerPicker === 'function') buildBannerPicker();
+    else renderReadOnlyBannerTab(viewingProfileData);
+  }
+  if (tab === 'friends' && isSelf) renderProfileFriendsTab();
+  if (tab === 'clan') renderProfileClanTab(isSelf ? null : viewingProfileData);
 }
 
 // ── АВАТАР ПРОФИЛЯ: только Discord ──
@@ -987,6 +997,12 @@ async function disbandClan(){
 
 // ─────────────────────────────────────────────
 // CLAN CHAT v2 — инициализация и добавление сообщений
+// Стиль сообщений переиспользует те же классы, что и общий чат/ЛС в
+// попапе "Сообщения" (cp-msg-group/cp-msg-col/cp-msg-headline/cp-msg-text,
+// см. cpRenderMessages выше) — тот же размер, отступы и Discord-аватарка
+// с status-точкой (cpAvatarEl), чтобы не было двух разных визуальных
+// языков для чата. Раньше клан-чат рисовался вручную своими
+// clan-chat-v2-avatar/-header/-text классами — убраны в пользу общих cp-*.
 // ─────────────────────────────────────────────
 let _clanChatV2Init = false;
 let _clanChatV2Messages = [];
@@ -997,12 +1013,7 @@ function initClanChatV2() {
   inner.dataset.v2 = '1';
   _clanChatV2Init = true;
   inner.innerHTML = `
-      <div class="clan-chat-v2-wrap" id="clan-chat-v2-msgs">
-          <div class="clan-chat-v2-empty">
-              <div class="clan-chat-v2-empty-icon">💬</div>
-              <div>Здесь появятся сообщения клана</div>
-          </div>
-      </div>
+      <div class="cp-messages clan-chat-v2-wrap" id="clan-chat-v2-msgs"></div>
       <div class="clan-chat-v2-input-row">
           <input class="clan-chat-v2-input" id="clan-chat-v2-input"
               placeholder="Сообщение клану..." maxlength="200"
@@ -1011,53 +1022,52 @@ function initClanChatV2() {
               <svg class="icon icon-arrow" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 19V5"/><path d="M6 11l6-6 6 6"/></svg>
           </button>
       </div>`;
-  // Восстановить историю
-  if (_clanChatV2Messages.length) {
-    const wrap = document.getElementById('clan-chat-v2-msgs');
-    if (wrap) {
-      wrap.innerHTML = '';
-      _clanChatV2Messages.forEach(m => _appendClanChatV2Msg(m.username, m.text, m.emoji, m.ts, m.avatar));
-    }
-  }
+  renderClanChatV2Messages();
 }
 
-function _appendClanChatV2Msg(user, text, emoji, ts, avatar) {
+function renderClanChatV2Messages() {
   const wrap = document.getElementById('clan-chat-v2-msgs');
   if (!wrap) return;
-  const empty = wrap.querySelector('.clan-chat-v2-empty');
-  if (empty) empty.remove();
-  const pad = n => String(n).padStart(2, '0');
-  let timeStr = '';
-  if (ts) {
-    const d = new Date(ts);
-    const now = new Date();
-    if (d.toDateString() === now.toDateString()) {
-      timeStr = pad(d.getHours()) + ':' + pad(d.getMinutes());
-    } else {
-      timeStr = pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
-    }
+  wrap.innerHTML = '';
+
+  if (!_clanChatV2Messages.length) {
+    wrap.appendChild(cpEmptyHint('Здесь появятся сообщения клана'));
+    return;
   }
-  const el = document.createElement('div');
-  el.className = 'clan-chat-v2-msg';
-  el.innerHTML = `
-      <div class="clan-chat-v2-avatar">${avatarInnerHTML({avatar})}</div>
-      <div class="clan-chat-v2-body">
-          <div class="clan-chat-v2-header">
-              <span class="clan-chat-v2-user">${esc(user)}</span>
-              ${timeStr ? `<span class="clan-chat-v2-time">${timeStr}</span>` : ''}
-          </div>
-          <div class="clan-chat-v2-text">${esc(text)}</div>
-      </div>`;
-  wrap.appendChild(el);
-  while (wrap.children.length > 120) wrap.removeChild(wrap.firstChild);
-  wrap.scrollTop = wrap.scrollHeight;
+
+  let lastUser = null;
+  _clanChatV2Messages.forEach(m => {
+    if (m.username !== lastUser) {
+      const g = document.createElement('div');
+      g.className = 'cp-msg-group';
+      g.appendChild(cpAvatarEl(m.username, '', { emoji: m.emoji, avatar: m.avatar }));
+      const col = document.createElement('div');
+      col.className = 'cp-msg-col';
+      col.innerHTML = `
+        <div class="cp-msg-headline"><span class="cp-msg-user">${esc(m.username)}</span><span class="cp-msg-time">${cpFmtTime(m.ts)}</span></div>
+        <div class="cp-msg-text">${cpMsgBodyHTML(m.text)}</div>
+      `;
+      g.appendChild(col);
+      wrap.appendChild(g);
+    } else {
+      const g = document.createElement('div');
+      g.className = 'cp-msg-continued-row cp-msg-continued';
+      g.innerHTML = `
+        <div class="cp-msg-time-hover">${cpFmtTime(m.ts)}</div>
+        <div class="cp-msg-col"><div class="cp-msg-text">${cpMsgBodyHTML(m.text)}</div></div>`;
+      wrap.appendChild(g);
+    }
+    lastUser = m.username;
+  });
+
+  wrap.scrollTop = wrap.scrollHeight + 999;
 }
 
 function addClanChatMessage(user, text, emoji, ts, avatar) {
   const msg = { username: user, text, emoji: emoji || '👾', avatar: avatar || null, ts: ts || Date.now() };
   _clanChatV2Messages.push(msg);
   if (_clanChatV2Messages.length > 120) _clanChatV2Messages.shift();
-  _appendClanChatV2Msg(user, text, emoji, msg.ts, avatar);
+  renderClanChatV2Messages();
 }
 
 function sendClanChatV2() {
@@ -1460,7 +1470,7 @@ function renderClanView(clan){
   const canInvite = clanHasPermUser(clan, currentUser, 'invite');
 
   // ── Рендерим баннер-хедер ──
-  const shellHeader = document.querySelector('.clan-shell-header');
+  const shellHeader = document.getElementById('clan-shell-header');
   if (shellHeader) {
     shellHeader.innerHTML = renderClanBannerHeader(clan, canManageSettings);
   }
@@ -2020,7 +2030,7 @@ function renderClanMemberPage() {
 
       return `<div class="member-row${isLdr?' member-row-is-leader':''}${b.cls}">
         ${b.html}
-        <div class="member-row-info">
+        <div class="member-row-info" data-onclick="openProfile('${esc(m)}')" style="cursor:pointer">
           ${cpAvatarHTML(m, 'sm', {emoji: card.emoji, avatar: card.avatar, rank: card.rank})}
           ${isLdr ? '<span class="member-row-crown" title="Лидер">👑</span>' : ''}
           <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}${isMe?' <span class="member-row-you">(вы)</span>':''}</span>
@@ -2378,7 +2388,7 @@ function renderLeaderboardPlayers(data){
       ${b.html}
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, avatar: u.avatar, rank: u.rank, online: u.online})}
-      <div class="lb-name">${esc(u.username)}</div>
+      <div class="lb-name" data-onclick="openProfile('${esc(u.username)}')" style="cursor:pointer">${esc(u.username)}</div>
       <div class="lb-capsule"><div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div></div>
     </div>`;
   }).join('');
@@ -2677,7 +2687,9 @@ function showPanel(id){
   document.getElementById(id)?.classList.add('show');
   document.getElementById('backdrop').classList.add('show');
   if (id==='leaderboard-panel') sendJSON({action:'get_leaderboard'});
-  if (id==='profile-panel'){buildEmojiAvatarPicker();loadAvatarFromStorage();}
+  // profile-panel больше не открывается напрямую showPanel() — см. openProfile()
+  // в этом файле (Этап 3), которая сама вызывает showPanel('profile-panel')
+  // после подготовки данных (своих или чужих).
   if (id==='admin-panel') loadAdminStats();
   if (id==='clan-panel') { if (currentClan) sendJSON({action:'clan_get'}); else sendJSON({action:'clan_list'}); }
   if (id==='shop-panel') buildShopUI();
@@ -3671,38 +3683,15 @@ function cpRenderSidebar() {
   if (!root) return;
   root.innerHTML = '';
 
-  if (cpActiveTab === 'chats') {
-    const q = cpSearchQuery.toLowerCase();
-    const channels = cpChannelsList().filter(c => !q || c.name.toLowerCase().includes(q));
-    const dms = cpDmList().filter(c => !q || cpUser(c.user).username.toLowerCase().includes(q));
+  const q = cpSearchQuery.toLowerCase();
+  const channels = cpChannelsList().filter(c => !q || c.name.toLowerCase().includes(q));
+  const dms = cpDmList().filter(c => !q || cpUser(c.user).username.toLowerCase().includes(q));
 
-    root.appendChild(cpSectionLabel('Каналы'));
-    channels.forEach(c => root.appendChild(cpChannelRow(c)));
-    root.appendChild(cpSectionLabel('Личные сообщения'));
-    if (dms.length === 0) root.appendChild(cpEmptyHint(cpDmConversations.length === 0 ? 'Пока нет переписок — добавьте друзей' : 'Ничего не найдено'));
-    dms.forEach(c => root.appendChild(cpDmRow(c)));
-  } else {
-    const q = cpSearchQuery.toLowerCase();
-    const incoming = cpIncoming.filter(u => u.username.toLowerCase().includes(q));
-    if (incoming.length) {
-      root.appendChild(cpSectionLabel(`Заявки в друзья · ${incoming.length}`));
-      incoming.forEach(u => root.appendChild(cpRequestRow(u)));
-    }
-    const friends = cpFriends.filter(u => u.username.toLowerCase().includes(q));
-    const online = friends.filter(u => u.online);
-    const offline = friends.filter(u => !u.online);
-    root.appendChild(cpSectionLabel(`В сети · ${online.length}`));
-    online.forEach(u => root.appendChild(cpFriendRow(u)));
-    root.appendChild(cpSectionLabel(`Не в сети · ${offline.length}`));
-    if (offline.length === 0 && online.length === 0 && incoming.length === 0) root.appendChild(cpEmptyHint('У вас пока нет друзей'));
-    offline.forEach(u => root.appendChild(cpFriendRow(u)));
-
-    const cta = document.createElement('div');
-    cta.className = 'cp-addfriend-cta';
-    cta.onclick = openAddFriend;
-    cta.innerHTML = `<svg class="icon" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Добавить друга`;
-    root.appendChild(cta);
-  }
+  root.appendChild(cpSectionLabel('Каналы'));
+  channels.forEach(c => root.appendChild(cpChannelRow(c)));
+  root.appendChild(cpSectionLabel('Личные сообщения'));
+  if (dms.length === 0) root.appendChild(cpEmptyHint(cpDmConversations.length === 0 ? 'Пока нет переписок — добавьте друзей в профиле' : 'Ничего не найдено'));
+  dms.forEach(c => root.appendChild(cpDmRow(c)));
 }
 
 function cpSectionLabel(t) { const d = document.createElement('div'); d.className = 'cp-list-label'; d.textContent = t; return d; }
@@ -3772,17 +3761,349 @@ function profileBannerRowHTML(bannerId) {
   return { cls: ' has-profile-banner', html: `${bg}<div class="row-banner-overlay"></div>` };
 }
 
-// updateProfileBannerDisplay — вешает текущий баннер на шапку панели профиля
-// (#profile-header), используя тот же .has-profile-banner + row-banner-*
-// слой, что и ряды лидерборда/клан-меню. Вызывается при открытии профиля,
-// после auth_success и после banner_update (см. network.js).
+// ══════════════════════════════════════════════════════════════
+//  ЭТАП 3: реворк меню профиля (баннер-хедер + sidenav + чужие профили)
+// ══════════════════════════════════════════════════════════════
+//
+// buildOwnProfileObject() — собирает "публичный" объект своего профиля из
+// глобальных переменных state.js (currentUser/currentAvatar/...), в том же
+// формате, что и userCard() на сервере (см. profile_data), чтобы
+// renderProfileBannerHeader() умел рисовать и свой, и чужой профиль одной
+// функцией без ветвлений по источнику данных.
+function buildOwnProfileObject() {
+  return {
+    username: currentUser,
+    avatar:   currentAvatar,
+    emoji:    currentEmoji,
+    banner:   currentBannerId,
+    role:     isAdmin ? 'admin' : isVip ? 'vip' : 'user',
+    rank:     currentRank,
+    pixels:   currentPixels,
+    clan:     currentClan,
+    clanInfo: currentClan ? { name: currentClan, tag: (clanFullData&&clanFullData.tag)||'', icon: (clanFullData&&clanFullData.icon)||'🏴', tag_color: (clanFullData&&clanFullData.tag_color)||'#818cf8' } : null,
+  };
+}
+
+// renderProfileBannerHeader(p, isSelf) — единая точка рендера шапки профиля:
+// широкий баннер на всю ширину + круглая аватарка на границе баннер/контент
+// (аналог .clan-banner-icon в renderClanBannerHeader, см. plan п.1) + имя/
+// роль/бейдж клана + для чужого профиля — кнопка действия (добавить в
+// друзья / написать / принять заявку), для своего — ничего (действия есть
+// в самих разделах слева).
+function renderProfileBannerHeader(p, isSelf) {
+  const b = profileBannerRowHTML(p.banner);
+  const roleLabel = p.role==='admin' ? 'Администратор' : p.role==='vip' ? 'VIP' : 'Пользователь';
+  const clanTag = p.clanInfo ? `<span class="clan-banner-tag" style="color:${esc(p.clanInfo.tag_color)};border-color:${esc(p.clanInfo.tag_color)}55;">${esc((p.clanInfo.icon?p.clanInfo.icon+' ':'')+p.clanInfo.tag)}</span>` : '';
+
+  let actionBtn = '';
+  if (!isSelf) {
+    if (p.isFriend) {
+      actionBtn = `<button class="clan-banner-edit-btn profile-header-action" style="opacity:1;pointer-events:all;transform:none;" data-onclick="profileOpenDM('${esc(p.username)}')">💬 Написать</button>`;
+    } else if (p.requestSent) {
+      actionBtn = `<button class="clan-banner-edit-btn profile-header-action" disabled style="opacity:.6;pointer-events:none;transform:none;cursor:default;">⏳ Заявка отправлена</button>`;
+    } else if (p.requestReceived) {
+      actionBtn = `<button class="clan-banner-edit-btn profile-header-action" style="opacity:1;pointer-events:all;transform:none;" data-onclick="profileAcceptFriend('${esc(p.username)}')">✅ Принять заявку</button>`;
+    } else {
+      actionBtn = `<button class="clan-banner-edit-btn profile-header-action" style="opacity:1;pointer-events:all;transform:none;" data-onclick="profileAddFriend('${esc(p.username)}')">➕ Добавить в друзья</button>`;
+    }
+  }
+
+  return `<div class="clan-banner-wrap${b.cls}">
+    ${b.html}
+    ${!b.html ? `<div class="clan-banner-glow clan-banner-glow-1"></div><div class="clan-banner-glow clan-banner-glow-2"></div>` : ''}
+    <div class="clan-banner-content">
+      <div class="clan-banner-icon profile-banner-avatar">${avatarInnerHTML(p)}</div>
+      <div class="clan-banner-info">
+        <div class="clan-banner-name-row">
+          <span class="clan-banner-name">${esc(p.username)}</span>
+          <span class="clan-banner-tag" style="color:var(--text2);border-color:var(--border2)">${esc(roleLabel)}</span>
+          ${clanTag}
+        </div>
+        <div class="clan-banner-desc">${esc(p.rank||'Новичок')} · ${(p.pixels||0).toLocaleString()} пикселей</div>
+      </div>
+    </div>
+    ${actionBtn}
+  </div>`;
+}
+
+// openProfile(username) — единая точка входа в профиль ЛЮБОГО пользователя
+// (HUD-клик по себе, лидерборд, участники клана...). Если username — это
+// currentUser (или не передан), показывает "полный" режим (все разделы
+// nav, свои данные из state.js, без запроса на сервер). Иначе — запрашивает
+// у сервера publичные данные (profile_get → profile_data) и открывает панель
+// в режиме "только чтение" (см. renderProfileData).
+function openProfile(username) {
+  const uname = username || currentUser;
+  if (!uname) return;
+  viewingProfileUsername = uname;
+  if (uname === currentUser) {
+    viewingProfileData = null;
+    renderProfileData(null);
+    showPanel('profile-panel');
+  } else {
+    viewingProfileData = null;
+    showPanel('profile-panel');
+    document.getElementById('profile-panel-title').textContent = 'Профиль';
+    const header = document.getElementById('profile-shell-header');
+    if (header) header.innerHTML = `<div style="padding:44px 0;text-align:center;color:var(--text3);">Загрузка…</div>`;
+    document.getElementById('profile-overview-actions').innerHTML = '';
+    sendJSON({ action:'profile_get', username: uname });
+  }
+}
+
+// renderProfileData(d) — d===null означает "рендерим свой профиль из
+// state.js" (быстрый путь, без ожидания сервера — данные уже все есть от
+// auth_success). Иначе d — объект profile_data чужого пользователя.
+function renderProfileData(d) {
+  const isSelf = !d;
+  const p = d || buildOwnProfileObject();
+  viewingProfileData = isSelf ? null : d;
+
+  document.getElementById('profile-panel-title').textContent = isSelf ? 'Профиль' : `Профиль: ${p.username}`;
+  const header = document.getElementById('profile-shell-header');
+  if (header) header.innerHTML = renderProfileBannerHeader(p, isSelf);
+
+  // Разделы, которые не имеют смысла в чужом профиле — скрываем в sidenav
+  // (правило плана: настройки только у себя, друзья — приватность своя).
+  document.getElementById('profile-nav-settings').style.display = isSelf ? '' : 'none';
+  document.getElementById('profile-nav-settings-sep').style.display = isSelf ? '' : 'none';
+  document.getElementById('profile-nav-friends').style.display = isSelf ? '' : 'none';
+
+  if (isSelf) {
+    updateProfileStats(currentPixels, currentRank);
+    updateCoinsUI(currentCoins);
+    document.getElementById('prof-session-card').style.display = '';
+    document.getElementById('prof-coins-card').style.display = '';
+    document.getElementById('profile-overview-actions').innerHTML = renderProfileOverviewActions(p, true);
+  } else {
+    document.getElementById('prof-pixels').textContent = (p.pixels||0).toLocaleString();
+    document.getElementById('prof-rank').textContent = p.rank || 'Новичок';
+    const r = RANKS.find(r => r.name === p.rank) || RANKS[0];
+    document.getElementById('prof-rank-icon').textContent = r.icon;
+    // Сессия/монеты — приватные поля чужого аккаунта, не отдаются сервером
+    // (см. userCard на сервере) — прячем карточки, а не показываем 0.
+    document.getElementById('prof-session-card').style.display = 'none';
+    document.getElementById('prof-coins-card').style.display = 'none';
+    document.getElementById('profile-overview-actions').innerHTML = renderProfileOverviewActions(p, false);
+  }
+
+  switchProfileTab('overview');
+}
+
+// renderProfileOverviewActions — "точки входа" в духе Steam/Discord прямо
+// из обзора профиля: клан / позиция в лидерборде / магазин баннеров.
+function renderProfileOverviewActions(p, isSelf) {
+  const rows = [];
+  if (p.clan) {
+    rows.push(`<button class="btn btn-secondary" data-onclick="switchProfileTab('clan')">🏴 ${isSelf ? 'Открыть свой клан' : 'Клан: ' + esc(p.clan)}</button>`);
+  } else if (isSelf) {
+    rows.push(`<button class="btn btn-secondary" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">🔍 Найти клан</button>`);
+  }
+  if (isSelf) {
+    rows.push(`<button class="btn btn-secondary" data-onclick="hidePanel('profile-panel');showLeaderboard()">🏆 Открыть лидерборд</button>`);
+    rows.push(`<button class="btn btn-secondary" data-onclick="switchProfileTab('banner')">🖼️ Магазин баннеров</button>`);
+  }
+  return rows.join('');
+}
+
+// renderReadOnlyBannerTab — вкладка "Баннер" для ЧУЖОГО профиля: показывает
+// ВСЕ купленные (owned_banners) баннеры пользователя сеткой (как у себя),
+// но без возможности купить/выбрать — просто просмотр, с отметкой ✓ на том,
+// что сейчас надет. owned_banners приходит с сервера в profile_data
+// (см. profile_get в server.js).
+function renderReadOnlyBannerTab(p) {
+  const root = document.getElementById('profile-banner-picker');
+  if (!root || !p) return;
+  const catalog = profileBannersCatalog || [];
+  const ownedIds = p.owned_banners || [];
+  const owned = catalog.filter(b => b.tier === 'free' || ownedIds.includes(b.id));
+
+  if (!owned.length) {
+    const b = getBannerEntry(p.banner);
+    if (!b) { root.innerHTML = `<div style="color:var(--text3);font-size:12px;padding:12px 0;">Баннер не выбран</div>`; return; }
+    owned.push(b);
+  }
+
+  const cards = owned.map(b => {
+    const equipped = p.banner === b.id;
+    const animCls = b.anim ? ` ${esc(b.anim)}` : '';
+    const bg = b.url
+      ? `<img class="profile-banner-card-bg" src="${esc(b.url)}" alt="" loading="lazy">`
+      : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}"></div>` : '');
+    return `<div class="profile-banner-card${equipped ? ' equipped' : ''}${!bg ? ' none-banner' : ''}" title="${esc(b.name)}">
+      ${bg}
+      ${equipped ? '<div class="profile-banner-card-check">✓</div>' : ''}
+      <div class="profile-banner-card-label"><span>${esc(b.name)}</span></div>
+    </div>`;
+  }).join('');
+
+  root.innerHTML = `<div class="profile-banner-tier-title">Баннеры (${owned.length})</div>
+    <div class="profile-banner-grid">${cards}</div>`;
+}
+
+// renderProfileFriendsTab — вкладка "Друзья" прямо в профиле (плана п.1
+// Этапа 3). Реворк: раньше использовались вертикальные cp-row из сайдбара
+// попапа чата — их CSS заскоуплен на #chat-popup-panel и внутри профиля
+// не применялся (ряды были без стилей). Теперь список рисуется теми же
+// горизонтальными рядами, что и участники клана/лидерборд (.member-row,
+// глобальный класс, не заскоуплен) — аватар слева, имя, статус и кнопки
+// действий (написать/удалить) справа. Заявки — карточками .clan-req-card
+// (тот же стиль, что заявки на вступление в клан). Кнопка "Добавить друга"
+// открывает существующую модалку поиска (openAddFriend()) — раньше в
+// профиле не было способа добавить друга вообще.
+function renderProfileFriendsTab() {
+  const root = document.getElementById('profile-friends-list');
+  if (!root) return;
+  if (!cpFriends.length && !cpIncoming.length) {
+    sendJSON({ action:'friends_get' });
+  }
+  root.innerHTML = '';
+
+  const addBtn = document.createElement('button');
+  addBtn.className = 'btn btn-primary';
+  addBtn.style.cssText = 'margin-bottom:14px;width:100%;justify-content:center;';
+  addBtn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Добавить друга`;
+  addBtn.onclick = () => openAddFriend();
+  root.appendChild(addBtn);
+
+  if (cpIncoming.length) {
+    const title = document.createElement('div');
+    title.className = 'profile-banner-tier-title';
+    title.textContent = `Заявки в друзья (${cpIncoming.length})`;
+    root.appendChild(title);
+
+    const list = document.createElement('div');
+    list.className = 'clan-req-list';
+    list.style.marginBottom = '16px';
+    cpIncoming.forEach(u => {
+      const card = document.createElement('div');
+      card.className = 'clan-req-card';
+      card.appendChild(cpAvatarEl(u.username, 'sm'));
+      const info = document.createElement('div');
+      info.className = 'clan-req-info';
+      info.innerHTML = `<div class="clan-req-name">${esc(u.username)}</div><div class="clan-req-sub">Хочет добавить вас в друзья</div>`;
+      info.style.cursor = 'pointer';
+      info.onclick = () => openProfile(u.username);
+      card.appendChild(info);
+      const actions = document.createElement('div');
+      actions.className = 'clan-req-actions';
+      actions.innerHTML = `
+        <button class="clan-req-btn clan-req-accept" title="Принять"><svg class="icon" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7"/></svg></button>
+        <button class="clan-req-btn clan-req-deny" title="Отклонить"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      `;
+      actions.children[0].onclick = () => { cpAcceptFriendReq(u.username); showToast(`${u.username} теперь в друзьях`, 'success'); };
+      actions.children[1].onclick = () => { cpDeclineFriendReq(u.username); showToast('Заявка отклонена', 'info'); };
+      card.appendChild(actions);
+      list.appendChild(card);
+    });
+    root.appendChild(list);
+  }
+
+  const title2 = document.createElement('div');
+  title2.className = 'profile-banner-tier-title';
+  title2.textContent = `Друзья (${cpFriends.length})`;
+  root.appendChild(title2);
+
+  if (!cpFriends.length) {
+    const empty = document.createElement('div');
+    empty.style.cssText = 'color:var(--text3);font-size:12px;padding:8px 0;';
+    empty.textContent = 'Пока никого — добавьте друзей через кнопку выше 💬';
+    root.appendChild(empty);
+    return;
+  }
+
+  cpFriends.forEach(u => {
+    const row = document.createElement('div');
+    row.className = 'member-row';
+
+    const info = document.createElement('div');
+    info.className = 'member-row-info';
+    info.style.cursor = 'pointer';
+    info.onclick = () => openProfile(u.username);
+    info.appendChild(cpAvatarEl(u.username, 'sm'));
+    const name = document.createElement('span');
+    name.className = 'member-row-name';
+    name.textContent = u.username;
+    info.appendChild(name);
+    row.appendChild(info);
+
+    const actions = document.createElement('div');
+    actions.className = 'member-row-actions';
+    const statusBadge = document.createElement('span');
+    statusBadge.className = 'member-rank-badge';
+    statusBadge.style.cssText = u.online
+      ? 'color:var(--green);background:rgba(34,197,94,.12);border-color:rgba(34,197,94,.3);'
+      : 'color:var(--text3);background:var(--surface3);border-color:var(--border2);';
+    statusBadge.textContent = CP_STATUS_LABEL[u.online ? 'online' : 'offline'];
+    actions.appendChild(statusBadge);
+
+    const msgBtn = document.createElement('button');
+    msgBtn.className = 'member-action-btn';
+    msgBtn.title = 'Написать';
+    msgBtn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>`;
+    msgBtn.onclick = () => profileOpenDM(u.username);
+    actions.appendChild(msgBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'member-kick-btn';
+    delBtn.title = 'Удалить из друзей';
+    delBtn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>`;
+    delBtn.onclick = async () => {
+      const ok = await showConfirm(`Удалить ${u.username} из друзей?`, { title: 'Удаление друга', icon: '💔', danger: true });
+      if (!ok) return;
+      cpRemoveFriendReq(u.username);
+      showToast(`${u.username} удалён из друзей`, 'info');
+    };
+    actions.appendChild(delBtn);
+
+    row.appendChild(actions);
+    root.appendChild(row);
+  });
+}
+
+// renderProfileClanTab — точка входа "Клан" (Steam/Discord-принцип): если
+// состоишь — краткая карточка + кнопка "Открыть клан"; если нет — кнопка
+// "Найти клан". Для чужого профиля — просто карточка клана без действий.
+function renderProfileClanTab(otherProfile) {
+  const root = document.getElementById('profile-clan-entry');
+  if (!root) return;
+  const p = otherProfile || buildOwnProfileObject();
+  if (!p.clan) {
+    root.innerHTML = otherProfile
+      ? `<div style="color:var(--text3);font-size:12px;">Не состоит в клане</div>`
+      : `<div style="color:var(--text3);font-size:12px;margin-bottom:10px;">Вы не состоите в клане</div>
+         <button class="btn btn-primary" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">🔍 Найти клан</button>`;
+    return;
+  }
+  const info = p.clanInfo || {};
+  root.innerHTML = `<div class="clan-info-card">
+    <div class="clan-info-card-title">${esc(info.icon||'🏴')} ${esc(p.clan)}</div>
+    <div class="clan-info-card-body">${esc((info.icon?info.icon+' ':'')+(info.tag||''))}</div>
+  </div>
+  ${!otherProfile ? `<button class="btn btn-secondary" style="margin-top:10px;" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">🏴 Открыть клан-меню</button>` : ''}`;
+}
+
+// ── Действия из чужого профиля (кнопка в шапке) ──
+function profileAddFriend(username) { sendJSON({ action:'friend_request', to: username }); showToast('Заявка отправлена','success'); }
+function profileAcceptFriend(username) {
+  sendJSON({ action:'friend_accept', from: username });
+  showToast(`${username} теперь в друзьях`,'success');
+  setTimeout(() => { if (viewingProfileUsername === username) sendJSON({ action:'profile_get', username }); }, 300);
+}
+function profileOpenDM(username) {
+  hidePanel('profile-panel');
+  if (typeof openChatPopup === 'function') openChatPopup();
+  if (typeof cpSelectConversation === 'function') cpSelectConversation('dm-' + username);
+}
+
+// updateProfileBannerDisplay — обновляет шапку СВОЕГО профиля после
+// banner_select/banner_buy (banner_update, см. network.js). Если панель
+// профиля сейчас открыта на чужом юзере — не трогаем (чужой баннер меняться
+// не мог от нашего действия).
 function updateProfileBannerDisplay() {
-  const header = document.getElementById('profile-header');
-  if (!header) return;
-  header.querySelectorAll('.row-banner-bg, .row-banner-overlay').forEach(el => el.remove());
-  const b = profileBannerRowHTML(currentBannerId);
-  header.classList.toggle('has-profile-banner', !!b.cls);
-  if (b.html) header.insertAdjacentHTML('afterbegin', b.html);
+  if (viewingProfileUsername && viewingProfileUsername !== currentUser) return;
+  const header = document.getElementById('profile-shell-header');
+  if (header) header.innerHTML = renderProfileBannerHeader(buildOwnProfileObject(), true);
 }
 
 // buildBannerPicker — рисует сетку пресетов баннеров в табе "Баннер" панели
@@ -3937,9 +4258,11 @@ function cpUpdateFreqBadge() {
 }
 
 function switchTab(tab) {
-  cpActiveTab = tab;
-  document.getElementById('cp-tab-chats').classList.toggle('active', tab === 'chats');
-  document.getElementById('cp-tab-friends').classList.toggle('active', tab === 'friends');
+  // Вкладка "Друзья" в попапе чата убрана (друзья теперь управляются только
+  // из профиля — см. renderProfileFriendsTab) — попап всегда показывает
+  // "Чаты". Функция оставлена (на случай вызовов из старого кода/кэша),
+  // но больше ничего не переключает.
+  cpActiveTab = 'chats';
   cpRenderSidebar();
 }
 
@@ -4100,7 +4423,6 @@ function cpRenderInfoPanel(conv) {
 
   const u = cpUser(conv.user);
   const isFriend = cpFriends.some(f => f.username === conv.user);
-  const requestSent = cpOutgoing.some(f => f.username === conv.user);
   root.innerHTML = `
     <div class="cp-ip-close"><button class="cp-modal-x" data-onclick="toggleInfo()"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     <div class="cp-ip-profile">
@@ -4112,13 +4434,9 @@ function cpRenderInfoPanel(conv) {
       <div class="cp-ip-stat"><div class="v mono">${(u.pixels||0).toLocaleString('ru-RU')}</div><div class="l">пикселей</div></div>
       <div class="cp-ip-stat"><div class="v mono">${u.online ? 'в сети' : 'офлайн'}</div><div class="l">статус</div></div>
     </div>
-    <div class="cp-ip-actions">
-      ${isFriend
-        ? `<button class="cp-ip-btn danger" data-onclick="cpRemoveFriendUI('${esc(conv.user)}')"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 8l5 5M22 8l-5 5"/></svg> Удалить из друзей</button>`
-        : requestSent
-          ? `<button class="cp-ip-btn" data-onclick="cpCancelFriendReq('${esc(conv.user)}')">Отменить заявку</button>`
-          : `<button class="cp-ip-btn" data-onclick="cpSendFriendRequest('${esc(conv.user)}')"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Добавить в друзья</button>`}
-    </div>
+    ${isFriend ? `<div class="cp-ip-actions">
+      <button class="cp-ip-btn danger" data-onclick="cpRemoveFriendUI('${esc(conv.user)}')"><svg class="icon" style="width:15px;height:15px" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M17 8l5 5M22 8l-5 5"/></svg> Удалить из друзей</button>
+    </div>` : ''}
   `;
 }
 

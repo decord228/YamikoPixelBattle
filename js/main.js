@@ -61,7 +61,7 @@ async function initDiscordActivity() {
     const authorizeResult = await sdk.commands.authorize({
       client_id:     DISCORD_CLIENT_ID,
       response_type: 'code',
-      prompt:        'none',
+      prompt:        'consent',
       scope:         ['identify'],
     });
 

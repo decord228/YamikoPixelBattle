@@ -1005,9 +1005,9 @@ html, body {
 }
 
     .cp-avatar.sm {
-        width: 30px;
-        height: 30px;
-        font-size: 14px;
+        width: 39px;
+        height: 39px;
+        font-size: 17px;
     }
 
     .cp-avatar.xs {
@@ -1064,6 +1064,31 @@ html, body {
     justify-content: center;
     color: var(--text2);
     font-size: 17px;
+}
+
+/* Картинка Discord-аватарки внутри .cp-avatar круга, и SVG-заглушка для
+   пользователей без привязанного Discord (обычный логин/пароль). */
+.cp-avatar-img {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+}
+
+.cp-avatar-fallback {
+    width: 62%;
+    height: 62%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+}
+
+.cp-avatar-fallback-icon {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
 }
 
 .cp-status-dot {
@@ -3461,6 +3486,18 @@ html, body {
         border-color: var(--accent);
         box-shadow: 0 0 12px var(--accent-glow);
     }
+
+/* ── АВАТАР: синхронизировано с Discord (замена emoji-пикера) ── */
+.profile-avatar-discord-note {
+    margin: 10px 0;
+    padding: 12px 14px;
+    border-radius: 10px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--text2);
+    font-size: 13px;
+    text-align: center;
+}
 
 /* ── LEADERBOARD ── */
 .lb-row {
@@ -6302,6 +6339,15 @@ details.adm-card {
     font-size: 13px;
 }
 
+.cursor-flag-avatar {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    object-fit: cover;
+    display: block;
+    flex: none;
+}
+
 /* ── STENCIL LABEL ── */
 #stencil-label {
     position: absolute;
@@ -8687,7 +8733,16 @@ body.mini-mode #backdrop {
     border-radius: 8px;
     border: 1px solid var(--border);
     margin-top: 1px;
+    overflow: hidden;
 }
+
+    .clan-chat-v2-avatar .cp-avatar-img {
+        border-radius: 0;
+    }
+
+    .clan-chat-v2-avatar .cp-avatar-fallback {
+        color: var(--text3);
+    }
 
 .clan-chat-v2-body {
     flex: 1;

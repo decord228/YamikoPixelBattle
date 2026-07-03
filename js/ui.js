@@ -57,7 +57,7 @@ function onAuthSuccess(d) {
   // записи, даже когда она реально шла (сервер тоже теперь отвечает на
   // timelapse_status без требования admin-роли — см. server.js).
   if (typeof tlStartStatusPolling === 'function') tlStartStatusPolling();
-  showToast('Добро пожаловать, '+currentUser+'! '+currentEmoji,'success');
+  showToast('Добро пожаловать, '+currentUser+'!','success');
   loadAvatarFromStorage();
   drawAvatarCanvas(selectedEmoji);
   drawHudAvatar(selectedEmoji);
@@ -119,47 +119,69 @@ function switchProfileTab(tab) {
   });
 }
 
+// ── АВАТАР ПРОФИЛЯ: только Discord ──
+// Раньше здесь был грид эмодзи для ручного выбора аватарки. Теперь аватарка
+// целиком приходит из Discord (currentAvatar, URL с cdn.discordapp.com),
+// а для пользователей без Discord-логина показываем нейтральную заглушку —
+// свою аватарку вручную больше поставить нельзя.
 function buildEmojiAvatarPicker() {
-  const c=document.getElementById('emoji-avatars'); c.innerHTML='';
-  EMOJI_AVATARS.forEach(em=>{
-    const d=document.createElement('div');
-    d.className='av-opt'+(selectedEmoji===em?' selected':'');
-    d.textContent=em;
-    d.onclick=()=>{
-      selectedEmoji=em;buildEmojiAvatarPicker();drawAvatarCanvas(em);drawHudAvatar(em);
-      localStorage.setItem('pb_avatar',JSON.stringify({type:'emoji',val:em}));
-      sendJSON({action:'save_emoji',emoji:em});
-      showToast('Аватар изменён '+em,'info');
-    };
-    c.appendChild(d);
-  });
+  const c=document.getElementById('emoji-avatars');
+  if (!c) return;
+  c.innerHTML = currentAvatar
+    ? `<div class="profile-avatar-discord-note">✅ Аватарка синхронизирована с Discord</div>`
+    : `<div class="profile-avatar-discord-note">Войдите через Discord, чтобы использовать свою аватарку</div>`;
 }
 
-function drawAvatarCanvas(emoji) {
+function _drawAvatarFallback(ctx, size) {
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.beginPath(); ctx.arc(size/2, size*0.4, size*0.16, 0, Math.PI*2); ctx.fill();
+  ctx.beginPath();
+  ctx.moveTo(size*0.2, size*0.95);
+  ctx.arc(size/2, size*0.95, size*0.3, Math.PI, 0);
+  ctx.fill();
+}
+
+const _avatarImgCache = {};
+function _drawAvatarImg(canvas, url, size) {
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0,0,size,size);
+  const grad = ctx.createLinearGradient(0,0,size,size);
+  grad.addColorStop(0,'#1c1c20'); grad.addColorStop(1,'#141416');
+  ctx.fillStyle = grad; ctx.fillRect(0,0,size,size);
+  if (!url) { _drawAvatarFallback(ctx, size); return; }
+  let img = _avatarImgCache[url];
+  if (!img) {
+    img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = url;
+    _avatarImgCache[url] = img;
+  }
+  const render = () => {
+    ctx.clearRect(0,0,size,size);
+    ctx.save();
+    ctx.beginPath(); ctx.arc(size/2,size/2,size/2,0,Math.PI*2); ctx.clip();
+    ctx.drawImage(img,0,0,size,size);
+    ctx.restore();
+  };
+  if (img.complete && img.naturalWidth) render();
+  else { img.onload = render; img.onerror = () => _drawAvatarFallback(ctx, size); }
+}
+
+function drawAvatarCanvas() {
   const canvas=document.getElementById('avatar-canvas');
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,78,78);
-  const grad=ctx.createLinearGradient(0,0,78,78);
-  grad.addColorStop(0,'#1c1c20');grad.addColorStop(1,'#141416');
-  ctx.fillStyle=grad;ctx.fillRect(0,0,78,78);
-  ctx.font='40px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(emoji||'👾',39,41);
+  if (canvas) _drawAvatarImg(canvas, currentAvatar, 78);
 }
 
-function drawHudAvatar(emoji) {
+function drawHudAvatar() {
   const canvas=document.getElementById('phud-avatar-canvas');
-  const ctx=canvas.getContext('2d');
-  ctx.clearRect(0,0,48,48);
-  ctx.font='28px serif';ctx.textAlign='center';ctx.textBaseline='middle';
-  ctx.fillText(emoji||'👾',24,26);
+  if (canvas) _drawAvatarImg(canvas, currentAvatar, 48);
 }
 
 function loadAvatarFromStorage() {
-  try {
-    const av=localStorage.getItem('pb_avatar');
-    if (av){const obj=JSON.parse(av);if(obj.type==='emoji'){selectedEmoji=obj.val;drawAvatarCanvas(obj.val);drawHudAvatar(obj.val);}}
-    else {drawAvatarCanvas(selectedEmoji);drawHudAvatar(selectedEmoji);}
-  }catch(_){drawAvatarCanvas(selectedEmoji);drawHudAvatar(selectedEmoji);}
+  // Аватарка больше не хранится локально — она всегда приходит с сервера
+  // вместе с currentAvatar (Discord). Оставлено для совместимости вызовов.
+  drawAvatarCanvas();
+  drawHudAvatar();
 }
 
 function buildColorGrid() {
@@ -216,7 +238,7 @@ function placePixel() {
   sendPixel(x,y,colorToPlace);
   canvasData[y*canvasW+x]=colorToPlace;
   // Сразу записываем себя в кэш авторов — не ждём ответа сервера
-  pixelOwnerCache.set(`${x},${y}`, { username: currentUser, emoji: currentEmoji });
+  pixelOwnerCache.set(`${x},${y}`, { username: currentUser, emoji: currentEmoji, avatar: currentAvatar });
   renderPixel(x,y,colorToPlace);
   sessionPixels++;
   updateProfileStats(currentPixels+1,currentRank);
@@ -861,14 +883,14 @@ document.addEventListener('keydown', (ev) => {
   }
 });
 
-function addChatMessage(user, text, emoji) {
+function addChatMessage(user, text, emoji, avatar) {
   const msgDiv = document.createElement('div');
   msgDiv.className = 'chat-msg';
   if (user === '__system') {
     msgDiv.className += ' chat-msg-system';
     msgDiv.textContent = text;
   } else {
-    msgDiv.innerHTML = `<span class="chat-msg-user">${esc(emoji||'👾')} ${esc(user)}:</span> ${esc(text)}`;
+    msgDiv.innerHTML = `<span class="chat-msg-user">${cpAvatarHTML(user, 'xs', {emoji, avatar})} ${esc(user)}:</span> ${esc(text)}`;
   }
   const msgs = document.getElementById('chat-messages');
   msgs.appendChild(msgDiv);
@@ -991,12 +1013,12 @@ function initClanChatV2() {
     const wrap = document.getElementById('clan-chat-v2-msgs');
     if (wrap) {
       wrap.innerHTML = '';
-      _clanChatV2Messages.forEach(m => _appendClanChatV2Msg(m.username, m.text, m.emoji, m.ts));
+      _clanChatV2Messages.forEach(m => _appendClanChatV2Msg(m.username, m.text, m.emoji, m.ts, m.avatar));
     }
   }
 }
 
-function _appendClanChatV2Msg(user, text, emoji, ts) {
+function _appendClanChatV2Msg(user, text, emoji, ts, avatar) {
   const wrap = document.getElementById('clan-chat-v2-msgs');
   if (!wrap) return;
   const empty = wrap.querySelector('.clan-chat-v2-empty');
@@ -1015,7 +1037,7 @@ function _appendClanChatV2Msg(user, text, emoji, ts) {
   const el = document.createElement('div');
   el.className = 'clan-chat-v2-msg';
   el.innerHTML = `
-      <div class="clan-chat-v2-avatar">${esc(emoji || '👾')}</div>
+      <div class="clan-chat-v2-avatar">${avatarInnerHTML({avatar})}</div>
       <div class="clan-chat-v2-body">
           <div class="clan-chat-v2-header">
               <span class="clan-chat-v2-user">${esc(user)}</span>
@@ -1028,11 +1050,11 @@ function _appendClanChatV2Msg(user, text, emoji, ts) {
   wrap.scrollTop = wrap.scrollHeight;
 }
 
-function addClanChatMessage(user, text, emoji, ts) {
-  const msg = { username: user, text, emoji: emoji || '👾', ts: ts || Date.now() };
+function addClanChatMessage(user, text, emoji, ts, avatar) {
+  const msg = { username: user, text, emoji: emoji || '👾', avatar: avatar || null, ts: ts || Date.now() };
   _clanChatV2Messages.push(msg);
   if (_clanChatV2Messages.length > 120) _clanChatV2Messages.shift();
-  _appendClanChatV2Msg(user, text, emoji, msg.ts);
+  _appendClanChatV2Msg(user, text, emoji, msg.ts, avatar);
 }
 
 function sendClanChatV2() {
@@ -2339,7 +2361,7 @@ function renderLeaderboardPlayers(data){
   c.innerHTML=data.map((u,i)=>`
     <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
-      ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, rank: u.rank, online: u.online})}
+      ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, avatar: u.avatar, rank: u.rank, online: u.online})}
       <div class="lb-name">${esc(u.username)}</div>
       <div class="lb-capsule"><div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div></div>
     </div>`).join('');
@@ -2677,7 +2699,7 @@ function updateInspector(mx, my, px, py, fromCache) {
   if (cached === 'loading') {
     ownerHtml = '<span class="inspector-owner">⏳</span>';
   } else if (cached && cached !== 'unknown') {
-    ownerHtml = `<span class="inspector-owner">${cached.emoji} <b>${esc(cached.username)}</b></span>`;
+    ownerHtml = `<span class="inspector-owner">${cpAvatarHTML(cached.username, 'xs', {emoji: cached.emoji, avatar: cached.avatar})} <b>${esc(cached.username)}</b></span>`;
   }
 
   document.getElementById('inspector-color').style.background=col.c;
@@ -3676,6 +3698,23 @@ function cpEmptyHint(t) { const d = document.createElement('div'); d.className =
 // один аватар-компонент на всё приложение, а не два разных стиля.
 // overrides позволяет подставить свежие данные, даже если пользователя ещё
 // нет в cpUserCache (например, участник клана, который ни разу не писал в чат).
+// Дефолтная заглушка для тех, у кого нет привязанного Discord-аватара
+// (обычный логин/пароль на сайте) — нейтральная иконка профиля, как в Discord.
+const DEFAULT_AVATAR_SVG = `<svg viewBox="0 0 24 24" class="cp-avatar-fallback-icon" xmlns="http://www.w3.org/2000/svg">
+  <circle cx="12" cy="8.5" r="3.5" fill="currentColor"/>
+  <path d="M4.5 20c0-4.14 3.36-7 7.5-7s7.5 2.86 7.5 7" fill="currentColor"/>
+</svg>`;
+
+// Внутренности аватара: картинка Discord если есть, иначе заглушка.
+// Вынесено отдельно, чтобы использовать и в cpAvatarHTML (innerHTML-строки),
+// и в любых будущих местах (профиль, HUD).
+function avatarInnerHTML(user) {
+  if (user && user.avatar) {
+    return `<img class="cp-avatar-img" src="${esc(user.avatar)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'cp-avatar-fallback',innerHTML:${JSON.stringify(DEFAULT_AVATAR_SVG)}}))">`;
+  }
+  return `<span class="cp-avatar-fallback">${DEFAULT_AVATAR_SVG}</span>`;
+}
+
 function cpAvatarHTML(username, size = '', overrides = {}) {
   const base = cpUser(username);
   const clean = {};
@@ -3685,7 +3724,7 @@ function cpAvatarHTML(username, size = '', overrides = {}) {
   const dot = size === 'sm' || size === 'xs'
     ? ''
     : `<div class="cp-status-dot ${user.online ? 'online' : ''}"></div>`;
-  return `<div class="cp-avatar ${size} ${rankClass}">${esc(user.emoji || '👾')}${dot}</div>`;
+  return `<div class="cp-avatar ${size} ${rankClass}">${avatarInnerHTML(user)}${dot}</div>`;
 }
 
 function cpAvatarEl(username, size = '', overrides = {}) {

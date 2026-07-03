@@ -318,13 +318,16 @@ function updateStencilLabel() {
 }
 
 // ── CURSORS ──
-function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
+function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji, avatar) {
   if (!showCursors||(!serverCursorsEnabled&&!clanShareCursor)) return;
   const off = getRenderOffset();
   const sx = canvasX * camZoom + off.x; 
   const sy = canvasY * camZoom + off.y; 
   const col = PALETTE[colorIdx] || PALETTE[0];
   const color = col.c;
+  const avatarHtml = avatar
+    ? `<img class="cursor-flag-avatar" src="${avatar}" alt="" loading="lazy" onerror="this.style.display='none'">`
+    : `<span class="cursor-flag-emoji">${emoji||'👾'}</span>`;
 
   if (!cursorEls[username]) {
     const el = document.createElement('div');
@@ -335,7 +338,7 @@ function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji) {
           <path d="M1 1 L11 6 L6.5 9 L4.5 15.5 Z" fill="${color}" stroke="rgba(0,0,0,0.4)" stroke-width="0.8"/>
         </svg>
         <div class="cursor-flag-body">
-          <span class="cursor-flag-emoji">${emoji||'👾'}</span>
+          ${avatarHtml}
           <span style="color:${color};font-size:10px">${username}</span>
         </div>
       </div>`;
@@ -358,7 +361,7 @@ function clearCursorFlags() {
 
 function updateAllCursorFlags() {
   for (const [u,cur] of Object.entries(otherCursors)) {
-    updateCursorFlag(u,cur.x,cur.y,cur.c,cur.emoji);
+    updateCursorFlag(u,cur.x,cur.y,cur.c,cur.emoji,cur.avatar);
   }
 }
 

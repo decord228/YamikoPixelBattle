@@ -69,6 +69,7 @@ function handleJSON(d) {
     currentPixels=d.pixels||0;
     currentRank=d.rank||'Новичок';
     currentEmoji=d.emoji||'👾';
+    currentAvatar=d.avatar||null;
     currentCoins=d.coins||0;
     purchasedItems=d.purchased_items||d.purchased_levels||[];
     currentClan=d.clan||'';
@@ -103,8 +104,8 @@ function handleJSON(d) {
     sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});
   }
   else if (a==='cursor') {
-    otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾',clan:d.clan||''};
-    updateCursorFlag(d.u,d.x,d.y,d.c,d.emoji||'👾');
+    otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾',avatar:d.avatar||null,clan:d.clan||''};
+    updateCursorFlag(d.u,d.x,d.y,d.c,d.emoji||'👾',d.avatar||null);
   }
   else if (a==='server_settings') { applyServerSettings(d.settings); }
   else if (a==='online_count') { document.getElementById('online-count').textContent=d.count; }
@@ -195,7 +196,7 @@ function handleJSON(d) {
     if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
   }
   else if (a==='clan_chat_message') {
-    if (d.msg) addClanChatMessage(d.msg.username, d.msg.text, d.msg.emoji);
+    if (d.msg) addClanChatMessage(d.msg.username, d.msg.text, d.msg.emoji, d.msg.ts, d.msg.avatar);
   }
   else if (a==='clan_motd') {
     document.getElementById('clan-motd-text').textContent = d.motd || 'Добро пожаловать в клан!';
@@ -205,7 +206,7 @@ function handleJSON(d) {
   }
   else if (a==='chat_message') {
     if (d.msg) {
-      addChatMessage(d.msg.username, d.msg.text, d.msg.emoji || '👾');
+      addChatMessage(d.msg.username, d.msg.text, d.msg.emoji || '👾', d.msg.avatar || null);
       chatMessages.push(d.msg);
       if (chatMessages.length > 200) chatMessages.shift();
       if (typeof cpOnGlobalMessage === 'function') cpOnGlobalMessage(d.msg);
@@ -213,7 +214,7 @@ function handleJSON(d) {
   }
   else if (a==='chat_history') {
     if (d.messages && Array.isArray(d.messages)) {
-      d.messages.forEach(m => addChatMessage(m.username, m.text, m.emoji || '👾'));
+      d.messages.forEach(m => addChatMessage(m.username, m.text, m.emoji || '👾', m.avatar || null));
       chatMessages = d.messages.slice(-200);
       if (typeof cpRenderMessages === 'function' && cpActiveConvId === 'ch-general') cpRenderMessages(cpGetActiveConv());
     }
@@ -304,7 +305,7 @@ function handleJSON(d) {
   else if (a==='pixel_info_result') {
     const key = `${d.x},${d.y}`;
     if (d.username) {
-      pixelOwnerCache.set(key, { username: d.username, emoji: d.emoji || '👾' });
+      pixelOwnerCache.set(key, { username: d.username, emoji: d.emoji || '👾', avatar: d.avatar || null });
     } else {
       pixelOwnerCache.set(key, 'unknown');
     }

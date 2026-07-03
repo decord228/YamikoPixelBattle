@@ -8,7 +8,7 @@ let selectedColor = 0;
 let cooldown = 0, cooldownTime = 3.0, cooldownTimer = null;
 let isLoggedIn = false, isAdmin = false, isVip = false;
 let currentUser = '', currentPixels = 0, sessionPixels = 0;
-let currentRank = 'Новичок', currentEmoji = '👾';
+let currentRank = 'Новичок', currentEmoji = '👾', currentAvatar = null;
 let currentCoins = 0, purchasedItems = [];
 let currentClan = '';
 let clanFullData = null;   // последний полный объект клана с сервера (name, ranks, member_roles, ...)

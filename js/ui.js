@@ -4570,25 +4570,10 @@ function quickEmoji() {
   input.focus();
 }
 
-// Модалка поиска друга физически лежит внутри #chat-popup-overlay, который
-// по умолчанию скрыт (display:none), пока не открыт попап чата. Раньше
-// openAddFriend() просто вешал .show на саму модалку — если вызвать её не
-// из уже открытого чата (например, кнопкой "Добавить в друзья" в чужом
-// профиле), родительский оверлей оставался невидимым и модалка не
-// показывалась вообще. Теперь при необходимости открываем (и лениво
-// инициализируем) сам оверлей чата, а при закрытии модалки возвращаем всё
-// как было — если чат до этого не был открыт, закрываем и оверлей тоже.
-let _addFriendOpenedChatOverlay = false;
-
+// Модалка поиска друга — независимый компонент верхнего уровня (не часть
+// попапа чата), поэтому просто показываем/прячем её саму, не трогая
+// состояние чата (открыт он или нет).
 function openAddFriend() {
-  const overlay = document.getElementById('chat-popup-overlay');
-  if (overlay && !overlay.classList.contains('show')) {
-    if (typeof initChatPopup === 'function') initChatPopup();
-    overlay.classList.add('show');
-    _addFriendOpenedChatOverlay = true;
-  } else {
-    _addFriendOpenedChatOverlay = false;
-  }
   document.getElementById('cp-add-friend-backdrop').classList.add('show');
   document.getElementById('cp-modal-search-input').value = '';
   cpSearchResults = [];
@@ -4597,13 +4582,6 @@ function openAddFriend() {
 }
 function closeAddFriend() {
   document.getElementById('cp-add-friend-backdrop').classList.remove('show');
-  // Если оверлей чата был открыт специально ради этой модалки (чат до этого
-  // был закрыт) — закрываем его обратно, чтобы не оставлять "призрачный" чат
-  // открытым поверх остального интерфейса.
-  if (_addFriendOpenedChatOverlay && !chatOpen) {
-    document.getElementById('chat-popup-overlay')?.classList.remove('show');
-  }
-  _addFriendOpenedChatOverlay = false;
 }
 
 function filterSuggestions(q) {

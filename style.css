@@ -1262,6 +1262,17 @@ html, body {
     line-height: 1.6;
 }
 
+/* Тот же хинт используется внутри независимой модалки "Добавить друга"
+   (#cp-add-friend-backdrop), которая больше не вложена в #chat-popup-panel —
+   без этого правила текст "Пользователь не найден" остался бы без стилей. */
+.cp-modal-card .cp-empty-hint {
+    text-align: center;
+    color: var(--text3);
+    font-size: 12px;
+    padding: 24px 20px;
+    line-height: 1.6;
+}
+
 /* ---- main column ---- */
 #chat-popup-panel .cp-main {
     display: flex;
@@ -1844,9 +1855,14 @@ html, body {
         font-size: 12.5px;
     }
 
-/* ---- add friend modal ---- */
-#chat-popup-panel .cp-modal-backdrop {
-    position: absolute;
+/* ---- add friend modal ----
+   Модалка больше не часть попапа чата (см. index.html) — раньше все правила
+   были заскоуплены под #chat-popup-panel и требовали, чтобы позиционирующий
+   родитель (сам попап чата) существовал в DOM/был виден. Теперь модалка —
+   независимый элемент верхнего уровня, поэтому position:fixed на весь
+   вьюпорт и свой z-index, а не привязка к #chat-popup-panel. */
+.cp-modal-backdrop {
+    position: fixed;
     inset: 0;
     background: rgba(5,5,7,.7);
     backdrop-filter: blur(3px);
@@ -1856,15 +1872,31 @@ html, body {
     opacity: 0;
     pointer-events: none;
     transition: opacity .15s;
-    z-index: 50;
+    z-index: 10000;
 }
 
-    #chat-popup-panel .cp-modal-backdrop.show {
+    .cp-modal-backdrop.show {
         opacity: 1;
         pointer-events: auto;
     }
 
-#chat-popup-panel .cp-modal-card {
+/* Модалка теперь лежит прямым потомком #ui (см. index.html), а у #ui есть
+   правило "#ui > * { pointer-events: auto; }" для всех его прямых детей.
+   Специфичность ID-селектора (#ui > *) выше, чем у класса .cp-modal-backdrop,
+   поэтому оно перебивало pointer-events:none выше и делало невидимый (opacity:0)
+   бэкдроп кликабельным НА ВЕСЬ ЭКРАН всегда, даже без .show — из-за этого
+   переставало работать вообще любое управление (клики проваливались в
+   невидимый fixed-инсет-0 элемент). Перебиваем обратно ID-селектором той же
+   "силы" (#ui > #id), чтобы поведение снова управлялось только .show. */
+#ui > #cp-add-friend-backdrop {
+    pointer-events: none;
+}
+
+    #ui > #cp-add-friend-backdrop.show {
+        pointer-events: auto;
+    }
+
+.cp-modal-card {
     width: 380px;
     max-width: 90vw;
     background: var(--surface);
@@ -1876,24 +1908,24 @@ html, body {
     box-shadow: 0 20px 60px rgba(0,0,0,.5);
 }
 
-#chat-popup-panel .cp-modal-backdrop.show .cp-modal-card {
+.cp-modal-backdrop.show .cp-modal-card {
     transform: scale(1) translateY(0);
 }
 
-#chat-popup-panel .cp-modal-head {
+.cp-modal-head {
     display: flex;
     align-items: center;
     justify-content: space-between;
     margin-bottom: 14px;
 }
 
-#chat-popup-panel .cp-modal-title {
+.cp-modal-title {
     font-family: 'Unbounded', sans-serif;
     font-size: 14px;
     font-weight: 700;
 }
 
-#chat-popup-panel .cp-modal-x {
+.cp-modal-x {
     width: 28px;
     height: 28px;
     border-radius: 9px;
@@ -1906,12 +1938,12 @@ html, body {
     cursor: pointer;
 }
 
-    #chat-popup-panel .cp-modal-x:hover {
+    .cp-modal-x:hover {
         background: var(--surface2);
         color: var(--text);
     }
 
-#chat-popup-panel .cp-modal-search {
+.cp-modal-search {
     height: 40px;
     background: var(--surface2);
     border: 1px solid var(--border2);
@@ -1923,7 +1955,7 @@ html, body {
     margin-bottom: 12px;
 }
 
-    #chat-popup-panel .cp-modal-search input {
+    .cp-modal-search input {
         flex: 1;
         font-size: 13px;
         background: none;
@@ -1933,12 +1965,12 @@ html, body {
         font-family: inherit;
     }
 
-    #chat-popup-panel .cp-modal-search:focus-within {
+    .cp-modal-search:focus-within {
         border-color: var(--accent);
         box-shadow: 0 0 0 3px var(--accent-glow);
     }
 
-#chat-popup-panel .cp-suggest-row {
+.cp-suggest-row {
     display: flex;
     align-items: center;
     gap: 10px;
@@ -1946,11 +1978,11 @@ html, body {
     border-radius: 11px;
 }
 
-    #chat-popup-panel .cp-suggest-row:hover {
+    .cp-suggest-row:hover {
         background: var(--surface2);
     }
 
-#chat-popup-panel .cp-suggest-add {
+.cp-suggest-add {
     font-size: 11px;
     font-weight: 800;
     color: #fff;
@@ -1960,11 +1992,11 @@ html, body {
     cursor: pointer;
 }
 
-    #chat-popup-panel .cp-suggest-add:hover {
+    .cp-suggest-add:hover {
         background: var(--accent2);
     }
 
-    #chat-popup-panel .cp-suggest-add.added {
+    .cp-suggest-add.added {
         background: var(--surface3);
         color: var(--text3);
         cursor: default;

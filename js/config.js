@@ -94,6 +94,11 @@ const CLAN_SHOP_ITEMS = [
 ];
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');
 
+// Discord Application (Client) ID — публичное значение, безопасно хранить в клиентском коде
+// (в отличие от Client Secret, который используется только на сервере).
+// Взять его можно в Discord Developer Portal → ваше приложение → General Information → Application ID.
+const DISCORD_CLIENT_ID = 'ВСТАВЬ_СЮДА_APPLICATION_ID';
+
 // WS_URL вычисляется в момент вызова connect(), после patchUrlMappings
 function getWsUrl() {
   return IS_DISCORD_ACTIVITY

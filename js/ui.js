@@ -3708,9 +3708,25 @@ const DEFAULT_AVATAR_SVG = `<svg viewBox="0 0 24 24" class="cp-avatar-fallback-i
 // Внутренности аватара: картинка Discord если есть, иначе заглушка.
 // Вынесено отдельно, чтобы использовать и в cpAvatarHTML (innerHTML-строки),
 // и в любых будущих местах (профиль, HUD).
+//
+// ВАЖНО про onerror: раньше сюда вставлялся JSON.stringify(DEFAULT_AVATAR_SVG)
+// прямо внутрь HTML-атрибута в двойных кавычках. JSON.stringify экранирует
+// кавычки как JS ("\""), а не как HTML (&quot;) — браузер обрывал атрибут
+// onerror на первой же такой кавычке, и остаток SVG-строки (viewBox="0 0..."
+// и т.д.) вылетал из атрибута прямым текстом рядом с картинкой (те самые
+// "символы слева от круга"). Чтобы так больше не происходило — не кладём
+// разметку fallback'а в inline-атрибут вообще, а вызываем маленький
+// глобальный хелпер _avatarImgFallback(imgEl), который берёт SVG из
+// константы напрямую, а не пропускает её через HTML-атрибут.
+function _avatarImgFallback(imgEl) {
+  imgEl.replaceWith(Object.assign(document.createElement('span'), {
+    className: 'cp-avatar-fallback',
+    innerHTML: DEFAULT_AVATAR_SVG,
+  }));
+}
 function avatarInnerHTML(user) {
   if (user && user.avatar) {
-    return `<img class="cp-avatar-img" src="${esc(user.avatar)}" alt="" loading="lazy" onerror="this.replaceWith(Object.assign(document.createElement('span'),{className:'cp-avatar-fallback',innerHTML:${JSON.stringify(DEFAULT_AVATAR_SVG)}}))">`;
+    return `<img class="cp-avatar-img" src="${esc(user.avatar)}" alt="" loading="lazy" onerror="_avatarImgFallback(this)">`;
   }
   return `<span class="cp-avatar-fallback">${DEFAULT_AVATAR_SVG}</span>`;
 }

@@ -70,6 +70,9 @@ function handleJSON(d) {
     currentRank=d.rank||'Новичок';
     currentEmoji=d.emoji||'👾';
     currentAvatar=d.avatar||null;
+    currentBannerId=d.banner||null;
+    ownedBanners=d.owned_banners||[];
+    if (d.banners_catalog) profileBannersCatalog=d.banners_catalog;
     currentCoins=d.coins||0;
     purchasedItems=d.purchased_items||d.purchased_levels||[];
     currentClan=d.clan||'';
@@ -113,6 +116,15 @@ function handleJSON(d) {
     currentCoins=d.coins||0;
     updateCoinsUI(currentCoins);
     if (d.pixels) currentPixels=d.pixels;
+  }
+  else if (a==='banner_update') {
+    currentBannerId=d.banner||null;
+    ownedBanners=d.owned_banners||[];
+    currentCoins=d.coins||0;
+    updateCoinsUI(currentCoins);
+    if (typeof buildBannerPicker === 'function') buildBannerPicker();
+    if (typeof updateProfileBannerDisplay === 'function') updateProfileBannerDisplay();
+    if (d.message) showToast(d.message,'success');
   }
   else if (a==='clan_update') {
     if (d.clan) {

@@ -10,6 +10,10 @@ let isLoggedIn = false, isAdmin = false, isVip = false;
 let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾', currentAvatar = null;
 let currentCoins = 0, purchasedItems = [];
+// ── БАННЕР ПРОФИЛЯ (Этап 2) ──
+let currentBannerId = null;       // текущий выбранный баннер (id из каталога, или null)
+let ownedBanners = [];            // купленные платные баннеры (id-шники)
+let profileBannersCatalog = [];   // весь каталог баннеров, приходит с сервера в auth_success
 let currentClan = '';
 let clanFullData = null;   // последний полный объект клана с сервера (name, ranks, member_roles, ...)
 let clanRanksEditingId = null; // id звания, которое сейчас редактируется в панели "Звания" (null = форма создания скрыта)

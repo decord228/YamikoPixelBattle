@@ -39,6 +39,8 @@ function onAuthSuccess(d) {
   document.getElementById('prof-role').className='profile-role '+roleClass;
   updateProfileStats(currentPixels,currentRank);
   updateCoinsUI(currentCoins);
+  if (typeof updateProfileBannerDisplay === 'function') updateProfileBannerDisplay();
+  if (typeof buildBannerPicker === 'function') buildBannerPicker();
 
   document.getElementById('phud-name').textContent=currentUser;
   document.getElementById('phud-role').textContent=roleLabel;
@@ -111,12 +113,13 @@ function loadSession(){try{const s=localStorage.getItem('pb_session');return s?J
 function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
 
 function switchProfileTab(tab) {
-  ['avatar','account'].forEach(t=>{
+  ['avatar','banner','account'].forEach(t=>{
     document.getElementById(`prof-tab-${t}`).style.display=t===tab?'':'none';
   });
   document.querySelectorAll('#profile-panel .sub-tab').forEach((el,i)=>{
-    el.classList.toggle('active',['avatar','account'][i]===tab);
+    el.classList.toggle('active',['avatar','banner','account'][i]===tab);
   });
+  if (tab === 'banner' && typeof buildBannerPicker === 'function') buildBannerPicker();
 }
 
 // ── АВАТАР ПРОФИЛЯ: только Discord ──
@@ -2006,9 +2009,19 @@ function renderClanMemberPage() {
           ${assignableRanks.map(r => `<option value="${esc(r.id)}" ${r.id===rank.id?'selected':''}>${esc(r.icon)} ${esc(r.name)}</option>`).join('')}
         </select>` : `<span class="member-rank-badge" style="color:${rank.color};background:${rank.color}1e;border-color:${rank.color}55;">${esc(rank.icon)} ${esc(rank.name)}</span>`;
 
-      return `<div class="member-row${isLdr?' member-row-is-leader':''}">
+      // Карточка участника с сервера (аватар/эмодзи/ранг/баннер) — приходит
+      // вместе с данными клана (clan.member_cards, см. dbGetClan на сервере).
+      // Раньше аватар брался только из cpUserCache и был пуст для тех, кто
+      // ни разу не писал в чат/не заходил в онлайн-список — теперь сервер
+      // всегда даёт актуальную карточку, а cpUserCache используется только
+      // как fallback (например, статус "в сети").
+      const card = (clan.member_cards && clan.member_cards[m]) || {};
+      const b = profileBannerRowHTML(card.banner);
+
+      return `<div class="member-row${isLdr?' member-row-is-leader':''}${b.cls}">
+        ${b.html}
         <div class="member-row-info">
-          ${cpAvatarHTML(m, 'sm')}
+          ${cpAvatarHTML(m, 'sm', {emoji: card.emoji, avatar: card.avatar, rank: card.rank})}
           ${isLdr ? '<span class="member-row-crown" title="Лидер">👑</span>' : ''}
           <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}${isMe?' <span class="member-row-you">(вы)</span>':''}</span>
         </div>
@@ -2358,13 +2371,17 @@ function switchLbTab(tab){
 function renderLeaderboardPlayers(data){
   const c=document.getElementById('lb-players-list');
   if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
-  c.innerHTML=data.map((u,i)=>`
-    <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
+  c.innerHTML=data.map((u,i)=>{
+    const b = profileBannerRowHTML(u.banner);
+    return `
+    <div class="lb-row${b.cls}" style="animation:float-in .3s ease ${i*0.04}s both">
+      ${b.html}
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, avatar: u.avatar, rank: u.rank, online: u.online})}
       <div class="lb-name">${esc(u.username)}</div>
       <div class="lb-capsule"><div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div></div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
 function renderLeaderboardClans(data){
@@ -2374,9 +2391,9 @@ function renderLeaderboardClans(data){
     const bannerUrl = cl.banner_url || null;
     const bannerCrop = { x: cl.banner_crop_x??0, y: cl.banner_crop_y??0, w: cl.banner_crop_w??1, h: cl.banner_crop_h??1 };
     return `
-    <div class="lb-row${bannerUrl?' has-banner':''}" style="animation:float-in .3s ease ${i*0.04}s both">
+    <div class="lb-row${bannerUrl?' has-profile-banner':''}" style="animation:float-in .3s ease ${i*0.04}s both">
       ${bannerUrl ? clanBannerImgTag(bannerUrl, bannerCrop) : ''}
-      ${bannerUrl ? '<div class="lb-row-banner-overlay"></div>' : ''}
+      ${bannerUrl ? '<div class="row-banner-overlay"></div>' : ''}
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
       <span class="clan-tag" style="color:${cl.tag_color||'#818cf8'};background:${(cl.tag_color||'#818cf8')+'22'};border-color:${(cl.tag_color||'#818cf8')+'55'}">${(cl.icon?cl.icon+' ':'')+esc(cl.tag||'')}</span>
       <div class="lb-name">${esc(cl.name)}</div>
@@ -3729,6 +3746,95 @@ function avatarInnerHTML(user) {
     return `<img class="cp-avatar-img" src="${esc(user.avatar)}" alt="" loading="lazy" onerror="_avatarImgFallback(this)">`;
   }
   return `<span class="cp-avatar-fallback">${DEFAULT_AVATAR_SVG}</span>`;
+}
+
+// ── БАННЕР ПРОФИЛЯ (Этап 2) ──
+// getBannerEntry — достаёт запись каталога по id (каталог приходит с
+// сервера в auth_success.banners_catalog, см. network.js).
+// profileBannerRowHTML — строит HTML-слой баннера + затемнение для ЛЮБОГО
+// ряда-карточки (лидерборд/клан-меню/...). Использование:
+//   const b = profileBannerRowHTML(bannerId);
+//   `<div class="lb-row${b.cls}">${b.html}...остальная разметка ряда...</div>`
+// Класс .has-profile-banner + слои .row-banner-bg/.row-banner-overlay —
+// единые для всех мест (см. style.css), никакой ряд не переизобретает CSS.
+function getBannerEntry(bannerId) {
+  if (!bannerId) return null;
+  return (profileBannersCatalog || []).find(b => b.id === bannerId) || null;
+}
+
+function profileBannerRowHTML(bannerId) {
+  const b = getBannerEntry(bannerId);
+  if (!b || (!b.css && !b.url)) return { cls: '', html: '' };
+  const animCls = b.anim ? ` ${esc(b.anim)}` : '';
+  const bg = b.url
+    ? `<img class="row-banner-bg" src="${esc(b.url)}" alt="" loading="lazy">`
+    : `<div class="row-banner-bg${animCls}" style="background:${esc(b.css)}"></div>`;
+  return { cls: ' has-profile-banner', html: `${bg}<div class="row-banner-overlay"></div>` };
+}
+
+// updateProfileBannerDisplay — вешает текущий баннер на шапку панели профиля
+// (#profile-header), используя тот же .has-profile-banner + row-banner-*
+// слой, что и ряды лидерборда/клан-меню. Вызывается при открытии профиля,
+// после auth_success и после banner_update (см. network.js).
+function updateProfileBannerDisplay() {
+  const header = document.getElementById('profile-header');
+  if (!header) return;
+  header.querySelectorAll('.row-banner-bg, .row-banner-overlay').forEach(el => el.remove());
+  const b = profileBannerRowHTML(currentBannerId);
+  header.classList.toggle('has-profile-banner', !!b.cls);
+  if (b.html) header.insertAdjacentHTML('afterbegin', b.html);
+}
+
+// buildBannerPicker — рисует сетку пресетов баннеров в табе "Баннер" панели
+// профиля, сгруппированную по тирам (бесплатные / градиенты / анимированные).
+// Карточка клик: если баннер уже доступен (free или в ownedBanners) — сразу
+// надевает (selectBanner), иначе — предлагает купить (buyBanner).
+const PROFILE_BANNER_TIER_TITLES = { free: 'Бесплатные', gradient: 'Градиенты', animated: 'Анимированные' };
+
+function buildBannerPicker() {
+  const root = document.getElementById('profile-banner-picker');
+  if (!root) return;
+  const catalog = profileBannersCatalog || [];
+  if (!catalog.length) { root.innerHTML = '<div style="color:var(--text3);font-size:11px;">Каталог баннеров пуст</div>'; return; }
+
+  const tiers = ['free', 'gradient', 'animated'];
+  root.innerHTML = tiers.map(tier => {
+    const items = catalog.filter(b => b.tier === tier);
+    if (!items.length) return '';
+    const cards = items.map(b => {
+      const owned = b.tier === 'free' || ownedBanners.includes(b.id);
+      const equipped = currentBannerId === b.id || (!currentBannerId && b.id === 'banner_none');
+      const animCls = b.anim ? ` ${esc(b.anim)}` : '';
+      const bg = b.url
+        ? `<img class="profile-banner-card-bg" src="${esc(b.url)}" alt="" loading="lazy">`
+        : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}"></div>` : '');
+      const action = owned
+        ? `selectBanner('${esc(b.id)}')`
+        : `buyBanner('${esc(b.id)}')`;
+      return `<div class="profile-banner-card${equipped ? ' equipped' : ''}${!bg ? ' none-banner' : ''}" data-onclick="${action}" title="${esc(b.name)}">
+        ${bg}
+        ${equipped ? '<div class="profile-banner-card-check">✓</div>' : (!owned ? `<div class="profile-banner-card-lock">🔒</div>` : '')}
+        <div class="profile-banner-card-label">
+          <span>${esc(b.name)}</span>
+          ${!owned && b.cost ? `<span class="profile-banner-card-price">${b.cost}🪙</span>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+    return `<div class="profile-banner-tier-title">${PROFILE_BANNER_TIER_TITLES[tier] || tier}</div>
+    <div class="profile-banner-grid">${cards}</div>`;
+  }).join('');
+}
+
+function selectBanner(bannerId) {
+  const id = bannerId === 'banner_none' ? null : bannerId;
+  sendJSON({ action: 'banner_select', banner_id: id });
+}
+
+async function buyBanner(bannerId) {
+  const b = getBannerEntry(bannerId);
+  const ok = await showConfirm(`Купить баннер «${b ? b.name : bannerId}» за ${b ? b.cost : '?'}🪙?`, { title: 'Покупка баннера', icon: '🖼️' });
+  if (!ok) return;
+  sendJSON({ action: 'banner_buy', banner_id: bannerId });
 }
 
 function cpAvatarHTML(username, size = '', overrides = {}) {

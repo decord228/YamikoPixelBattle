@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260632-03';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260632-04';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <!--
@@ -424,7 +424,7 @@
     <div id="profile-panel" class="overlay-panel panel">
         <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="8" r="4" /><path d="M4 20.5c0-4.1 3.6-6.5 8-6.5s8 2.4 8 6.5" /></svg> Профиль</div><div class="panel-close" data-onclick="hidePanel('profile-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
         <div class="panel-body">
-            <div class="profile-header">
+            <div class="profile-header" id="profile-header">
                 <div id="profile-avatar-ring">
                     <canvas id="avatar-canvas" width="78" height="78"></canvas>
                     <div class="avatar-overlay"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><circle cx="9" cy="10" r="1" fill="currentColor" stroke="none" /><circle cx="15" cy="10" r="1" fill="currentColor" stroke="none" /><path d="M8 14.5c1.2 1.4 2.6 2 4 2s2.8-.6 4-2" /></svg></div>
@@ -443,11 +443,15 @@
             </div>
             <div class="sub-tabs">
                 <div class="sub-tab active" data-onclick="switchProfileTab('avatar')">Аватар</div>
+                <div class="sub-tab" data-onclick="switchProfileTab('banner')">Баннер</div>
                 <div class="sub-tab" data-onclick="switchProfileTab('account')">Аккаунт</div>
             </div>
             <div id="prof-tab-avatar">
                 <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:8px;letter-spacing:.5px;text-transform:uppercase;">Выбрать аватар</div>
                 <div class="avatar-options" id="emoji-avatars"></div>
+            </div>
+            <div id="prof-tab-banner" style="display:none">
+                <div id="profile-banner-picker"></div>
             </div>
             <div id="prof-tab-account" style="display:none">
                 <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Сменить пароль</div>

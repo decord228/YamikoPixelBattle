@@ -984,97 +984,114 @@ html, body {
             font-weight: 600;
         }
 
-    #chat-popup-panel .cp-avatar {
-        position: relative;
-        flex: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: var(--surface3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 19px;
-        border: 1.5px solid var(--border2);
+/* ── ЕДИНЫЙ КРУГЛЫЙ АВАТАР ──
+       Раньше .cp-avatar был заскоуплен под #chat-popup-panel, из-за чего
+       лидерборд и меню клана рисовали пользователей отдельными "плоскими"
+       эмодзи без рамки/индикатора. Теперь класс глобальный (без скоупа) и
+       используется ВЕЗДЕ: чат, лидерборд, список участников клана.
+       Форма — круг (border-radius: 50%). */
+.cp-avatar {
+    position: relative;
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--surface3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 19px;
+    border: 1.5px solid var(--border2);
+}
+
+    .cp-avatar.sm {
+        width: 30px;
+        height: 30px;
+        font-size: 14px;
     }
 
-        #chat-popup-panel .cp-avatar.sm {
-            width: 30px;
-            height: 30px;
-            border-radius: 9px;
-            font-size: 14px;
-        }
-
-        #chat-popup-panel .cp-avatar.lg {
-            width: 72px;
-            height: 72px;
-            border-radius: 20px;
-            font-size: 34px;
-        }
-
-        #chat-popup-panel .cp-avatar.cp-rank-novice {
-            border-color: #2d5a3f;
-        }
-
-        #chat-popup-panel .cp-avatar.cp-rank-artist {
-            border-color: var(--accent2);
-            box-shadow: 0 0 0 1px var(--accent-glow) inset;
-        }
-
-        #chat-popup-panel .cp-avatar.cp-rank-maestro {
-            border-color: #b44ac0;
-        }
-
-        #chat-popup-panel .cp-avatar.cp-rank-legend {
-            border-color: var(--vip);
-            box-shadow: 0 0 0 1px var(--vip-glow) inset;
-        }
-
-        #chat-popup-panel .cp-avatar.cp-rank-architect {
-            border-color: #00cc78;
-        }
-
-        #chat-popup-panel .cp-avatar.cp-rank-god {
-            border-color: transparent;
-            background-image: linear-gradient(var(--surface3), var(--surface3)), conic-gradient(from 180deg, #f59e0b, #ec4899, #818cf8, #22c55e, #f59e0b);
-            background-origin: border-box;
-            background-clip: padding-box, border-box;
-        }
-
-    #chat-popup-panel .cp-channel-icon {
-        flex: none;
-        width: 40px;
-        height: 40px;
-        border-radius: 12px;
-        background: var(--surface2);
-        border: 1.5px solid var(--border);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text2);
-        font-size: 17px;
+    .cp-avatar.xs {
+        width: 24px;
+        height: 24px;
+        font-size: 12px;
+        border-width: 1px;
     }
 
-    #chat-popup-panel .cp-status-dot {
-        position: absolute;
-        right: -2px;
-        bottom: -2px;
-        width: 11px;
-        height: 11px;
-        border-radius: 4px;
-        border: 2.5px solid var(--bg2);
-        background: var(--text3);
+    .cp-avatar.lg {
+        width: 72px;
+        height: 72px;
+        font-size: 34px;
     }
 
-        #chat-popup-panel .cp-status-dot.online {
-            background: var(--green);
-        }
+    .cp-avatar.cp-rank-novice {
+        border-color: #2d5a3f;
+    }
 
-        #chat-popup-panel .cp-status-dot.drawing {
-            background: var(--drawing);
-            box-shadow: 0 0 6px var(--drawing-glow);
-            animation: cp-pulse-dot 1.4s ease-in-out infinite;
-        }
+    .cp-avatar.cp-rank-artist {
+        border-color: var(--accent2);
+        box-shadow: 0 0 0 1px var(--accent-glow) inset;
+    }
+
+    .cp-avatar.cp-rank-maestro {
+        border-color: #b44ac0;
+    }
+
+    .cp-avatar.cp-rank-legend {
+        border-color: var(--vip);
+        box-shadow: 0 0 0 1px var(--vip-glow) inset;
+    }
+
+    .cp-avatar.cp-rank-architect {
+        border-color: #00cc78;
+    }
+
+    .cp-avatar.cp-rank-god {
+        border-color: transparent;
+        background-image: linear-gradient(var(--surface3), var(--surface3)), conic-gradient(from 180deg, #f59e0b, #ec4899, #818cf8, #22c55e, #f59e0b);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
+    }
+
+#chat-popup-panel .cp-channel-icon {
+    flex: none;
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: var(--surface2);
+    border: 1.5px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text2);
+    font-size: 17px;
+}
+
+.cp-status-dot {
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    width: 11px;
+    height: 11px;
+    border-radius: 50%;
+    border: 2.5px solid var(--bg2);
+    background: var(--text3);
+}
+
+.cp-avatar.xs .cp-status-dot {
+    width: 8px;
+    height: 8px;
+    border-width: 2px;
+}
+
+.cp-status-dot.online {
+    background: var(--green);
+}
+
+.cp-status-dot.drawing {
+    background: var(--drawing);
+    box-shadow: 0 0 6px var(--drawing-glow);
+    animation: cp-pulse-dot 1.4s ease-in-out infinite;
+}
 
 @keyframes cp-pulse-dot {
     0%,100% {
@@ -1225,6 +1242,8 @@ html, body {
     display: flex;
     flex-direction: column;
     min-width: 0;
+    min-height: 0; /* критично: без этого grid-item тянется по контенту, .cp-messages
+                       не сжимается и не скроллится, а композер не прибит к низу */
     background: var(--bg);
     position: relative;
 }
@@ -4724,6 +4743,12 @@ details.adm-card {
     flex-shrink: 0;
 }
 
+.member-row-crown {
+    font-size: 13px;
+    flex-shrink: 0;
+    margin-left: -4px;
+}
+
 .member-row-name {
     font-size: 12px;
     font-weight: 500;
@@ -6630,6 +6655,53 @@ details.adm-card {
 
 .toast-info::before {
     content: '◈ ';
+}
+
+/* ── CANVAS ATTACH PICK MODE (прикрепление места из чата) ── */
+#canvas-attach-banner {
+    position: fixed;
+    top: 18px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-140%);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    background: var(--accent);
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 12px 10px 18px;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.4);
+    opacity: 0;
+    transition: transform .2s cubic-bezier(.2,.9,.25,1), opacity .2s;
+    pointer-events: none;
+}
+
+    #canvas-attach-banner.show {
+        transform: translateX(-50%) translateY(0);
+        opacity: 1;
+        pointer-events: auto;
+    }
+
+    #canvas-attach-banner button {
+        background: rgba(255,255,255,.18);
+        border: none;
+        color: #fff;
+        font-weight: 700;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 9px;
+        cursor: pointer;
+    }
+
+        #canvas-attach-banner button:hover {
+            background: rgba(255,255,255,.3);
+        }
+
+body.canvas-attach-picking #canvas-wrap {
+    cursor: crosshair !important;
 }
 
 /* ── INSPECTOR ── */

@@ -108,6 +108,17 @@ let stencilUploadGen = 0; // увеличивается при каждой но
 // Active item usage
 let activeItem = null;
 
+// ── ПРИКРЕПЛЕНИЕ МЕСТА НА ХОЛСТЕ К СООБЩЕНИЮ В ЧАТЕ ──
+// true = попап чата скрыт, ждём клика по холсту, чтобы взять координаты
+// и вставить их в поле ввода того чата/ЛС, из которого был вызван режим.
+let canvasAttachPickMode = false;
+let canvasAttachConvId = null;
+
+// "Пользователь печатает…" — троеточие в шапке/списке ЛС
+let cpTypingTimers = {};      // username -> timeout, сбрасывающий индикатор
+let cpTypingFrom = {};        // username -> true, если сейчас печатает нам
+let cpMyTypingTimer = null;   // троттлинг отправки собственного 'typing' на сервер
+
 // ── PIXEL OWNERSHIP CACHE ──
 // Ключ: "x,y" → { username, emoji } | 'loading' | 'unknown'
 const pixelOwnerCache = new Map();

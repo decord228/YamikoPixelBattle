@@ -1986,7 +1986,8 @@ function renderClanMemberPage() {
 
       return `<div class="member-row${isLdr?' member-row-is-leader':''}">
         <div class="member-row-info">
-          <span class="member-row-emoji">${isLdr ? '👑' : '👤'}</span>
+          ${cpAvatarHTML(m, 'sm')}
+          ${isLdr ? '<span class="member-row-crown" title="Лидер">👑</span>' : ''}
           <span class="member-row-name${isLdr ? ' member-row-leader' : ''}">${esc(m)}${isMe?' <span class="member-row-you">(вы)</span>':''}</span>
         </div>
         <div class="member-row-actions">
@@ -2338,7 +2339,7 @@ function renderLeaderboardPlayers(data){
   c.innerHTML=data.map((u,i)=>`
     <div class="lb-row" style="animation:float-in .3s ease ${i*0.04}s both">
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
-      <div style="font-size:16px">${u.emoji||'👾'}</div>
+      ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, rank: u.rank, online: u.online})}
       <div class="lb-name">${esc(u.username)}</div>
       <div class="lb-capsule"><div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div></div>
     </div>`).join('');
@@ -3534,7 +3535,14 @@ function cpChannelsList() {
 }
 
 function cpDmList() {
-  return cpDmConversations.map(c => ({ id: 'dm-' + c.username, type: 'dm', user: c.username, ...c }));
+  const list = cpDmConversations.map(c => ({ id: 'dm-' + c.username, type: 'dm', user: c.username, ...c }));
+  const known = new Set(list.map(c => c.user));
+  cpFriends.forEach(f => {
+    if (known.has(f.username)) return;
+    list.push({ id: 'dm-' + f.username, type: 'dm', user: f.username, ...f, lastMessage: '', lastFrom: '', lastTs: 0, unread: 0 });
+    known.add(f.username);
+  });
+  return list;
 }
 
 function cpAllConversations() { return [...cpChannelsList(), ...cpDmList()]; }
@@ -3553,6 +3561,45 @@ function cpFmtTime(ts) {
   const diffDays = Math.floor((now - d) / 86400000);
   if (diffDays < 7) return days[d.getDay()];
   return pad(d.getDate()) + '.' + pad(d.getMonth() + 1);
+}
+
+// ── "ПОЛЬЗОВАТЕЛЬ ПЕЧАТАЕТ…" ──
+// cpSendTyping троттлит собственную отправку (не чаще раза в 2с на активность),
+// cpShowTyping/cpRenderTypingRow показывают анимированное троеточие у собеседника.
+function cpSendTyping() {
+  if (!isLoggedIn || cpMyTypingTimer) return;
+  const conv = cpGetActiveConv();
+  const payload = conv.type === 'dm' ? { action:'typing', to: conv.user } : { action:'typing' };
+  sendJSON(payload);
+  cpMyTypingTimer = setTimeout(() => { cpMyTypingTimer = null; }, 2000);
+}
+
+function cpShowTyping(from, isChannel) {
+  cpTypingFrom[from] = { channel: !!isChannel };
+  clearTimeout(cpTypingTimers[from]);
+  cpTypingTimers[from] = setTimeout(() => { delete cpTypingFrom[from]; cpRenderTypingRow(); }, 3000);
+  cpRenderTypingRow();
+}
+
+function cpRenderTypingRow() {
+  const root = document.getElementById('cp-messages');
+  if (!root) return;
+  const old = document.getElementById('cp-typing-indicator');
+  if (old) old.remove();
+  const conv = cpGetActiveConv();
+  const names = Object.keys(cpTypingFrom).filter(u => {
+    if (u === currentUser) return false;
+    const info = cpTypingFrom[u];
+    return conv.type === 'channel' ? info.channel : (!info.channel && u === conv.user);
+  });
+  if (!names.length) return;
+  const row = document.createElement('div');
+  row.className = 'cp-typing-row';
+  row.id = 'cp-typing-indicator';
+  const verb = names.length > 1 ? 'печатают' : 'печатает';
+  row.innerHTML = `<div class="cp-typing-squares"><span></span><span></span><span></span></div><div>${esc(names.join(', '))} ${verb}…</div>`;
+  root.appendChild(row);
+  root.scrollTop = root.scrollHeight + 999;
 }
 
 function initChatPopup() {
@@ -3622,17 +3669,29 @@ function cpRenderSidebar() {
 function cpSectionLabel(t) { const d = document.createElement('div'); d.className = 'cp-list-label'; d.textContent = t; return d; }
 function cpEmptyHint(t) { const d = document.createElement('div'); d.className = 'cp-empty-hint'; d.textContent = t; return d; }
 
-function cpAvatarEl(username, size = '') {
-  const user = cpUser(username);
-  const div = document.createElement('div');
-  div.className = `cp-avatar ${size} ${CP_RANK_CLASS[user.rank] || 'cp-rank-novice'}`;
-  div.textContent = user.emoji || '👾';
-  if (size !== 'sm') {
-    const dot = document.createElement('div');
-    dot.className = 'cp-status-dot ' + (user.online ? 'online' : '');
-    div.appendChild(dot);
-  }
-  return div;
+// ── ЕДИНЫЙ АВАТАР ПОЛЬЗОВАТЕЛЯ (круг + рамка звания + индикатор "в сети") ──
+// cpAvatarHTML — строковая версия для мест, где разметка собирается через
+// .map().join() в innerHTML (лидерборд, список участников клана), а не через
+// createElement (как в попапе чата). Обе функции дают идентичный визуал —
+// один аватар-компонент на всё приложение, а не два разных стиля.
+// overrides позволяет подставить свежие данные, даже если пользователя ещё
+// нет в cpUserCache (например, участник клана, который ни разу не писал в чат).
+function cpAvatarHTML(username, size = '', overrides = {}) {
+  const base = cpUser(username);
+  const clean = {};
+  Object.keys(overrides || {}).forEach(k => { if (overrides[k] !== undefined) clean[k] = overrides[k]; });
+  const user = { ...base, ...clean };
+  const rankClass = CP_RANK_CLASS[user.rank] || 'cp-rank-novice';
+  const dot = size === 'sm' || size === 'xs'
+    ? ''
+    : `<div class="cp-status-dot ${user.online ? 'online' : ''}"></div>`;
+  return `<div class="cp-avatar ${size} ${rankClass}">${esc(user.emoji || '👾')}${dot}</div>`;
+}
+
+function cpAvatarEl(username, size = '', overrides = {}) {
+  const wrap = document.createElement('div');
+  wrap.innerHTML = cpAvatarHTML(username, size, overrides);
+  return wrap.firstElementChild;
 }
 
 function cpChannelRow(c) {
@@ -3761,16 +3820,27 @@ function cpRenderHeader(conv) {
   }
 }
 
+// Рисует реальный кусок холста 11×11 вокруг прикреплённой точки (а не
+// случайные цвета "для вида"), чтобы в сообщении правда было видно место,
+// а не абстрактную мозаику. По центру — флажок-маркер самой точки.
 function cpCanvasCardHTML(cx, cy) {
+  const RADIUS = 5; // зона вокруг точки: 11×11 клеток
   let cells = '';
-  const seed = cx + cy;
-  for (let i = 0; i < 100; i++) {
-    const c = PALETTE[(seed * 7 + i * 13) % PALETTE.length].c;
-    cells += `<div style="background:${c}"></div>`;
+  for (let dy = -RADIUS; dy <= RADIUS; dy++) {
+    for (let dx = -RADIUS; dx <= RADIUS; dx++) {
+      const x = cx + dx, y = cy + dy;
+      let bg = 'var(--surface3)'; // за пределами холста
+      if (x >= 0 && x < canvasW && y >= 0 && y < canvasH) {
+        const idx = canvasData[y * canvasW + x];
+        bg = (PALETTE[idx] || PALETTE[0]).c;
+      }
+      const isCenter = dx === 0 && dy === 0;
+      cells += `<div style="background:${bg}">${isCenter ? '<span class="cc-flag">🚩</span>' : ''}</div>`;
+    }
   }
   return `
     <div class="cp-canvas-card">
-      <div class="cc-grid">${cells}</div>
+      <div class="cc-grid cc-grid-11">${cells}</div>
       <div class="cc-foot">
         <div class="cc-coords">X:${cx} Y:${cy}</div>
         <div class="cc-go" data-onclick="jumpToCanvas(${cx},${cy})">Перейти →</div>
@@ -3786,6 +3856,12 @@ function cpMsgBodyHTML(text) {
   return (rest ? esc(rest) + '<div style="height:6px"></div>' : '') + cpCanvasCardHTML(+m[1], +m[2]);
 }
 
+// Единый рендер сообщений — используется и для общего чата, и для ЛС,
+// чтобы не поддерживать два разных визуальных стиля (раньше ЛС рисовались
+// пузырями cp-bubble-row, а общий чат — группами cp-msg-group). Теперь оба
+// используют группы: аватар + ник только у первого сообщения "пачки" от
+// одного автора, у последующих подряд идущих сообщений — только время по
+// ховеру слева (cp-msg-continued-row).
 function cpRenderMessages(conv) {
   const root = document.getElementById('cp-messages');
   if (!root) return;
@@ -3797,10 +3873,10 @@ function cpRenderMessages(conv) {
 
   if (thread.length === 0) {
     root.appendChild(cpEmptyHint(isChannel ? 'Пока нет сообщений — начните разговор' : 'Напишите первое сообщение'));
-  } else if (isChannel) {
+  } else {
     let lastUser = null;
     thread.forEach(m => {
-      const uname = m.username;
+      const uname = isChannel ? m.username : m.from;
       if (uname !== lastUser) {
         const g = document.createElement('div');
         g.className = 'cp-msg-group';
@@ -3823,20 +3899,9 @@ function cpRenderMessages(conv) {
       }
       lastUser = uname;
     });
-  } else {
-    thread.forEach(m => {
-      const own = m.from === currentUser;
-      const row = document.createElement('div');
-      row.className = 'cp-bubble-row' + (own ? ' own' : '');
-      row.appendChild(cpAvatarEl(own ? currentUser : m.from));
-      const bub = document.createElement('div');
-      bub.className = 'cp-bubble';
-      bub.innerHTML = `${cpMsgBodyHTML(m.text)}<span class="cp-msg-time">${cpFmtTime(m.ts)}</span>`;
-      row.appendChild(bub);
-      root.appendChild(row);
-    });
   }
 
+  cpRenderTypingRow();
   root.scrollTop = root.scrollHeight + 999;
 }
 
@@ -3914,6 +3979,11 @@ function jumpToCanvas(x, y) {
 
 function autoGrow(el) { el.style.height = 'auto'; el.style.height = Math.min(el.scrollHeight, 120) + 'px'; }
 
+function onComposerInput(el) {
+  autoGrow(el);
+  if (el.value.trim()) cpSendTyping();
+}
+
 function onComposerKey(e) {
   if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
 }
@@ -3929,15 +3999,48 @@ function sendMessage() {
   input.value = ''; input.style.height = 'auto';
 }
 
+// Раньше эта функция сразу отправляла сообщение с координатами последней
+// наведённой точки холста (часто устаревшей/случайной, т.к. попап чата
+// перекрывает холст). Теперь — честный режим "укажи точку": попап чата
+// прячется, показывается баннер-подсказка, курсор становится прицелом, и
+// координаты берутся из реального клика по холсту. После клика попап чата
+// открывается обратно, а токен места вставляется в поле ввода — пользователь
+// сам решает, отправлять сразу или дописать текст.
 function attachCanvasSnippet() {
   if (!isLoggedIn) { cpToast('Сначала войдите в аккаунт'); return; }
   const conv = cpGetActiveConv();
-  const x = hoveredPixel && hoveredPixel.x >= 0 ? hoveredPixel.x : Math.floor(canvasW / 2);
-  const y = hoveredPixel && hoveredPixel.y >= 0 ? hoveredPixel.y : Math.floor(canvasH / 2);
-  const text = `смотри что я нарисовал [[canvas:${x}:${y}]]`;
-  if (conv.type === 'channel') sendJSON({ action:'chat_send', text });
-  else sendJSON({ action:'dm_send', to: conv.user, text });
-  cpToast('Место на холсте прикреплено');
+  canvasAttachConvId = conv.id;
+  canvasAttachPickMode = true;
+  document.getElementById('chat-popup-overlay').classList.remove('show');
+  document.getElementById('chat-btn').classList.remove('active');
+  document.body.classList.add('canvas-attach-picking');
+  document.getElementById('canvas-attach-banner').classList.add('show');
+}
+
+function cancelCanvasAttachPick() {
+  canvasAttachPickMode = false;
+  canvasAttachConvId = null;
+  document.body.classList.remove('canvas-attach-picking');
+  document.getElementById('canvas-attach-banner').classList.remove('show');
+}
+
+// Вызывается из input.js по клику на холст, пока активен режим выбора точки.
+function confirmCanvasAttachPick(x, y) {
+  if (!canvasAttachPickMode) return;
+  const convId = canvasAttachConvId;
+  cancelCanvasAttachPick();
+
+  openChatPopup();
+  if (convId) cpSelectConversation(convId);
+
+  const input = document.getElementById('cp-composer-input');
+  if (input) {
+    const marker = `[[canvas:${x}:${y}]]`;
+    input.value = input.value ? (input.value.trim() + ' ' + marker) : marker;
+    if (typeof autoGrow === 'function') autoGrow(input);
+    input.focus();
+  }
+  cpToast(`Место (${x}, ${y}) прикреплено к сообщению`);
 }
 
 function quickEmoji() {

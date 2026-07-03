@@ -8,6 +8,12 @@ wrap.addEventListener('mousedown',e=>{
     wrap.style.cursor='grabbing';e.preventDefault();
     if (typeof startDragRaf === 'function') startDragRaf();
   } else if (e.button===0){
+    if (typeof canvasAttachPickMode !== 'undefined' && canvasAttachPickMode) {
+      const p = getCanvasPos(e.clientX, e.clientY);
+      const px = Math.floor(p.x), py = Math.floor(p.y);
+      if (px >= 0 && px < canvasW && py >= 0 && py < canvasH) confirmCanvasAttachPick(px, py);
+      return;
+    }
     if (stencilActive && stencilEditMode){ if (handleStencilStart(e.clientX,e.clientY)){isDraggingTool=true;} return; }
     if (tool==='admin_image'||adminImagePreviewMode){
       if (!handleToolInteractionStart(e.clientX,e.clientY)){
@@ -201,7 +207,7 @@ document.addEventListener('keydown',e=>{
   if (e.key==='e'||e.key==='E') setTool(tool==='pencil'?'eyedrop':'pencil');
   if (e.key==='g'||e.key==='G') toggleGrid();
   if (e.key==='p'||e.key==='P') togglePalette();
-  if (e.key==='Escape'){hideAllPanels();cancelAdminTool();cancelStencil();cancelUseItem();hideLeaderboard();}
+  if (e.key==='Escape'){hideAllPanels();cancelAdminTool();cancelStencil();cancelUseItem();hideLeaderboard();if (typeof cancelCanvasAttachPick === 'function') cancelCanvasAttachPick();}
   if (e.key==='+'||e.key==='=') zoomIn();
   if (e.key==='-') zoomOut();
   if (e.key===' '){e.preventDefault();placePixel();}

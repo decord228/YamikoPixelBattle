@@ -227,6 +227,13 @@ function handleJSON(d) {
     if (typeof cpUpdateFreqBadge === 'function') cpUpdateFreqBadge();
     if (typeof cpRenderSidebar === 'function') cpRenderSidebar();
     if (typeof cpRenderInfoPanel === 'function' && cpActiveConvId !== 'ch-general') cpRenderInfoPanel(cpGetActiveConv());
+    // Новый друг может ещё не иметь записи в cpDmConversations (она заводится
+    // только когда есть история сообщений или это уже друг) — подтягиваем
+    // актуальный список ЛС сразу, чтобы открыть переписку без перезахода в чат.
+    sendJSON({ action:'dm_conversations' });
+  }
+  else if (a==='typing') {
+    if (d.from && d.from !== currentUser && typeof cpShowTyping === 'function') cpShowTyping(d.from, !!d.channel);
   }
   else if (a==='friend_presence') {
     if (cpUserCache[d.username]) cpUserCache[d.username].online = !!d.online;

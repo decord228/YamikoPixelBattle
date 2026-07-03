@@ -112,7 +112,7 @@ function saveSession(u,p){try{localStorage.setItem('pb_session',JSON.stringify({
 function loadSession(){try{const s=localStorage.getItem('pb_session');return s?JSON.parse(s):null;}catch(_){return null;}}
 function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
 
-const PROFILE_TABS = ['overview','banner','friends','clan','settings'];
+const PROFILE_TABS = ['overview','banner','friends','settings'];
 
 function switchProfileTab(tab) {
   if (!PROFILE_TABS.includes(tab)) tab = 'overview';
@@ -129,7 +129,7 @@ function switchProfileTab(tab) {
     else renderReadOnlyBannerTab(viewingProfileData);
   }
   if (tab === 'friends' && isSelf) renderProfileFriendsTab();
-  if (tab === 'clan') renderProfileClanTab(isSelf ? null : viewingProfileData);
+  if (tab === 'overview') renderProfileClanCard(isSelf ? null : viewingProfileData);
 }
 
 // ── АВАТАР ПРОФИЛЯ: только Discord ──
@@ -945,6 +945,14 @@ function switchClanInnerTab(tab) {
   });
   document.querySelectorAll('#clan-view-in-clan .clan-sidenav .csn-item[data-tab]').forEach(el => {
     el.classList.toggle('active', el.dataset.tab === tab);
+  });
+  // Вкладка "Участники" сама управляет своим скроллом (скроллится только
+  // #clan-member-list, поиск и пагинация остаются на месте) — раньше
+  // скроллился весь .clan-content целиком, из-за чего пагинация уезжала
+  // вниз под контент, а после прокрутки внизу оказывалось поле поиска.
+  // Для остальных вкладок оставляем обычный скролл всего .clan-content.
+  document.querySelectorAll('#clan-view-in-clan .clan-content').forEach(el => {
+    el.classList.toggle('clan-content-fixed', tab === 'members');
   });
   if (tab === 'requests') sendJSON({action:'clan_get_requests'});
   if (tab === 'ranks') { clanRanksEditingId = null; renderClanRanksTab(); }
@@ -2387,7 +2395,7 @@ function renderLeaderboardPlayers(data){
     <div class="lb-row${b.cls}" style="animation:float-in .3s ease ${i*0.04}s both">
       ${b.html}
       <div class="lb-rank ${i===0?'lb-rank-1':i===1?'lb-rank-2':i===2?'lb-rank-3':'lb-rank-n'}">${i<3?['<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>','<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 3h6l-1.3 5.4L12 11l-1.7-2.6L9 3z"/><circle cx="12" cy="15.5" r="5"/><path d="M9.7 14.3l1.6 1.6 2.8-2.8" stroke-width="1.7"/></svg>'][i]:i+1}</div>
-      ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, avatar: u.avatar, rank: u.rank, online: u.online})}
+      ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, avatar: u.avatar, rank: u.rank, online: u.online, showDot: false})}
       <div class="lb-name" data-onclick="openProfile('${esc(u.username)}')" style="cursor:pointer">${esc(u.username)}</div>
       <div class="lb-capsule"><div class="lb-pixels">${(u.pixels||0).toLocaleString()} px</div></div>
     </div>`;
@@ -3600,7 +3608,12 @@ function cpAllConversations() { return [...cpChannelsList(), ...cpDmList()]; }
 function cpGetActiveConv() { return cpAllConversations().find(c => c.id === cpActiveConvId) || cpChannelsList()[0]; }
 
 function cpUser(username) {
-  return cpUserCache[username] || { username, emoji: '👾', rank: 'Новичок', role: 'user', clan: '', online: false };
+  if (cpUserCache[username]) return cpUserCache[username];
+  // Пока свой кэш ещё не заведён (см. auth_success в network.js) — для себя
+  // всё равно считаем "онлайн", раз мы прямо сейчас подключены и это наш
+  // собственный аккаунт.
+  const online = isLoggedIn && username === currentUser;
+  return { username, emoji: '👾', rank: 'Новичок', role: 'user', clan: '', online };
 }
 
 function cpFmtTime(ts) {
@@ -3780,7 +3793,19 @@ function buildOwnProfileObject() {
     rank:     currentRank,
     pixels:   currentPixels,
     clan:     currentClan,
-    clanInfo: currentClan ? { name: currentClan, tag: (clanFullData&&clanFullData.tag)||'', icon: (clanFullData&&clanFullData.icon)||'🏴', tag_color: (clanFullData&&clanFullData.tag_color)||'#818cf8' } : null,
+    clanInfo: currentClan ? {
+      name: currentClan,
+      tag: (clanFullData&&clanFullData.tag)||'',
+      icon: (clanFullData&&clanFullData.icon)||'🏴',
+      tag_color: (clanFullData&&clanFullData.tag_color)||'#818cf8',
+      banner_url: (clanFullData&&clanFullData.banner_url)||null,
+      banner_crop_x: (clanFullData&&clanFullData.banner_crop_x)??0,
+      banner_crop_y: (clanFullData&&clanFullData.banner_crop_y)??0,
+      banner_crop_w: (clanFullData&&clanFullData.banner_crop_w)??1,
+      banner_crop_h: (clanFullData&&clanFullData.banner_crop_h)??1,
+      members: (clanFullData&&clanFullData.members&&clanFullData.members.length)||0,
+      pixels: (clanFullData&&clanFullData.pixels)||0,
+    } : null,
   };
 }
 
@@ -3890,20 +3915,13 @@ function renderProfileData(d) {
   switchProfileTab('overview');
 }
 
-// renderProfileOverviewActions — "точки входа" в духе Steam/Discord прямо
-// из обзора профиля: клан / позиция в лидерборде / магазин баннеров.
+// renderProfileOverviewActions — раньше тут были кнопки-"точки входа"
+// (открыть клан / лидерборд / магазин баннеров). Клан теперь показывается
+// прямо на вкладке "Обзор" красивой горизонтальной карточкой (см.
+// renderProfileClanCard), а отдельные кнопки на лидерборд/магазин баннеров
+// убраны как дублирующие обычную навигацию по сайдбару/тулбару.
 function renderProfileOverviewActions(p, isSelf) {
-  const rows = [];
-  if (p.clan) {
-    rows.push(`<button class="btn btn-secondary" data-onclick="switchProfileTab('clan')">🏴 ${isSelf ? 'Открыть свой клан' : 'Клан: ' + esc(p.clan)}</button>`);
-  } else if (isSelf) {
-    rows.push(`<button class="btn btn-secondary" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">🔍 Найти клан</button>`);
-  }
-  if (isSelf) {
-    rows.push(`<button class="btn btn-secondary" data-onclick="hidePanel('profile-panel');showLeaderboard()">🏆 Открыть лидерборд</button>`);
-    rows.push(`<button class="btn btn-secondary" data-onclick="switchProfileTab('banner')">🖼️ Магазин баннеров</button>`);
-  }
-  return rows.join('');
+  return '';
 }
 
 // renderReadOnlyBannerTab — вкладка "Баннер" для ЧУЖОГО профиля: показывает
@@ -3916,7 +3934,7 @@ function renderReadOnlyBannerTab(p) {
   if (!root || !p) return;
   const catalog = profileBannersCatalog || [];
   const ownedIds = p.owned_banners || [];
-  const owned = catalog.filter(b => b.tier === 'free' || ownedIds.includes(b.id));
+  const owned = catalog.filter(b => b.cost === 0 || ownedIds.includes(b.id));
 
   if (!owned.length) {
     const b = getBannerEntry(p.banner);
@@ -4061,26 +4079,43 @@ function renderProfileFriendsTab() {
   });
 }
 
-// renderProfileClanTab — точка входа "Клан" (Steam/Discord-принцип): если
-// состоишь — краткая карточка + кнопка "Открыть клан"; если нет — кнопка
-// "Найти клан". Для чужого профиля — просто карточка клана без действий.
-function renderProfileClanTab(otherProfile) {
-  const root = document.getElementById('profile-clan-entry');
+// renderProfileClanCard — клан теперь показывается прямо на вкладке
+// "Обзор" (а не отдельной вкладкой "Клан") в виде красивого горизонтального
+// баннера — тот же визуальный язык, что в лидерборде/списке кланов
+// (.lb-row + .clan-tag + баннер клана через clanBannerImgTag), просто одна
+// карточка вместо списка. Клик по карточке открывает клан-меню.
+function renderProfileClanCard(otherProfile) {
+  const root = document.getElementById('profile-overview-clan');
   if (!root) return;
   const p = otherProfile || buildOwnProfileObject();
+  const isSelf = !otherProfile;
+
   if (!p.clan) {
-    root.innerHTML = otherProfile
-      ? `<div style="color:var(--text3);font-size:12px;">Не состоит в клане</div>`
-      : `<div style="color:var(--text3);font-size:12px;margin-bottom:10px;">Вы не состоите в клане</div>
-         <button class="btn btn-primary" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">🔍 Найти клан</button>`;
+    root.innerHTML = isSelf
+      ? `<div class="clan-info-card" style="cursor:pointer;text-align:center;" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">
+           <div class="clan-info-card-title">🏴 Вы не состоите в клане</div>
+           <div class="clan-info-card-body">Нажмите, чтобы найти или создать клан</div>
+         </div>`
+      : `<div class="clan-info-card"><div class="clan-info-card-body" style="color:var(--text3);">Не состоит в клане</div></div>`;
     return;
   }
+
   const info = p.clanInfo || {};
-  root.innerHTML = `<div class="clan-info-card">
-    <div class="clan-info-card-title">${esc(info.icon||'🏴')} ${esc(p.clan)}</div>
-    <div class="clan-info-card-body">${esc((info.icon?info.icon+' ':'')+(info.tag||''))}</div>
-  </div>
-  ${!otherProfile ? `<button class="btn btn-secondary" style="margin-top:10px;" data-onclick="hidePanel('profile-panel');showPanel('clan-panel')">🏴 Открыть клан-меню</button>` : ''}`;
+  const bannerUrl = info.banner_url || null;
+  const bannerCrop = { x: info.banner_crop_x??0, y: info.banner_crop_y??0, w: info.banner_crop_w??1, h: info.banner_crop_h??1 };
+  const tagColor = info.tag_color || '#818cf8';
+  const openAction = isSelf ? `hidePanel('profile-panel');showPanel('clan-panel')` : '';
+
+  root.innerHTML = `
+    <div class="lb-row${bannerUrl?' has-profile-banner':''}" ${openAction ? `data-onclick="${openAction}" style="cursor:pointer;"` : ''}>
+      ${bannerUrl ? clanBannerImgTag(bannerUrl, bannerCrop) : ''}
+      ${bannerUrl ? '<div class="row-banner-overlay"></div>' : ''}
+      <div class="lb-rank lb-rank-n" style="font-size:20px;">${esc(info.icon || '🏴')}</div>
+      <span class="clan-tag" style="color:${tagColor};background:${tagColor}22;border-color:${tagColor}55">${esc(info.tag||'')}</span>
+      <div class="lb-name">${esc(p.clan)}</div>
+      <div class="lb-capsule"><div class="lb-members"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3"/><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5"/><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1"/><path d="M16 14c2.4 0 4.5 1.8 4.5 5"/></svg>${info.members ?? ''}</div></div>
+      <div class="lb-capsule"><div class="lb-pixels">${(info.pixels||0).toLocaleString()} px</div></div>
+    </div>`;
 }
 
 // ── Действия из чужого профиля (кнопка в шапке) ──
@@ -4123,7 +4158,7 @@ function buildBannerPicker() {
     const items = catalog.filter(b => b.tier === tier);
     if (!items.length) return '';
     const cards = items.map(b => {
-      const owned = b.tier === 'free' || ownedBanners.includes(b.id);
+      const owned = b.cost === 0 || ownedBanners.includes(b.id);
       const equipped = currentBannerId === b.id || (!currentBannerId && b.id === 'banner_none');
       const animCls = b.anim ? ` ${esc(b.anim)}` : '';
       const bg = b.url
@@ -4164,9 +4199,15 @@ function cpAvatarHTML(username, size = '', overrides = {}) {
   Object.keys(overrides || {}).forEach(k => { if (overrides[k] !== undefined) clean[k] = overrides[k]; });
   const user = { ...base, ...clean };
   const rankClass = CP_RANK_CLASS[user.rank] || 'cp-rank-novice';
-  const dot = size === 'sm' || size === 'xs'
-    ? ''
-    : `<div class="cp-status-dot ${user.online ? 'online' : ''}"></div>`;
+  // Индикатор "в сети" теперь показывается на аватарках везде (профиль, чат,
+  // список друзей, участники клана и т.д.), кроме лидерборда — там для
+  // компактности статус скрывается через overrides.showDot === false (см.
+  // renderLeaderboardPlayers). Раньше видимость решалась только по размеру
+  // ('sm'/'xs' — без точки), из-за чего она пропадала везде, где аватар
+  // рисовался маленьким (например, у участников клана), а не только там,
+  // где это осознанно требовалось.
+  const showDot = overrides.showDot !== false;
+  const dot = showDot ? `<div class="cp-status-dot ${user.online ? 'online' : ''}"></div>` : '';
   return `<div class="cp-avatar ${size} ${rankClass}">${avatarInnerHTML(user)}${dot}</div>`;
 }
 
@@ -4529,14 +4570,41 @@ function quickEmoji() {
   input.focus();
 }
 
+// Модалка поиска друга физически лежит внутри #chat-popup-overlay, который
+// по умолчанию скрыт (display:none), пока не открыт попап чата. Раньше
+// openAddFriend() просто вешал .show на саму модалку — если вызвать её не
+// из уже открытого чата (например, кнопкой "Добавить в друзья" в чужом
+// профиле), родительский оверлей оставался невидимым и модалка не
+// показывалась вообще. Теперь при необходимости открываем (и лениво
+// инициализируем) сам оверлей чата, а при закрытии модалки возвращаем всё
+// как было — если чат до этого не был открыт, закрываем и оверлей тоже.
+let _addFriendOpenedChatOverlay = false;
+
 function openAddFriend() {
+  const overlay = document.getElementById('chat-popup-overlay');
+  if (overlay && !overlay.classList.contains('show')) {
+    if (typeof initChatPopup === 'function') initChatPopup();
+    overlay.classList.add('show');
+    _addFriendOpenedChatOverlay = true;
+  } else {
+    _addFriendOpenedChatOverlay = false;
+  }
   document.getElementById('cp-add-friend-backdrop').classList.add('show');
   document.getElementById('cp-modal-search-input').value = '';
   cpSearchResults = [];
   cpRenderSearchResults();
   setTimeout(() => document.getElementById('cp-modal-search-input').focus(), 80);
 }
-function closeAddFriend() { document.getElementById('cp-add-friend-backdrop').classList.remove('show'); }
+function closeAddFriend() {
+  document.getElementById('cp-add-friend-backdrop').classList.remove('show');
+  // Если оверлей чата был открыт специально ради этой модалки (чат до этого
+  // был закрыт) — закрываем его обратно, чтобы не оставлять "призрачный" чат
+  // открытым поверх остального интерфейса.
+  if (_addFriendOpenedChatOverlay && !chatOpen) {
+    document.getElementById('chat-popup-overlay')?.classList.remove('show');
+  }
+  _addFriendOpenedChatOverlay = false;
+}
 
 function filterSuggestions(q) {
   clearTimeout(cpSearchDebounceTimer);

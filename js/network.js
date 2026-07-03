@@ -81,6 +81,15 @@ function handleJSON(d) {
     if (typeof renderSavedStencils === 'function') renderSavedStencils();
     if (d.canvas_w&&d.canvas_h&&(d.canvas_w!==canvasW||d.canvas_h!==canvasH)) resizeCanvas(d.canvas_w,d.canvas_h);
     if (d.settings) applyServerSettings(d.settings);
+    // Раньше себя не было в cpUserCache вообще (сервер намеренно не включает
+    // самого игрока в список "онлайн" — это нормально для списка ДРУГИХ
+    // пользователей). Но из-за этого cpUser(currentUser)/cpAvatarEl всегда
+    // возвращали online:false для собственного аккаунта — свой же аватар с
+    // рамкой звания везде показывал "офлайн", хотя ты только что залогинился.
+    // Явно заводим свою карточку в кэше с online:true.
+    if (typeof cpCacheUser === 'function') {
+      cpCacheUser({ username: currentUser, emoji: currentEmoji, avatar: currentAvatar, rank: currentRank, role: (isAdmin?'admin':isVip?'vip':'user'), clan: currentClan, online: true });
+    }
     onAuthSuccess(d);
   }
   else if (a==='toast') {

@@ -1529,7 +1529,12 @@ html, body {
 
     #chat-popup-panel .cp-canvas-card .cc-grid {
         display: grid;
-        grid-template-columns: repeat(10, 1fr);
+        /* JS (cpCanvasCardHTML в ui.js) рисует зону RADIUS=5 вокруг точки,
+           т.е. 11×11 = 121 ячейку. Раньше тут было жёстко зашито 10 колонок —
+           121 не делится на 10, поэтому CSS-грид переносил строки не там, где
+           нужно, и превью выглядело как случайный набор пикселей, хотя данные
+           из canvasData были верными. */
+        grid-template-columns: repeat(11, 1fr);
         aspect-ratio: 1;
         width: 100%;
     }
@@ -2355,7 +2360,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 23px 25px 0;
+    padding: 13px 13px 13px 25px;
     flex-shrink: 0;
 }
 
@@ -2769,6 +2774,12 @@ html, body {
     border-radius: var(--radius-sm);
     cursor: pointer;
     transition: background .15s;
+    /* Без этого длинный заголовок новости мог растягивать всю строку шире
+       контейнера #news-list-col (ellipsis не срабатывал, т.к. у флекс-строки
+       не было верхней границы ширины) — визуально "ломало" список. */
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
 }
 
     .news-list-item:hover {
@@ -2795,6 +2806,7 @@ html, body {
 
 .news-list-item-info {
     min-width: 0;
+    flex: 1 1 auto;
 }
 
 .news-list-item-title {
@@ -3639,7 +3651,6 @@ html, body {
 }
 
 .row-banner-overlay {
-
     position: absolute;
     inset: 0;
     border-radius: inherit;
@@ -5756,6 +5767,30 @@ details.adm-card {
     overflow-y: auto;
     padding: 20px 24px 24px;
 }
+
+    /* Режим для вкладки "Участники": сам .clan-content не скроллится — высота
+   фиксирована по родителю, а #clan-inner-members растягивается на всю
+   доступную высоту флекс-колонкой. Поиск и пагинация остаются на местах,
+   скроллится только сам список участников (.member-list, flex:1 ниже). */
+    .clan-content.clan-content-fixed {
+        overflow-y: hidden;
+        display: flex;
+        flex-direction: column;
+        min-height: 0;
+    }
+
+.clan-content-fixed #clan-inner-members {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+}
+
+    .clan-content-fixed #clan-inner-members .member-list {
+        flex: 1;
+        min-height: 0;
+        max-height: none;
+    }
 
 .clan-chat-scroll {
     height: 100%;

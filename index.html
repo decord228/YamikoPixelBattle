@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260632-09';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260633-01';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <!--
@@ -355,28 +355,6 @@
             </div>
         </div>
 
-        <!-- ── МОДАЛКА "ДОБАВИТЬ ДРУГА" ──
-             Раньше лежала внутри #chat-popup-overlay (компонент попапа чата),
-             из-за чего физически не могла показаться, пока не открыт сам чат
-             (родитель был display:none). Теперь это полностью независимая
-             модалка на верхнем уровне — открывается из любого места (кнопка
-             в профиле, кнопка в чате и т.д.) без побочных эффектов на чат. -->
-        <div class="cp-modal-backdrop" id="cp-add-friend-backdrop" data-onclick="if(event.target===this)closeAddFriend()">
-            <div class="cp-modal-card">
-                <div class="cp-modal-head">
-                    <div class="cp-modal-title">Добавить друга</div>
-                    <button class="cp-modal-x" data-onclick="closeAddFriend()">
-                        <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
-                    </button>
-                </div>
-                <div class="cp-modal-search">
-                    <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;color:var(--text3)"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
-                    <input placeholder="Введите имя пользователя…" id="cp-modal-search-input" data-oninput="filterSuggestions(this.value)">
-                </div>
-                <div id="cp-suggest-list"></div>
-            </div>
-        </div>
-
         <div id="admin-floating-bar">
             <div id="admin-floating-bar-title">Действие</div>
             <label id="admin-shape-fill-container" style="color:#fff;font-size:11px;margin-right:10px;display:flex;align-items:center;cursor:pointer;">
@@ -393,6 +371,33 @@
 
         <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
         <div id="toast-wrap"></div>
+    </div>
+
+    <!-- ── МОДАЛКА "ДОБАВИТЬ ДРУГА" ──
+         Раньше лежала внутри #ui (#chat-popup-overlay), из-за чего попадала
+         в собственный stacking context #ui (z-index:10) — сколько бы ни был
+         z-index у самой .cp-modal-backdrop (10000), выше он мог поднять её
+         только среди других детей #ui, но не выше соседних панелей вроде
+         #profile-panel/#leaderboard-panel, которые лежат ВНЕ #ui на верхнем
+         уровне и потому сравниваются в корневом контексте наложения. Из-за
+         этого модалка "Добавить друга" оказывалась под панелью профиля.
+         Теперь модалка — прямой потомок body, в том же контексте наложения,
+         что и остальные оверлей-панели, поэтому её z-index:10000 работает
+         как задумано и она всегда поверх профиля/лидерборда/etc. -->
+    <div class="cp-modal-backdrop" id="cp-add-friend-backdrop" data-onclick="if(event.target===this)closeAddFriend()">
+        <div class="cp-modal-card">
+            <div class="cp-modal-head">
+                <div class="cp-modal-title">Добавить друга</div>
+                <button class="cp-modal-x" data-onclick="closeAddFriend()">
+                    <svg class="icon" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                </button>
+            </div>
+            <div class="cp-modal-search">
+                <svg class="icon" viewBox="0 0 24 24" style="width:15px;height:15px;color:var(--text3)"><circle cx="11" cy="11" r="7" /><path d="M21 21l-4.3-4.3" /></svg>
+                <input placeholder="Введите имя пользователя…" id="cp-modal-search-input" data-oninput="filterSuggestions(this.value)">
+            </div>
+            <div id="cp-suggest-list"></div>
+        </div>
     </div>
 
     <div id="auth-panel" class="overlay-panel panel show">

@@ -3759,6 +3759,25 @@ function avatarInnerHTML(user) {
 //   `<div class="lb-row${b.cls}">${b.html}...остальная разметка ряда...</div>`
 // Класс .has-profile-banner + слои .row-banner-bg/.row-banner-overlay —
 // единые для всех мест (см. style.css), никакой ряд не переизобретает CSS.
+// pbannerParticlesHTML — для баннеров, где вместо чистого CSS-кейфрейминга
+// используется настоящая система частиц (см. .pbanner-ember в style.css):
+// генерирует N искр с РАЗНЫМ углом/дистанцией/задержкой через инлайновые
+// CSS-переменные --a/--d и animation-delay, поэтому каждая летит по своей
+// траектории, а не все синхронно по одной and той же keyframe.
+function pbannerParticlesHTML(anim) {
+  if (anim !== 'pbanner-prem-supernova') return '';
+  const n = 7;
+  let out = '';
+  for (let i = 0; i < n; i++) {
+    const angle = Math.round((360 / n) * i + (i % 2 ? 12 : -8));
+    const dist = 44 + (i % 3) * 14;
+    const delay = (i * 0.23).toFixed(2);
+    const dur = (1.5 + (i % 3) * 0.3).toFixed(2);
+    out += `<span class="pbanner-ember" style="--a:${angle}deg;--d:${dist}px;animation-delay:${delay}s;animation-duration:${dur}s"></span>`;
+  }
+  return out;
+}
+
 function getBannerEntry(bannerId) {
   if (!bannerId) return null;
   return (profileBannersCatalog || []).find(b => b.id === bannerId) || null;
@@ -3770,7 +3789,7 @@ function profileBannerRowHTML(bannerId) {
   const animCls = b.anim ? ` ${esc(b.anim)}` : '';
   const bg = b.url
     ? `<img class="row-banner-bg" src="${esc(b.url)}" alt="" loading="lazy">`
-    : `<div class="row-banner-bg${animCls}" style="background:${esc(b.css)}"></div>`;
+    : `<div class="row-banner-bg${animCls}" style="background:${esc(b.css)}">${pbannerParticlesHTML(b.anim)}</div>`;
   return { cls: ' has-profile-banner', html: `${bg}<div class="row-banner-overlay"></div>` };
 }
 
@@ -3860,6 +3879,7 @@ function renderProfileBannerHeader(p, isSelf) {
 function openProfile(username) {
   const uname = username || currentUser;
   if (!uname) return;
+  hideLeaderboard();
   viewingProfileUsername = uname;
   if (uname === currentUser) {
     viewingProfileData = null;
@@ -3947,7 +3967,7 @@ function renderReadOnlyBannerTab(p) {
     const animCls = b.anim ? ` ${esc(b.anim)}` : '';
     const bg = b.url
       ? `<img class="profile-banner-card-bg" src="${esc(b.url)}" alt="" loading="lazy">`
-      : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}"></div>` : '');
+      : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}">${pbannerParticlesHTML(b.anim)}</div>` : '');
     return `<div class="profile-banner-card${equipped ? ' equipped' : ''}${!bg ? ' none-banner' : ''}" title="${esc(b.name)}">
       ${bg}
       ${equipped ? '<div class="profile-banner-card-check">✓</div>' : ''}
@@ -4163,7 +4183,7 @@ function buildBannerPicker() {
       const animCls = b.anim ? ` ${esc(b.anim)}` : '';
       const bg = b.url
         ? `<img class="profile-banner-card-bg" src="${esc(b.url)}" alt="" loading="lazy">`
-        : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}"></div>` : '');
+        : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}">${pbannerParticlesHTML(b.anim)}</div>` : '');
       const action = owned
         ? `selectBanner('${esc(b.id)}')`
         : `buyBanner('${esc(b.id)}')`;
@@ -4349,7 +4369,7 @@ function cpRenderHeader(conv) {
 // случайные цвета "для вида"), чтобы в сообщении правда было видно место,
 // а не абстрактную мозаику. По центру — флажок-маркер самой точки.
 function cpCanvasCardHTML(cx, cy) {
-  const RADIUS = 5; // зона вокруг точки: 11×11 клеток
+  const RADIUS = 10; // зона вокруг точки: 21×21 клеток (увеличено в 2 раза)
   let cells = '';
   for (let dy = -RADIUS; dy <= RADIUS; dy++) {
     for (let dx = -RADIUS; dx <= RADIUS; dx++) {
@@ -4365,7 +4385,7 @@ function cpCanvasCardHTML(cx, cy) {
   }
   return `
     <div class="cp-canvas-card">
-      <div class="cc-grid cc-grid-11">${cells}</div>
+      <div class="cc-grid cc-grid-21">${cells}</div>
       <div class="cc-foot">
         <div class="cc-coords">X:${cx} Y:${cy}</div>
         <div class="cc-go" data-onclick="jumpToCanvas(${cx},${cy})">Перейти →</div>

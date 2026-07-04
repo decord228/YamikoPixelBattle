@@ -1,0 +1,917 @@
+/* ══════════════════════════════════════════════════════════════
+   SKINS.CSS — анимированные пресеты баннеров профиля/клана/лидерборда
+   (.pbanner-anim-*, .pbanner-geo-*, .pbanner-prem-*, и их @keyframes).
+
+   Вынесено из style.css (там осталась только СТРУКТУРНАЯ вёрстка баннеров:
+   .row-banner-bg, .has-profile-banner, .profile-banner-card, .clan-banner-*
+   и т.д.) — сюда попадают ТОЛЬКО декоративные "скины"/паттерны, чтобы не
+   раздувать основной файл стилей. Подключается в index.html ПОСЛЕ style.css.
+
+   Добавляя новый скин баннера — добавляй его класс + keyframes сюда, а не
+   в style.css.
+══════════════════════════════════════════════════════════════ */
+
+/* ── БАННЕР ПРОФИЛЯ: встроенные анимированные пресеты (Этап 2, тир 100-1000🪙) ──
+   Применяются как ДОПОЛНИТЕЛЬНЫЙ класс к .row-banner-bg / .profile-banner-card-bg
+   (тот же элемент, что рисует статичный css/url-фон — анимация просто
+   двигает то, что уже назначено через style="background:..."). Растущая
+   сложность = больше слоёв движения/цветов, отсюда и цена 100 → 1000. */
+.pbanner-anim-pulse {
+    background-size: 160% 160% !important;
+    animation: pbannerPulse 3.2s ease-in-out infinite;
+}
+
+@keyframes pbannerPulse {
+    0%, 100% {
+        background-position: 0% 50%;
+        filter: brightness(1);
+    }
+
+    50% {
+        background-position: 100% 50%;
+        filter: brightness(1.18);
+    }
+}
+
+.pbanner-anim-tide {
+    background-size: 300% 300% !important;
+    animation: pbannerTide 6s ease-in-out infinite;
+}
+
+@keyframes pbannerTide {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    50% {
+        background-position: 100% 50%;
+    }
+
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.pbanner-anim-aurora {
+    background-size: 400% 400% !important;
+    animation: pbannerAurora 7s ease infinite;
+}
+
+@keyframes pbannerAurora {
+    0% {
+        background-position: 0% 0%;
+    }
+
+    50% {
+        background-position: 100% 100%;
+    }
+
+    100% {
+        background-position: 0% 0%;
+    }
+}
+
+.pbanner-anim-stardust {
+    overflow: hidden;
+}
+
+    .pbanner-anim-stardust::before,
+    .pbanner-anim-stardust::after {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background-image: radial-gradient(2px 2px at 20% 30%, #fff, transparent 60%), radial-gradient(2px 2px at 60% 70%, #fff, transparent 60%), radial-gradient(1.5px 1.5px at 80% 20%, #ffd635, transparent 60%), radial-gradient(1.5px 1.5px at 40% 85%, #51e9f4, transparent 60%), radial-gradient(2px 2px at 90% 60%, #fff, transparent 60%);
+        background-repeat: repeat;
+        opacity: .8;
+        animation: pbannerStardust 9s linear infinite;
+    }
+
+    .pbanner-anim-stardust::after {
+        animation-duration: 14s;
+        animation-direction: reverse;
+        opacity: .5;
+    }
+
+@keyframes pbannerStardust {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-15%, 10%);
+    }
+}
+
+.pbanner-anim-rainbow {
+    background-size: 300% 300% !important;
+    animation: pbannerRainbow 5s linear infinite;
+}
+
+@keyframes pbannerRainbow {
+    0% {
+        background-position: 0% 50%;
+    }
+
+    100% {
+        background-position: 100% 50%;
+    }
+}
+
+/* ── БАННЕР ПРОФИЛЯ: геометрические украшения (Этап 2, доп. заказ) ──
+   Отдельный визуальный тип от переливающихся градиентов выше — здесь фон
+   (заданный inline через style="background:...") остаётся статичным цветом-
+   подложкой, а анимируется ФИГУРА поверх него через ::before (паттерн
+   clip-path/conic-gradient/repeating-linear-gradient), а не сам background. */
+.pbanner-geo-hex,
+.pbanner-geo-triangle,
+.pbanner-geo-stripes,
+.pbanner-geo-rings,
+.pbanner-geo-dots,
+.pbanner-geo-bolt {
+    overflow: hidden;
+}
+
+.pbanner-geo-hex {
+    background-size: 220% 220% !important;
+    animation: pbannerHexBasePan 8s ease-in-out infinite;
+}
+
+@keyframes pbannerHexBasePan {
+    0%, 100% {
+        background-position: 0% 30%;
+    }
+
+    50% {
+        background-position: 100% 70%;
+    }
+}
+
+/* "Electric Hive"-реворк №2 — по прямому референсу скина AWP | Electric
+       Hive (CS:GO): гексагональная сетка, залитая БЕГУЩИМ градиентом
+       оранжевый → малиновый → пурпурный → синий (сам градиент — 7-й слой
+       снизу, а линии сот наложены на него через background-blend-mode:
+       overlay, поэтому видимый цвет линий — это движущийся радужный поток,
+       а не статичный белый контур). Сверху ещё раз mix-blend-mode:screen,
+       чтобы сетка светилась поверх фона карточки, как металл под неоном. */
+.pbanner-geo-hex::before {
+    content: '';
+    position: absolute;
+    inset: -10%;
+    background-image: linear-gradient(30deg, #fff 12%, transparent 12.8%, transparent 87.2%, #fff 88%, #fff), linear-gradient(150deg, #fff 12%, transparent 12.8%, transparent 87.2%, #fff 88%, #fff), linear-gradient(30deg, #fff 12%, transparent 12.8%, transparent 87.2%, #fff 88%, #fff), linear-gradient(150deg, #fff 12%, transparent 12.8%, transparent 87.2%, #fff 88%, #fff), linear-gradient(60deg, #fff 25%, transparent 25.8%, transparent 74.2%, #fff 75%, #fff), linear-gradient(60deg, #fff 25%, transparent 25.8%, transparent 74.2%, #fff 75%, #fff), linear-gradient(115deg, #ff9600 0%, #ff3d6e 28%, #d4227e 45%, #811e9f 65%, #2450a4 85%, #3690ea 100%);
+    background-size: 46px 80px, 46px 80px, 46px 80px, 46px 80px, 46px 80px, 46px 80px, 320% 320%;
+    background-position: 0 0, 0 0, 23px 40px, 23px 40px, 0 0, 23px 40px, 0% 50%;
+    background-blend-mode: overlay, overlay, overlay, overlay, overlay, overlay, normal;
+    mix-blend-mode: screen;
+    animation: pbannerHexPulse 4.5s ease-in-out infinite, pbannerHexColorFlow 6s linear infinite;
+}
+
+/* Дымчатые фиолетово-оранжевые пятна за сеткой + мелкие "искры" на
+       пересечениях граней, резко (steps) вспыхивающие и гаснущие —
+       имитация электрических разрядов по проводам сот. */
+.pbanner-geo-hex::after {
+    content: '';
+    position: absolute;
+    inset: -30%;
+    background-image: radial-gradient(circle at 30% 40%, rgba(255,150,0,.5), transparent 35%), radial-gradient(circle at 70% 65%, rgba(36,80,164,.45), transparent 32%), radial-gradient(circle at 50% 20%, rgba(129,30,159,.4), transparent 30%), radial-gradient(2.4px 2.4px at 22% 36%, #fff, transparent 70%), radial-gradient(2.4px 2.4px at 66% 52%, #ffd9a0, transparent 70%), radial-gradient(2.4px 2.4px at 44% 78%, #cfe0ff, transparent 70%), radial-gradient(2.4px 2.4px at 82% 22%, #ffc2e0, transparent 70%);
+    filter: blur(18px);
+    mix-blend-mode: soft-light;
+    animation: pbannerHexSmokeDrift 13s ease-in-out infinite, pbannerHexSparks 1.4s steps(2) infinite;
+}
+
+@keyframes pbannerHexColorFlow {
+    0% {
+        background-position: 0 0, 0 0, 23px 40px, 23px 40px, 0 0, 23px 40px, 0% 50%;
+    }
+
+    100% {
+        background-position: 0 0, 0 0, 23px 40px, 23px 40px, 0 0, 23px 40px, 200% 50%;
+    }
+}
+
+@keyframes pbannerHexSmokeDrift {
+    0%, 100% {
+        transform: translate(0, 0) scale(1);
+    }
+
+    50% {
+        transform: translate(4%, -3%) scale(1.08);
+    }
+}
+
+@keyframes pbannerHexSparks {
+    0%, 100% {
+        filter: blur(18px) brightness(1);
+    }
+
+    50% {
+        filter: blur(15px) brightness(1.5);
+    }
+}
+
+@keyframes pbannerHexPulse {
+    0%, 100% {
+        opacity: .6;
+        transform: scale(1);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.04);
+    }
+}
+
+.pbanner-geo-triangle::before {
+    content: '';
+    position: absolute;
+    inset: -20%;
+    background-image: conic-gradient(from 0deg at 20% 30%, rgba(255,255,255,.16) 0 25%, transparent 0 50%), conic-gradient(from 90deg at 70% 60%, rgba(81,233,244,.18) 0 25%, transparent 0 50%), conic-gradient(from 180deg at 45% 85%, rgba(129,158,255,.16) 0 25%, transparent 0 50%);
+    background-size: 90px 90px;
+    animation: pbannerTrianglePan 10s linear infinite;
+}
+
+@keyframes pbannerTrianglePan {
+    from {
+        background-position: 0 0, 0 0, 0 0;
+    }
+
+    to {
+        background-position: 90px 0, -90px 45px, 45px -90px;
+    }
+}
+
+/* "Диагонали"-реворк №2: раньше грани были плоскими и почти незаметными.
+   Теперь это "гранёный кристалл" — несколько слоёв диагональных граней
+   РАЗНОЙ ширины/яркости/угла, каждый со своей скоростью дрейфа (лёгкий
+   параллакс между слоями создаёт ощущение объёма), плюс медленный общий
+   цветовой переток (hue-rotate) по граням и яркий "глянец", проходящий
+   по кристаллу под собственным углом. */
+.pbanner-geo-stripes {
+    background-size: 220% 220% !important;
+    animation: pbannerHexBasePan 9s ease-in-out infinite;
+}
+
+    .pbanner-geo-stripes::before {
+        content: '';
+        position: absolute;
+        inset: -30%;
+        background-image: repeating-linear-gradient(122deg, rgba(255,255,255,.16) 0 3px, transparent 3px 46px), repeating-linear-gradient(122deg, rgba(0,0,0,.28) 0 10px, transparent 10px 46px), repeating-linear-gradient(58deg, rgba(81,233,244,.14) 0 2px, transparent 2px 70px), repeating-linear-gradient(58deg, rgba(0,0,0,.16) 0 5px, transparent 5px 70px);
+        animation: pbannerStripesDrift 18s linear infinite, pbannerStripesHue 12s ease-in-out infinite;
+    }
+
+    .pbanner-geo-stripes::after {
+        content: '';
+        position: absolute;
+        inset: -60% -20%;
+        width: 55%;
+        background: linear-gradient(100deg, transparent 30%, rgba(255,255,255,.65) 48%, rgba(255,255,255,.12) 55%, transparent 70%);
+        transform: translateX(-160%) rotate(8deg);
+        animation: pbannerStripesGlare 4.5s ease-in-out infinite;
+    }
+
+@keyframes pbannerStripesDrift {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-46px, 46px);
+    }
+}
+
+@keyframes pbannerStripesHue {
+    0%, 100% {
+        filter: hue-rotate(0deg) brightness(1);
+    }
+
+    50% {
+        filter: hue-rotate(35deg) brightness(1.15);
+    }
+}
+
+@keyframes pbannerStripesGlare {
+    0%, 70%, 100% {
+        transform: translateX(-160%) rotate(8deg);
+        opacity: 0;
+    }
+
+    80% {
+        opacity: 1;
+    }
+
+    92% {
+        transform: translateX(260%) rotate(8deg);
+        opacity: 0;
+    }
+}
+
+.pbanner-geo-rings::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: repeating-radial-gradient(circle at 85% 40%, rgba(0,204,192,.5) 0 2px, transparent 2px 22px);
+    animation: pbannerRingsPulse 3.6s ease-out infinite;
+}
+
+@keyframes pbannerRingsPulse {
+    0% {
+        background-size: 100% 100%;
+        opacity: .4;
+    }
+
+    70% {
+        background-size: 160% 160%;
+        opacity: .9;
+    }
+
+    100% {
+        background-size: 100% 100%;
+        opacity: .4;
+    }
+}
+
+.pbanner-geo-dots::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image: radial-gradient(rgba(255,255,255,.55) 1.5px, transparent 1.5px);
+    background-size: 16px 16px;
+    animation: pbannerDotsWave 2.8s ease-in-out infinite;
+}
+
+@keyframes pbannerDotsWave {
+    0%, 100% {
+        opacity: .35;
+        background-size: 16px 16px;
+    }
+
+    50% {
+        opacity: .9;
+        background-size: 20px 20px;
+    }
+}
+
+.pbanner-geo-bolt::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 0%, transparent 46%, #ffd635 48%, #fff 50%, #ffd635 52%, transparent 54%, transparent 100%);
+    background-size: 260% 100%;
+    mix-blend-mode: screen;
+    animation: pbannerBoltFlash 3s ease-in-out infinite;
+}
+
+@keyframes pbannerBoltFlash {
+    0%, 40%, 100% {
+        background-position: 130% 0;
+        opacity: 0;
+    }
+
+    45% {
+        background-position: 20% 0;
+        opacity: 1;
+    }
+
+    55% {
+        opacity: .2;
+    }
+}
+
+/* ── БАННЕР ПРОФИЛЯ: "премиум"-серия (Этап 3, доп. заказ — "шедевры") ──
+   В отличие от pbanner-anim-*/ pbanner-geo-* выше (один слой движения на
+   один эффект), здесь КАЖДЫЙ баннер — минимум два независимых слоя:
+1) анимированная база (плавающий/вращающийся градиент на самом
+      элементе, через background-size+position/conic-gradient),
+2) один-два ::before/::after поверх — частицы/фигуры/лучи со своим
+таймингом. Именно комбинация слоёв даёт "сложность", а не просто
+более яркий градиент. */
+/* ★ Звёздное небо — ключевое отличие от "Звёздной пыли": там всё поле
+   точек ПЛЫВЁТ по диагонали (translate), тут звёзды НЕПОДВИЖНЫ и только
+   мерцают яркостью/размером, а движение даёт единственный яркий "хвост"
+   падающей звезды, пролетающий по диагонали раз в несколько секунд —
+   отдельный акцентный объект, а не общий дрейф всего поля. */
+.pbanner-prem-starfield {
+    overflow: hidden;
+    background-size: 220% 220% !important;
+    animation: pbannerPremSkyBreathe 10s ease-in-out infinite;
+}
+
+@keyframes pbannerPremSkyBreathe {
+    0%, 100% {
+        background-position: 20% 20%;
+    }
+
+    50% {
+        background-position: 80% 60%;
+    }
+}
+
+.pbanner-prem-starfield::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-repeat: repeat;
+    background-image: radial-gradient(2.2px 2.2px at 8% 22%, #fff, transparent 65%), radial-gradient(1.2px 1.2px at 24% 68%, #fff, transparent 65%), radial-gradient(1.6px 1.6px at 42% 12%, #fff, transparent 65%), radial-gradient(1.1px 1.1px at 58% 78%, #cfe0ff, transparent 65%), radial-gradient(2.6px 2.6px at 71% 34%, #fff, transparent 65%), radial-gradient(1.3px 1.3px at 87% 58%, #fff, transparent 65%), radial-gradient(1.1px 1.1px at 93% 14%, #cfe0ff, transparent 65%), radial-gradient(2px 2px at 15% 90%, #fff, transparent 65%), radial-gradient(1.4px 1.4px at 35% 45%, #fff, transparent 65%), radial-gradient(1.1px 1.1px at 65% 92%, #fff, transparent 65%);
+    animation: pbannerPremTwinkle 3.4s ease-in-out infinite;
+}
+
+/* Падающая звезда: узкий световой штрих, который проносится по диагонали
+       и почти всё остальное время цикла невидим. */
+.pbanner-prem-starfield::after {
+    content: '';
+    position: absolute;
+    top: 12%;
+    left: -15%;
+    width: 130px;
+    height: 2px;
+    border-radius: 2px;
+    background: linear-gradient(90deg, transparent, #fff 45%, #cdeeff 75%, transparent);
+    transform: translate(0, 0) rotate(-22deg);
+    opacity: 0;
+    animation: pbannerShootingStar 6.5s ease-in infinite;
+}
+
+@keyframes pbannerShootingStar {
+    0%, 55%, 100% {
+        transform: translate(0, 0) rotate(-22deg);
+        opacity: 0;
+    }
+
+    58% {
+        opacity: 1;
+    }
+
+    72% {
+        transform: translate(320px, 150px) rotate(-22deg);
+        opacity: 0;
+    }
+}
+
+@keyframes pbannerPremTwinkle {
+    0%, 100% {
+        opacity: .35;
+    }
+
+    50% {
+        opacity: 1;
+    }
+}
+
+/* ★ Галактика-реворк №2: два независимых спиральных рукава (::before)
+   вращаются в РАЗНЫЕ стороны с разной скоростью — это даёт настоящий эффект
+   глубины/параллакса вместо одного плоского вращающегося конуса. Плюс
+   отдельный слой звёздной пыли (::after), которая медленно ОРБИТАЛЬНО
+   вращается вокруг центра как единое целое (particle-like движение по
+   кругу, а не статичные точки), и пульсирующее ядро-свечение поверх. */
+.pbanner-prem-galaxy {
+    overflow: hidden;
+}
+
+    .pbanner-prem-galaxy::before {
+        content: '';
+        position: absolute;
+        inset: -90%;
+        background-image: conic-gradient(from 0deg at 50% 50%, rgba(129,30,159,.32) 0deg, rgba(36,80,164,.14) 90deg, rgba(20,10,30,0) 160deg, rgba(212,0,120,.28) 220deg, rgba(29,43,83,.12) 300deg, rgba(129,30,159,.32) 360deg);
+        filter: blur(34px);
+        mix-blend-mode: screen;
+    }
+
+    .pbanner-prem-galaxy::after {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,.9), rgba(180,120,255,.35) 22%, transparent 45%), radial-gradient(1.6px 1.6px at 32% 40%, #fff, transparent 60%), radial-gradient(1.2px 1.2px at 42% 65%, #fff, transparent 60%), radial-gradient(2px 2px at 58% 32%, #fff, transparent 60%), radial-gradient(1.4px 1.4px at 66% 55%, #fff, transparent 60%), radial-gradient(1.2px 1.2px at 70% 38%, #fff, transparent 60%), radial-gradient(1.6px 1.6px at 38% 55%, #cfe0ff, transparent 60%);
+        transform-origin: 50% 50%;
+        animation: pbannerPremNovaPulse 4s ease-in-out infinite;
+    }
+
+@keyframes pbannerPremGalaxySpin {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* ★ Сакура (аниме) — розовое небо на закате + осыпающиеся лепестки,
+   каждый со своим размером/дрейфом (два слоя частиц с разной скоростью,
+   плюс лёгкое покачивание из стороны в сторону через translateX). */
+.pbanner-prem-sakura {
+    overflow: hidden;
+    background-size: 180% 180% !important;
+    animation: pbannerPremSkyBreathe 9s ease-in-out infinite;
+}
+
+    .pbanner-prem-sakura::before,
+    .pbanner-prem-sakura::after {
+        content: '';
+        position: absolute;
+        inset: -20% -10%;
+        background-repeat: repeat;
+        background-image: radial-gradient(4px 5px at 10% 0%, #ffd3e6 60%, transparent 65%), radial-gradient(3px 4px at 35% 30%, #ffc2dc 60%, transparent 65%), radial-gradient(4px 5px at 60% 10%, #ffe0ee 60%, transparent 65%), radial-gradient(3px 4px at 82% 40%, #ffc2dc 60%, transparent 65%), radial-gradient(4px 5px at 22% 65%, #ffd3e6 60%, transparent 65%), radial-gradient(3px 4px at 70% 75%, #ffe0ee 60%, transparent 65%);
+        background-size: 140px 160px;
+        animation: pbannerPremSakuraFall 7s linear infinite;
+    }
+
+    .pbanner-prem-sakura::after {
+        background-size: 100px 120px;
+        animation-duration: 11s;
+        animation-delay: -3s;
+        opacity: .7;
+    }
+
+@keyframes pbannerPremSakuraFall {
+    0% {
+        transform: translate(0, -10%) rotate(0deg);
+    }
+
+    50% {
+        transform: translate(4%, 45%) rotate(8deg);
+    }
+
+    100% {
+        transform: translate(0, 110%) rotate(0deg);
+    }
+}
+
+/* ★ Пикми — пастельный переливающийся фон + всплывающие мыльные пузырьки
+   разного размера (радужный "iridescent" оттенок через hue-rotate). */
+.pbanner-prem-pikmi {
+    overflow: hidden;
+    background-size: 240% 240% !important;
+    animation: pbannerPremSkyBreathe 6s ease-in-out infinite;
+}
+
+    .pbanner-prem-pikmi::before,
+    .pbanner-prem-pikmi::after {
+        content: '';
+        position: absolute;
+        inset: -10%;
+        background-repeat: repeat;
+        background-image: radial-gradient(7px 7px at 10% 90%, rgba(255,255,255,.85), transparent 70%), radial-gradient(4px 4px at 30% 70%, rgba(255,255,255,.7), transparent 70%), radial-gradient(9px 9px at 50% 95%, rgba(255,255,255,.8), transparent 70%), radial-gradient(5px 5px at 70% 80%, rgba(255,255,255,.7), transparent 70%), radial-gradient(6px 6px at 88% 92%, rgba(255,255,255,.75), transparent 70%);
+        background-size: 160px 160px;
+        animation: pbannerPremBubbleUp 6s linear infinite;
+        filter: hue-rotate(0deg);
+    }
+
+    .pbanner-prem-pikmi::after {
+        background-size: 110px 110px;
+        animation-duration: 8.5s;
+        animation-delay: -2s;
+        opacity: .55;
+    }
+
+@keyframes pbannerPremBubbleUp {
+    0% {
+        transform: translateY(0);
+        filter: hue-rotate(0deg);
+    }
+
+    100% {
+        transform: translateY(-160px);
+        filter: hue-rotate(60deg);
+    }
+}
+
+/* ★ Пикми в мини-версиях (ряды лидерборда, карточки магазина баннеров):
+   исходный тайл пузырьков (110–160px) и амплитуда всплытия (-160px)
+   рассчитаны на большой баннер шапки профиля. В маленьких карточках
+   (высота ~54–60px) почти весь тайл и почти вся траектория пузырька
+   оказывались за пределами видимой области, поэтому частицы были
+   практически не видны. Здесь — уменьшенные тайл и амплитуда специально
+   для этих контекстов, без изменения полноразмерного варианта. */
+@keyframes pbannerPremBubbleUpSmall {
+    0% {
+        transform: translateY(0);
+        filter: hue-rotate(0deg);
+    }
+
+    100% {
+        transform: translateY(-42px);
+        filter: hue-rotate(60deg);
+    }
+}
+
+.lb-row .pbanner-prem-pikmi::before,
+.member-row .pbanner-prem-pikmi::before,
+.profile-banner-card-bg.pbanner-prem-pikmi::before {
+    background-size: 44px 44px;
+    animation-name: pbannerPremBubbleUpSmall;
+    animation-duration: 4.2s;
+}
+
+.lb-row .pbanner-prem-pikmi::after,
+.member-row .pbanner-prem-pikmi::after,
+.profile-banner-card-bg.pbanner-prem-pikmi::after {
+    background-size: 30px 30px;
+    animation-name: pbannerPremBubbleUpSmall;
+    animation-duration: 5.6s;
+    animation-delay: -1.4s;
+}
+
+/* ★ Матрица-реворк: раньше это были просто вертикальные полоски-штрихи —
+   ни намёка на "цифровой дождь". Теперь ::before/::after — это ДВА тайла
+   настоящих символов (латиница/катакана/цифры, встроены как SVG data-URI).
+   Падение сделано через steps() вместо linear — символы прыгают "по
+   клеточке" резкими дискретными скачками, как настоящий построчный рендер,
+   а не размытая полоса.
+
+   ВАЖНО: раньше каждый тайл содержал ОДНУ колонку с одним и тем же глифом —
+   при повторении (background-repeat) это давало идеально ровную сетку, где
+   все "столбики" выглядели одинаково и падали синхронно. Теперь тайл — это
+   широкий блок сразу с НЕСКОЛЬКИМИ колонками, в котором у каждой колонки
+   свой сдвиг по Y, свой глиф и свой оттенок (зашито прямо в SVG-паттерн).
+   Плюс у ::before и ::after разные размеры тайла (88×120 и 96×132 — не
+   кратны друг другу), поэтому наложение двух слоёв не образует видимого
+   регулярного узора, и колонки визуально не совпадают и не скачут
+   синхронно, а падают вразнобой. */
+.pbanner-prem-matrix {
+    overflow: hidden;
+}
+
+    .pbanner-prem-matrix::before,
+    .pbanner-prem-matrix::after {
+        content: '';
+        position: absolute;
+        inset: -60% 0;
+        background-repeat: repeat;
+        mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+        -webkit-mask-image: linear-gradient(180deg, transparent, #000 22%, #000 78%, transparent);
+    }
+
+    .pbanner-prem-matrix::before {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='88' height='120' viewBox='0 0 88 120'><text x='2' y='14' font-family='monospace' font-size='13' fill='%2300ff78'>ﾊ</text><text x='2' y='54' font-family='monospace' font-size='13' fill='%2300ff78'>3</text><text x='2' y='94' font-family='monospace' font-size='13' fill='%237dffc0'>ﾋ</text><text x='24' y='30' font-family='monospace' font-size='12' fill='%2300cc60'>8</text><text x='24' y='70' font-family='monospace' font-size='13' fill='%2300ff78'>ﾜ</text><text x='24' y='110' font-family='monospace' font-size='12' fill='%2300cc60'>ﾁ</text><text x='46' y='6' font-family='monospace' font-size='13' fill='%2300ff78'>ﾎ</text><text x='46' y='46' font-family='monospace' font-size='12' fill='%2300cc60'>5</text><text x='46' y='86' font-family='monospace' font-size='13' fill='%237dffc0'>ﾌ</text><text x='68' y='22' font-family='monospace' font-size='12' fill='%2300cc60'>0</text><text x='68' y='62' font-family='monospace' font-size='13' fill='%2300ff78'>ﾐ</text><text x='68' y='102' font-family='monospace' font-size='12' fill='%2300cc60'>9</text></svg>");
+        background-size: 88px 120px;
+        animation: pbannerPremMatrixFallA 1.4s steps(10) infinite, pbannerPremMatrixGlitchA 2.3s steps(1) infinite;
+    }
+
+    .pbanner-prem-matrix::after {
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='96' height='132' viewBox='0 0 96 132'><text x='4' y='10' font-family='monospace' font-size='12' fill='%23bfffd9'>ﾔ</text><text x='4' y='58' font-family='monospace' font-size='12' fill='%235fcf90'>2</text><text x='4' y='106' font-family='monospace' font-size='12' fill='%23bfffd9'>ﾖ</text><text x='28' y='34' font-family='monospace' font-size='11' fill='%235fcf90'>6</text><text x='28' y='82' font-family='monospace' font-size='12' fill='%23bfffd9'>ﾈ</text><text x='28' y='124' font-family='monospace' font-size='11' fill='%235fcf90'>ﾂ</text><text x='52' y='4' font-family='monospace' font-size='12' fill='%23bfffd9'>ﾚ</text><text x='52' y='52' font-family='monospace' font-size='11' fill='%235fcf90'>4</text><text x='52' y='100' font-family='monospace' font-size='12' fill='%23bfffd9'>ﾇ</text><text x='76' y='26' font-family='monospace' font-size='11' fill='%235fcf90'>1</text><text x='76' y='74' font-family='monospace' font-size='12' fill='%23bfffd9'>ﾉ</text><text x='76' y='122' font-family='monospace' font-size='11' fill='%235fcf90'>7</text></svg>");
+        background-position: 13px 9px;
+        opacity: .65;
+        animation: pbannerPremMatrixFallB 1s steps(9) infinite, pbannerPremMatrixGlitchB 1.6s steps(1) infinite reverse;
+    }
+
+@keyframes pbannerPremMatrixFallA {
+    from {
+        background-position-y: -120px;
+    }
+
+    to {
+        background-position-y: 0px;
+    }
+}
+
+@keyframes pbannerPremMatrixFallB {
+    from {
+        background-position-y: -132px;
+    }
+
+    to {
+        background-position-y: 0px;
+    }
+}
+
+/* Резкая "перетасовка" символов на месте — колонки не только едут вниз, но
+   и периодически будто перерисовываются другим набором глифов (имитируем
+   сдвигом фонового тайла по X внутри его же периода). Сдвиги у слоёв
+   намеренно НЕ кратны друг другу и не симметричны — совпадения фаз не
+   происходит, что тоже добавляет "рандомности" картинке. */
+@keyframes pbannerPremMatrixGlitchA {
+    0%, 100% {
+        background-position-x: 0;
+    }
+
+    25% {
+        background-position-x: 30px;
+    }
+
+    50% {
+        background-position-x: 0;
+    }
+
+    75% {
+        background-position-x: -24px;
+    }
+}
+
+@keyframes pbannerPremMatrixGlitchB {
+    0%, 100% {
+        background-position-x: 0;
+    }
+
+    30% {
+        background-position-x: -34px;
+    }
+
+    60% {
+        background-position-x: 0;
+    }
+
+    85% {
+        background-position-x: 28px;
+    }
+}
+
+/* ★ Сверхновая — пульсирующий радиальный взрыв света из центра + медленно
+   вращающиеся лучи (conic-gradient), два независимых движения разом. */
+.pbanner-prem-supernova {
+    overflow: hidden;
+}
+
+    .pbanner-prem-supernova::before {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background-image: conic-gradient(from 0deg, transparent 0 8%, rgba(255,214,53,.28) 9% 10%, transparent 11% 20%, rgba(255,214,53,.2) 21% 22%, transparent 23% 33%, rgba(255,214,53,.28) 34% 35%, transparent 36% 46%, rgba(255,214,53,.2) 47% 48%, transparent 49% 58%, rgba(255,214,53,.28) 59% 60%, transparent 61% 71%, rgba(255,214,53,.2) 72% 73%, transparent 74% 84%, rgba(255,214,53,.28) 85% 86%, transparent 87% 100%);
+        animation: pbannerPremGalaxySpin 14s linear infinite;
+        mix-blend-mode: screen;
+    }
+
+    .pbanner-prem-supernova::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-image: radial-gradient(circle at 50% 50%, rgba(255,255,255,.9), rgba(255,150,0,.4) 30%, transparent 65%);
+        animation: pbannerPremNovaPulse 2.6s ease-in-out infinite;
+    }
+
+    /* Система "угольков" (embers) — вместо одного плоского пульса это
+       набор искр, каждая летит от центра НАРУЖУ по своему углу/дистанции/
+       задержке (свой transform-origin + delay на каждой i:nth-child).
+       Разметку под них добавляет JS при рендере (см. renderEmberParticles
+       в config.js/ui.js) — здесь только стили самих частиц. */
+    .pbanner-prem-supernova .pbanner-ember {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: #ffd67a;
+        box-shadow: 0 0 6px 1px rgba(255,180,60,.9);
+        opacity: 0;
+        animation: pbannerEmberFly 1.8s ease-out infinite;
+    }
+
+@keyframes pbannerPremNovaPulse {
+    0%, 100% {
+        opacity: .5;
+        transform: scale(.85);
+    }
+
+    50% {
+        opacity: 1;
+        transform: scale(1.15);
+    }
+}
+
+/* Единая траектория "вылет + затухание" — угол и дистанция полёта каждой
+   искры задаются через CSS-переменные --a (угол) и --d (дистанция),
+   которые проставляются инлайново на каждой .pbanner-ember. */
+@keyframes pbannerEmberFly {
+    0% {
+        transform: translate(-50%, -50%) rotate(var(--a, 0deg)) translateX(0) scale(1);
+        opacity: 1;
+    }
+
+    100% {
+        transform: translate(-50%, -50%) rotate(var(--a, 0deg)) translateX(var(--d, 60px)) scale(.3);
+        opacity: 0;
+    }
+}
+
+/* ★ Лава — трещины со свечением, медленно "дышащие" (несколько тонких
+   изломанных линий через repeating-conic-gradient + пульс яркости). */
+.pbanner-prem-lava {
+    overflow: hidden;
+}
+
+    .pbanner-prem-lava::before {
+        content: '';
+        position: absolute;
+        inset: -20%;
+        background-image: repeating-linear-gradient(115deg, transparent 0 40px, rgba(255,150,0,.55) 40px 42px, transparent 42px 80px), repeating-linear-gradient(25deg, transparent 0 60px, rgba(228,0,0,.45) 60px 62px, transparent 62px 110px);
+        animation: pbannerPremLavaGlow 3.4s ease-in-out infinite, pbannerPremLavaShift 12s linear infinite;
+    }
+
+@keyframes pbannerPremLavaGlow {
+    0%, 100% {
+        filter: brightness(1) saturate(1);
+    }
+
+    50% {
+        filter: brightness(1.4) saturate(1.3);
+    }
+}
+
+@keyframes pbannerPremLavaShift {
+    from {
+        transform: translate(0, 0);
+    }
+
+    to {
+        transform: translate(-6%, 4%);
+    }
+}
+
+/* ★ Глубокий океан — три слоя волн (силуэты через repeating-radial-gradient
+   на разной скорости/сдвиге = эффект параллакса, а не одна плоская линия). */
+.pbanner-prem-ocean {
+    overflow: hidden;
+}
+
+    .pbanner-prem-ocean::before,
+    .pbanner-prem-ocean::after {
+        content: '';
+        position: absolute;
+        left: -20%;
+        right: -20%;
+        height: 60%;
+        bottom: -10%;
+        background-image: repeating-radial-gradient(ellipse at 50% 120%, rgba(81,233,244,.35) 0 6px, transparent 6px 46px);
+        border-radius: 50% 50% 0 0;
+        animation: pbannerPremWaveDrift 6s ease-in-out infinite;
+    }
+
+    .pbanner-prem-ocean::after {
+        bottom: -22%;
+        height: 70%;
+        opacity: .6;
+        animation-duration: 9s;
+        animation-direction: reverse;
+    }
+
+@keyframes pbannerPremWaveDrift {
+    0%, 100% {
+        transform: translateX(0);
+    }
+
+    50% {
+        transform: translateX(6%);
+    }
+}
+
+/* ★ Созвездие — редкие звёзды соединены тонкой мерцающей паутиной линий
+   (repeating-linear-gradient под разными углами) + медленный общий поворот. */
+/* ★ Созвездие-реворк: раньше "линии" были просто диагональной штриховкой
+   45°/-45° по всему полю — ничего общего с реальным созвездием. Теперь
+   ::before/::after — это ДВА настоящих созвездия (Большая Медведица —
+   крупным планом спереди, Орион — мельче и тусклее на заднем плане),
+   нарисованные как SVG (точки-звёзды + линии между ними по их реальной
+   относительной геометрии), каждое медленно и независимо вращается вокруг
+   своего центра — получается лёгкий параллакс двух звёздных фигур, а не
+   плоская сетка. */
+.pbanner-prem-constellation {
+    overflow: hidden;
+}
+
+    .pbanner-prem-constellation::before {
+        content: '';
+        position: absolute;
+        inset: -15%;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='200' viewBox='0 0 300 200'><g fill='none' stroke='%23819eff' stroke-width='1' stroke-opacity='.55'><polyline points='40,150 75,140 110,120 150,125 185,95 215,70 250,55'/></g><g fill='%23ffffff'><circle cx='40' cy='150' r='2.6'/><circle cx='75' cy='140' r='2'/><circle cx='110' cy='120' r='2.8'/><circle cx='150' cy='125' r='2'/><circle cx='185' cy='95' r='2.4'/><circle cx='215' cy='70' r='2'/><circle cx='250' cy='55' r='3'/></g></svg>");
+        background-repeat: no-repeat;
+        background-position: center;
+        background-size: 85% auto;
+        animation: pbannerConstellationDrift 50s ease-in-out infinite, pbannerPremTwinkle 4.5s ease-in-out infinite;
+        transform-origin: 45% 55%;
+    }
+
+    /* Орион — мельче, тусклее, на своём слое, вращается в другую сторону и
+       с другой скоростью, чем Медведица выше — независимое движение двух
+       фигур создаёт ощущение объёма звёздного неба. */
+    .pbanner-prem-constellation::after {
+        content: '';
+        position: absolute;
+        inset: -15%;
+        opacity: .5;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='260' viewBox='0 0 220 260'><g fill='none' stroke='%23a0b8ff' stroke-width='1' stroke-opacity='.5'><polyline points='40,20 60,70 80,120'/><polyline points='140,15 120,70 80,120 60,150 20,240'/><polyline points='140,15 165,90 200,235'/><polyline points='60,70 165,90'/></g><g fill='%23eaf1ff'><circle cx='40' cy='20' r='2.2'/><circle cx='140' cy='15' r='2.6'/><circle cx='60' cy='70' r='1.8'/><circle cx='165' cy='90' r='1.8'/><circle cx='80' cy='120' r='2.4'/><circle cx='60' cy='150' r='1.6'/><circle cx='20' cy='240' r='2'/><circle cx='200' cy='235' r='2'/></g></svg>"), radial-gradient(1.4px 1.4px at 12% 70%, #fff, transparent 60%), radial-gradient(1.2px 1.2px at 85% 20%, #fff, transparent 60%), radial-gradient(1.4px 1.4px at 70% 85%, #fff, transparent 60%);
+        background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+        background-position: 70% 40%, 0 0, 0 0, 0 0;
+        background-size: 55% auto, auto, auto, auto;
+        animation: pbannerConstellationDriftRev 65s ease-in-out infinite, pbannerPremTwinkle 6s ease-in-out infinite reverse;
+        transform-origin: 65% 40%;
+    }
+
+@keyframes pbannerConstellationDrift {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    50% {
+        transform: rotate(4deg) scale(1.04);
+    }
+}
+
+@keyframes pbannerConstellationDriftRev {
+    0%, 100% {
+        transform: rotate(0deg) scale(1);
+    }
+
+    50% {
+        transform: rotate(-3deg) scale(1.03);
+    }
+}

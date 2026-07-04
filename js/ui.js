@@ -2294,16 +2294,37 @@ function renderClanBrowseList(clans){
   }).join('');
 }
 
+const SHOP_TABS = ['general', 'vip', 'admin'];
+function switchShopTab(tab) {
+  SHOP_TABS.forEach(t => { const el = document.getElementById(`shop-tab-${t}`); if (el) el.style.display = t === tab ? '' : 'none'; });
+  document.querySelectorAll('#shop-sidenav .csn-item').forEach(el => { el.classList.toggle('active', el.dataset.tab === tab); });
+}
+
 function buildShopUI(){
   const body = document.getElementById('shop-body');
-  if (!body) return;
-  if (!isLoggedIn) { body.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;">Войдите в аккаунт</div>'; return; }
-  let html = '';
-  html += `<div class="shop-section"><div class="shop-section-title">Обычные улучшения</div>`;
+  const listGeneral = document.getElementById('shop-list-general');
+  const listVip = document.getElementById('shop-list-vip');
+  const listAdmin = document.getElementById('shop-list-admin');
+  const adminTabBtn = document.getElementById('shop-admin-tab');
+  const walletChip = document.getElementById('shop-wallet-chip');
+  if (!body || !listGeneral || !listVip || !listAdmin) return;
+
+  if (walletChip) walletChip.textContent = `🪙 ${(currentCoins||0).toLocaleString()}`;
+
+  if (!isLoggedIn) {
+    listGeneral.innerHTML = '<div style="color:var(--text3);text-align:center;padding:20px;">Войдите в аккаунт</div>';
+    listVip.innerHTML = '';
+    listAdmin.innerHTML = '';
+    if (adminTabBtn) adminTabBtn.style.display = 'none';
+    return;
+  }
+
+  // ── ОБЫЧНЫЕ УЛУЧШЕНИЯ ──
+  let genHtml = '';
   SHOP_ITEMS_USER.forEach(item => {
     const owned = purchasedItems.includes(item.id);
     const reqMet = !item.requires || purchasedItems.includes(item.requires);
-    html += `<div class="shop-item">
+    genHtml += `<div class="shop-item">
       <div class="shop-header">
         <div class="shop-item-title">${item.icon} ${item.title}</div>
         ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price">🪙 ${item.cost}</span>`}
@@ -2313,13 +2334,14 @@ function buildShopUI(){
       ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Требуется: ${item.requires}</div>` : ''}
     </div>`;
   });
-  html += '</div>';
+  listGeneral.innerHTML = genHtml;
 
+  // ── VIP РАСХОДНИКИ ──
+  let vipHtml = '';
   if (isVip || isAdmin) {
-    html += `<div class="shop-section"><div class="shop-section-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6L12 3z"/></svg> VIP Расходники</div>`;
     SHOP_ITEMS_VIP.forEach(item => {
       const count = getItemCount(item.id);
-      html += `<div class="shop-item vip-item">
+      vipHtml += `<div class="shop-item vip-item">
         <div class="shop-header">
           <div class="shop-item-title">${item.icon} ${item.title}</div>
           <span class="shop-price">🪙 ${item.cost}</span>
@@ -2331,27 +2353,31 @@ function buildShopUI(){
         </div>
       </div>`;
     });
-    html += '</div>';
   } else {
-    html += `<div class="shop-section"><div class="shop-section-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6L12 3z"/></svg> VIP Расходники</div>
-      <div class="shop-item" style="opacity:.5">
+    vipHtml = `<div class="shop-item" style="opacity:.5">
         <div class="shop-lock"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><div class="shop-item-title">Расходники для VIP</div>
         <div class="shop-item-desc">Получите VIP-статус чтобы разблокировать взрывчатку, ластики, зеркала и многое другое!</div>
-      </div></div>`;
+      </div>`;
   }
+  listVip.innerHTML = vipHtml;
 
+  // ── АДМИН-ЧИТЫ ──
+  if (adminTabBtn) adminTabBtn.style.display = isAdmin ? '' : 'none';
   if (isAdmin) {
-    html += `<div class="shop-section"><div class="shop-section-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z"/></svg> Админ-читы</div>`;
+    let adminHtml = '';
     SHOP_ITEMS_ADMIN.forEach(item => {
-      html += `<div class="shop-item admin-item">
+      adminHtml += `<div class="shop-item admin-item">
         <div class="shop-header"><div class="shop-item-title">${item.icon} ${item.title}</div><span style="font-size:10px;color:var(--text3);">БЕСПЛАТНО</span></div>
         <div class="shop-item-desc">${item.desc}</div>
         <button class="btn btn-primary btn-sm" data-onclick="useAdminShopItem('${item.id}')">Применить</button>
       </div>`;
     });
-    html += '</div>';
+    listAdmin.innerHTML = adminHtml;
+  } else {
+    listAdmin.innerHTML = '';
+    // Если не админ и почему-то была открыта вкладка admin — вернёмся на general
+    if (document.getElementById('shop-tab-admin')?.style.display !== 'none') switchShopTab('general');
   }
-  body.innerHTML = html;
 }
 
 function getItemCount(itemId) { return Array.isArray(purchasedItems) ? purchasedItems.filter(i => i === itemId).length : 0; }
@@ -2540,7 +2566,7 @@ function renderAdminUsers(users){
         ${cpAvatarHTML(u.username,'sm',{emoji:u.emoji,avatar:u.avatar,rank:u.rank,showDot:false})}
         <div class="apr-namewrap">
           <div class="apr-name ${u.banned?'apr-name-banned':''}">${esc(u.username)}</div>
-          <div class="apr-sub">${u.rank||'Новичок'} · ${u.pixels||0}px · 🪙${u.coins||0}${u.clan?' · '+esc(u.clan):''}</div>
+          <div class="apr-sub">${u.rank||'Новичок'} · ${Math.floor(u.pixels||0).toLocaleString('ru-RU')}px · 🪙${Math.floor(u.coins||0).toLocaleString('ru-RU')}${u.clan?' · '+esc(u.clan):''}</div>
         </div>
       </div>
       <div class="apr-badges">
@@ -2560,12 +2586,20 @@ function renderAdminUsers(users){
 // ══════════════════════════════════════════════════════════
 let _adminUserTarget = null;
 
+let _aumLoadTimer = null;
 function openAdminUserProfile(username){
   _adminUserTarget = username;
   document.getElementById('admin-user-backdrop').classList.add('show');
   document.getElementById('admin-user-dialog').classList.add('show');
   document.getElementById('admin-user-body').innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px;">Загрузка...</div>';
   sendJSON({action:'admin_cmd', cmd:'get_user_detail', target:username});
+  clearTimeout(_aumLoadTimer);
+  _aumLoadTimer = setTimeout(()=>{
+    const body = document.getElementById('admin-user-body');
+    if (body && body.textContent.includes('Загрузка')) {
+      body.innerHTML = '<div style="color:var(--red);text-align:center;padding:30px;font-size:12px;">Сервер не ответил. Похоже, backend ещё не обновлён (нужна команда get_user_detail в server.js).</div>';
+    }
+  }, 6000);
 }
 
 function closeAdminUserModal(){
@@ -2581,6 +2615,7 @@ document.addEventListener('keydown', (ev) => {
 
 function renderAdminUserModal(u){
   if (!u || u.username !== _adminUserTarget) return;
+  clearTimeout(_aumLoadTimer);
   const body = document.getElementById('admin-user-body');
   const roles = ['user','vip','admin'];
   const roleLabels = {user:'Игрок', vip:'VIP', admin:'Админ'};
@@ -2599,14 +2634,14 @@ function renderAdminUserModal(u){
       <div class="aum-stat">
         <div class="aum-stat-lbl">🪙 Монеты</div>
         <div class="aum-stat-editrow">
-          <input type="number" id="aum-coins-input" value="${u.coins||0}" min="0">
+          <input type="number" id="aum-coins-input" value="${Math.floor(u.coins||0)}" min="0" step="1">
           <button data-onclick="aumSaveCoins()">OK</button>
         </div>
       </div>
       <div class="aum-stat">
         <div class="aum-stat-lbl">🎨 Пиксели</div>
         <div class="aum-stat-editrow">
-          <input type="number" id="aum-pixels-input" value="${u.pixels||0}" min="0">
+          <input type="number" id="aum-pixels-input" value="${Math.floor(u.pixels||0)}" min="0" step="1">
           <button data-onclick="aumSavePixels()">OK</button>
         </div>
       </div>
@@ -3088,6 +3123,10 @@ function renderAdminClans(clans) {
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M3 6l9 6 9-6"/><path d="M4 20l16-16" stroke="currentColor"/></svg>
           Убрать баннер
         </button>` : ''}
+        <button class="action-btn ab-warn" data-onclick="adminRebuildClanMembers('${esc(cl.name)}')">
+          <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 1 1 3 6.7"/><path d="M3 21v-5h5"/></svg>
+          Восстановить участников
+        </button>
         <button class="action-btn ab-ban" data-onclick="adminDeleteClan('${esc(cl.name)}')">
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16"/><path d="M9 7V4h6v3"/><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
           Удалить
@@ -3099,6 +3138,17 @@ function renderAdminClans(clans) {
       </div>
     </div>`;
   }).join('');
+}
+
+async function adminRebuildClanMembers(name) {
+  if (!name) { showToast?.('Укажи название клана', 'error'); return; }
+  const ok = await showConfirm(
+    `Пересобрать клан «${name}» на основе поля clan у аккаунтов игроков? Если документ клана полностью отсутствует в БД — он будет создан заново (лидер, звания, казна и статистика пикселей клана при этом не восстановятся).`,
+    { title: 'Восстановить клан', icon: '🔄' }
+  );
+  if (!ok) return;
+  sendJSON({ action: 'admin_cmd', cmd: 'rebuild_clan_members', params: { name } });
+  setTimeout(() => loadAdminClans(), 500);
 }
 
 async function adminEditClan(name) {

@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260633-03';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260633-06';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -825,9 +825,65 @@
     </div>
 
     <div id="shop-panel" class="overlay-panel panel">
-        <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><path d="M2.5 3h2l2.6 12.6a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.5L21 8H6" /></svg> Магазин</div><div class="panel-close" data-onclick="hidePanel('shop-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
+        <div class="panel-header">
+            <div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><circle cx="18" cy="20.5" r="1.3" fill="currentColor" stroke="none" /><path d="M2.5 3h2l2.6 12.6a2 2 0 0 0 2 1.6h8.4a2 2 0 0 0 2-1.5L21 8H6" /></svg> Магазин</div>
+            <div style="display:flex;align-items:center;gap:10px;">
+                <span class="shop-wallet-chip" id="shop-wallet-chip">🪙 0</span>
+                <div class="panel-close" data-onclick="hidePanel('shop-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+            </div>
+        </div>
         <div class="panel-body" id="shop-body">
-            <div style="color:var(--text3);text-align:center;padding:20px;">Войдите в аккаунт</div>
+            <div class="clan-shell-main">
+                <nav class="clan-sidenav" id="shop-sidenav">
+                    <div class="csn-item active" data-tab="general" data-onclick="switchShopTab('general')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /></svg>
+                        <span>Улучшения</span>
+                    </div>
+                    <div class="csn-item" data-tab="vip" data-onclick="switchShopTab('vip')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3l2.6 5.6 6.1.6-4.6 4.1 1.3 6-5.4-3.1-5.4 3.1 1.3-6-4.6-4.1 6.1-.6L12 3z" /></svg>
+                        <span>VIP Расходники</span>
+                    </div>
+                    <div class="csn-item" id="shop-admin-tab" data-tab="admin" data-onclick="switchShopTab('admin')" style="display:none">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z" /></svg>
+                        <span>Админ-читы</span>
+                    </div>
+                </nav>
+
+                <div class="clan-content" id="shop-content">
+                    <div id="shop-tab-general">
+                        <div class="shop-page-intro">
+                            <div class="shop-page-intro-icon">🛠️</div>
+                            <div>
+                                <div class="shop-page-intro-title">Обычные улучшения</div>
+                                <div class="shop-page-intro-desc">Постоянные апгрейды за монеты — покупаются один раз и остаются с тобой навсегда.</div>
+                            </div>
+                        </div>
+                        <div id="shop-list-general"></div>
+                    </div>
+
+                    <div id="shop-tab-vip" style="display:none">
+                        <div class="shop-page-intro">
+                            <div class="shop-page-intro-icon">🎁</div>
+                            <div>
+                                <div class="shop-page-intro-title">VIP Расходники</div>
+                                <div class="shop-page-intro-desc">Разовые предметы для творческих разрушений: бомбочки, ластики, зеркала и хаос.</div>
+                            </div>
+                        </div>
+                        <div id="shop-list-vip"></div>
+                    </div>
+
+                    <div id="shop-tab-admin" style="display:none">
+                        <div class="shop-page-intro">
+                            <div class="shop-page-intro-icon">☢️</div>
+                            <div>
+                                <div class="shop-page-intro-title">Админ-читы</div>
+                                <div class="shop-page-intro-desc">Бесплатные инструменты для модерации холста. Используй с умом!</div>
+                            </div>
+                        </div>
+                        <div id="shop-list-admin"></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -963,6 +1019,14 @@
                     </div>
 
                     <div id="admin-tab-clans" style="display:none">
+                        <div class="clan-settings-card" style="margin-bottom:12px;">
+                            <div class="clan-settings-card-title">🔄 Восстановить пропавший клан по имени</div>
+                            <div style="font-size:11px;color:var(--text2);margin-bottom:8px;">Если клан вообще не в списке ниже (документ полностью пропал из БД), но у игроков в профиле всё ещё числится этот клан — впиши точное название и нажми кнопку. Клан будет пересоздан из аккаунтов игроков (звания, казну и статистику пикселей клана восстановить не получится).</div>
+                            <div style="display:flex;gap:8px;">
+                                <input class="form-input" id="admin-clan-recover-name" placeholder="Точное название клана" style="flex:1;">
+                                <button class="btn btn-primary btn-sm" data-onclick="adminRebuildClanMembers(document.getElementById('admin-clan-recover-name').value.trim())" style="flex-shrink:0;">Восстановить</button>
+                            </div>
+                        </div>
                         <input class="search-box" id="admin-clans-search" placeholder="Поиск клана..." data-oninput="filterAdminClans()">
                         <div id="admin-clans-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
                         <div style="margin-top:10px;">

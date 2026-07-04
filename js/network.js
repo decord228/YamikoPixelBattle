@@ -175,6 +175,19 @@ function handleJSON(d) {
       renderClanView(d.clan);
       if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
       if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
+    } else {
+      // Сервер ответил null — клан, на который у нас была ссылка, больше не
+      // существует (например, полностью пропал из БД). Раньше этот случай
+      // никак не обрабатывался: currentClan/clanFullData оставались старыми,
+      // и панель клана продолжала показывать "призрачные" данные вместо
+      // экрана "клана нет" (см. баг с переименованием клана в админке).
+      currentClan = '';
+      clanSharedStencil = null;
+      clanFullData = null;
+      if (stencilLocked) cancelStencil();
+      renderNoClanView();
+      if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
+      if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
     }
   }
   else if (a==='clan_list_data') {

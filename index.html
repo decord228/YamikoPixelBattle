@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260633-02';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260633-03';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -35,6 +35,30 @@
          свёрнута в маленькое плавающее окно (см. checkMiniMode() в main.js).
          В таком окне обычный UI (тулбары, холст) не помещается и превращается
          в нечитаемую кашу, поэтому мы просто прячем игру за этим экраном. -->
+    <!-- ── ЛОКАУТ: экран закрытия Пиксель Батла для всех, кроме админов ── -->
+    <div id="lockdown-screen">
+        <div id="lockdown-card">
+            <div id="lockdown-icon">🔒</div>
+            <div id="lockdown-title">PIXEL BATTLE ЗАКРЫТ</div>
+            <div id="lockdown-message">Скоро вернёмся! Идёт подготовка к новому сезону.</div>
+            <div id="lockdown-timer">
+                <div class="lockdown-timer-unit"><span id="lockdown-hh">00</span><small>ч</small></div>
+                <div class="lockdown-timer-unit"><span id="lockdown-mm">00</span><small>м</small></div>
+                <div class="lockdown-timer-unit"><span id="lockdown-ss">00</span><small>с</small></div>
+            </div>
+            <div id="lockdown-sub">до открытия — оставайтесь на связи</div>
+        </div>
+    </div>
+
+    <!-- ── РЕКЛАМА: popup по центру экрана ── -->
+    <div id="ad-popup-backdrop">
+        <div id="ad-popup-card">
+            <div id="ad-popup-close" data-onclick="closeAdPopup()">✕</div>
+            <img id="ad-popup-image" alt="Реклама" data-onclick="adClickThrough()">
+            <button class="btn btn-primary" id="ad-popup-goto" data-onclick="adClickThrough()">Перейти →</button>
+        </div>
+    </div>
+
     <div id="mini-mode-screen">
         <div class="connecting-logo" id="mini-mode-logo">PIXEL<br>BATTLE</div>
         <div id="mini-mode-expand-icon">
@@ -150,6 +174,18 @@
                 <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="14" height="16" rx="2" /><path d="M7 8h6" /><path d="M7 11.5h6" /><path d="M7 15h3" /><path d="M17 8h2a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H8" /></svg>
                 <div id="news-indicator-dot" style="display:none"></div>
                 <div id="news-indicator-tip">Новости</div>
+            </div>
+        </div>
+
+        <!-- ── РЕКЛАМА: полноширинный баннер под top-bar (картинка как фон) ── -->
+        <div id="ad-banner">
+            <div id="ad-banner-bg" data-onclick="adClickThrough()"></div>
+            <div id="ad-banner-fade"></div>
+            <div id="ad-banner-label">📢 Реклама</div>
+            <div id="ad-banner-content">
+                <div id="ad-banner-spacer"></div>
+                <button class="btn btn-primary btn-sm" id="ad-banner-goto" data-onclick="adClickThrough()">Перейти →</button>
+                <div id="ad-banner-close" data-onclick="closeAdBanner()">✕</div>
             </div>
         </div>
 
@@ -798,322 +834,427 @@
     <div id="admin-panel" class="overlay-panel panel">
         <div class="panel-header"><div class="panel-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z" /></svg> Панель администратора</div><div class="panel-close" data-onclick="hidePanel('admin-panel')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div></div>
         <div class="panel-body">
-            <div class="admin-tabs">
-                <div class="admin-tab active" data-onclick="switchAdminTab('users')">Игроки</div>
-                <div class="admin-tab" data-onclick="switchAdminTab('canvas')">Холст</div>
-                <div class="admin-tab" data-onclick="switchAdminTab('broadcast')">Сообщение</div>
-                <div class="admin-tab" data-onclick="switchAdminTab('stats')">Статистика</div>
-                <div class="admin-tab" data-onclick="switchAdminTab('clans')">Кланы</div>
-                <div class="admin-tab" data-onclick="switchAdminTab('news')">📰 Новости</div>
-                <div class="admin-tab" data-onclick="switchAdminTab('timelapse')">🎬 Тайм</div>
-            </div>
-
-            <div id="admin-tab-users">
-                <input class="search-box" id="admin-search" placeholder="Поиск..." data-oninput="filterAdminUsers()">
-                <div id="admin-users-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
-                <div class="pagination">
-                    <button class="page-btn" data-onclick="adminPageNav(-1)">‹ Пред</button>
-                    <span class="page-info" id="admin-page-info">1 / 1</span>
-                    <button class="page-btn" data-onclick="adminPageNav(1)">След ›</button>
-                </div>
-            </div>
-
-            <div id="admin-tab-canvas" style="display:none">
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
-                <div class="resize-form">
-                    <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
-                    <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
-                </div>
-                <div style="margin-bottom:12px;font-size:11px;color:var(--red);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L2 20h20L12 3z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none" /></svg> Изменение сохранит пиксели в пределах нового размера.</div>
-                <button class="btn btn-primary" data-onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
-                <div class="section-sep"></div>
-
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg> Задержка пикселей (Кулдаун)</div>
-                <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
-                    <input type="range" class="admin-range" id="admin-cooldown-slider" min="0" max="30000" step="500" value="3000" data-oninput="updateCooldownLabel(this.value)">
-                    <span id="admin-cooldown-label" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);min-width:50px;">3.0с</span>
-                </div>
-                <button class="btn btn-secondary btn-sm" data-onclick="adminSetCooldown()" style="margin-bottom:10px;">Применить</button>
-                <div class="section-sep"></div>
-
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → превью → холст)</div>
-                <div id="image-drop-zone" data-onclick="document.getElementById('admin-image-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
-                    <div style="font-size:28px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
-                    <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите или перетащите изображение</p>
-                    <p style="font-size:10px;color:var(--text3);margin-top:2px">Сначала откроется превью для позиционирования</p>
-                </div>
-                <input type="file" id="admin-image-file" accept="image/*" style="display:none" data-onchange="handleAdminImage(event)">
-                <img id="image-preview" alt="Preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
-                <button class="btn btn-primary" id="btn-place-image" data-onclick="startAdminImagePreview()" disabled style="margin-bottom:10px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.7-4.7" /></svg> Открыть превью</button>
-
-                <div class="section-sep"></div>
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" /></svg> Глобальный трафарет (для всех)</div>
-                <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" data-onclick="document.getElementById('admin-stencil-file').click()">
-                    <div style="font-size:22px"><svg class="icon icon-fill" viewBox="0 0 14 12" xmlns="http://www.w3.org/2000/svg"><path d="M12 0H2C1.46974 0.000579017 0.961373 0.211479 0.586426 0.586426C0.211479 0.961373 0.000579017 1.46974 0 2V10C0.000579017 10.5303 0.211479 11.0386 0.586426 11.4136C0.961373 11.7885 1.46974 11.9994 2 12H12C12.5303 11.9994 13.0386 11.7885 13.4136 11.4136C13.7885 11.0386 13.9994 10.5303 14 10V2C13.9994 1.46974 13.7885 0.961373 13.4136 0.586426C13.0386 0.211479 12.5303 0.000579017 12 0ZM9.5 2C9.79667 2 10.0867 2.08797 10.3334 2.2528C10.58 2.41762 10.7723 2.65189 10.8858 2.92597C10.9994 3.20006 11.0291 3.50166 10.9712 3.79264C10.9133 4.08361 10.7704 4.35088 10.5607 4.56066C10.3509 4.77044 10.0836 4.9133 9.79264 4.97118C9.50166 5.02906 9.20006 4.99935 8.92597 4.88582C8.65189 4.77229 8.41762 4.58003 8.2528 4.33336C8.08797 4.08668 8 3.79667 8 3.5C8.00041 3.1023 8.15858 2.72101 8.4398 2.4398C8.72101 2.15858 9.1023 2.00041 9.5 2ZM2 11C1.73478 11 1.48043 10.8946 1.29289 10.7071C1.10536 10.5196 1 10.2652 1 10V7.88656L3.96375 5.25219C4.2497 4.99858 4.62159 4.86354 5.00364 4.87457C5.38569 4.8856 5.74916 5.04188 6.02 5.31156L8.04969 7.33687L4.38656 11H2ZM13 10C13 10.2652 12.8946 10.5196 12.7071 10.7071C12.5196 10.8946 12.2652 11 12 11H5.80094L9.59531 7.20562C9.86396 6.97717 10.2049 6.8513 10.5575 6.85039C10.9102 6.84947 11.2517 6.97356 11.5216 7.20063L13 8.4325V10Z" /></svg></div>
-                    <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
-                </div>
-                <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" data-onchange="handleAdminGlobalStencil(event)">
-                <button class="btn btn-secondary" id="btn-clear-global-stencil" data-onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
-
-                <div class="section-sep"></div>
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
-                <div class="setting-row" style="padding-top:0">
-                    <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
-                    <div class="toggle" id="admin-toggle-cursors" data-onclick="adminToggleCursors()"></div>
-                </div>
-                <div class="section-sep"></div>
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
-                <button class="btn btn-danger" data-onclick="adminClearCanvas()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" /><path d="M10 11v6" /><path d="M14 11v6" /></svg> Очистить весь холст</button>
-            </div>
-
-            <div id="admin-tab-broadcast" style="display:none">
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
-                <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
-                <button class="btn btn-primary" data-onclick="adminBroadcast()" style="margin-bottom:14px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg> Отправить всем</button>
-                <div class="section-sep"></div>
-                <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
-                <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
-                <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
-                <button class="btn btn-secondary" data-onclick="adminSendDM()">Отправить</button>
-            </div>
-
-            <div id="admin-tab-stats" style="display:none">
-                <div class="admin-stats-grid">
-                    <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
-                    <div class="admin-stat"><div class="admin-stat-val" id="stat-online">—</div><div class="admin-stat-lbl">Онлайн</div></div>
-                    <div class="admin-stat"><div class="admin-stat-val" id="stat-banned">—</div><div class="admin-stat-lbl">Забанено</div></div>
-                </div>
-                <div class="admin-stat" style="margin-bottom:9px;"><div class="admin-stat-val" id="stat-canvas-size">256×256</div><div class="admin-stat-lbl">Размер холста</div></div>
-                <div class="admin-stat"><div class="admin-stat-val" id="stat-total-pixels">—</div><div class="admin-stat-lbl">Пикселей поставлено</div></div>
-                <div class="section-sep"></div>
-                <button class="btn btn-secondary" data-onclick="loadAdminStats()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg> Обновить</button>
-            </div>
-
-            <div id="admin-tab-clans" style="display:none">
-                <input class="search-box" id="admin-clans-search" placeholder="Поиск клана..." data-oninput="filterAdminClans()">
-                <div id="admin-clans-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
-                <div style="margin-top:10px;">
-                    <button class="btn btn-secondary btn-sm" data-onclick="loadAdminClans()">
-                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
-                        Обновить
-                    </button>
-                </div>
-            </div>
-
-            <div id="admin-tab-news" style="display:none">
-                <div id="admin-news-list-wrap">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Новости и события</div>
-                        <button class="btn btn-primary btn-sm" data-onclick="openNewsAdminForm(null)">+ Добавить</button>
+            <div class="clan-shell-main">
+                <nav class="clan-sidenav" id="admin-sidenav">
+                    <div class="csn-item active" data-tab="users" data-onclick="switchAdminTab('users')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5" /><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1" /><path d="M16 14c2.4 0 4.5 1.8 4.5 5" /></svg>
+                        <span>Игроки</span>
+                        <span class="csn-count" id="admin-nav-user-count">0</span>
                     </div>
-                    <div id="admin-news-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
-                </div>
+                    <div class="csn-item" data-tab="canvas" data-onclick="switchAdminTab('canvas')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><path d="M3 15l5-5 4 4 6-6" /></svg>
+                        <span>Холст</span>
+                    </div>
+                    <div class="csn-item" data-tab="broadcast" data-onclick="switchAdminTab('broadcast')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg>
+                        <span>Сообщения</span>
+                    </div>
+                    <div class="csn-item" data-tab="stats" data-onclick="switchAdminTab('stats')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 20V10" /><path d="M11 20V4" /><path d="M18 20v-7" /></svg>
+                        <span>Статистика</span>
+                    </div>
+                    <div class="csn-item" data-tab="clans" data-onclick="switchAdminTab('clans')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 21V3" /><path d="M5 4h14l-3.2 4L19 12H5" /></svg>
+                        <span>Кланы</span>
+                    </div>
+                    <div class="csn-item" data-tab="news" data-onclick="switchAdminTab('news')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="14" height="16" rx="2" /><path d="M7 8h6" /><path d="M7 11.5h6" /><path d="M7 15h3" /></svg>
+                        <span>Новости</span>
+                    </div>
+                    <div class="csn-item" data-tab="lockdown" data-onclick="switchAdminTab('lockdown')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V7a4 4 0 0 1 8 0v4" /></svg>
+                        <span>Локаут</span>
+                    </div>
+                    <div class="csn-item" data-tab="ads" data-onclick="switchAdminTab('ads')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="2" /><path d="M3 9h18" /></svg>
+                        <span>Реклама</span>
+                    </div>
+                    <div class="csn-item" data-tab="timelapse" data-onclick="switchAdminTab('timelapse')">
+                        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><path d="M12 8v4l3 2" /></svg>
+                        <span>Тайм-лапс</span>
+                    </div>
+                </nav>
 
-                <div id="admin-news-form" style="display:none">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                        <div id="admin-news-form-title" style="font-size:13px;font-weight:700;color:var(--text1);">Новая новость</div>
-                        <div class="panel-close" style="position:static" data-onclick="closeNewsAdminForm()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+                <div class="clan-content" id="admin-content">
+
+                    <div id="admin-tab-users">
+                        <div class="clan-info-card-title-row" style="margin-bottom:12px;">
+                            <div class="clan-info-card-title">👥 Игроки</div>
+                            <span class="clan-info-card-link" data-onclick="loadAdminUsers(adminPage)">↻ Обновить</span>
+                        </div>
+                        <input class="search-box" id="admin-search" placeholder="Поиск по нику..." data-oninput="filterAdminUsers()">
+                        <div id="admin-users-list" class="admin-players-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+                        <div class="pagination">
+                            <button class="page-btn" data-onclick="adminPageNav(-1)">‹ Пред</button>
+                            <span class="page-info" id="admin-page-info">1 / 1</span>
+                            <button class="page-btn" data-onclick="adminPageNav(1)">След ›</button>
+                        </div>
                     </div>
 
-                    <!-- Содержание -->
-                    <div class="adm-card">
-                        <div class="adm-card-head">
-                            <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="14" height="16" rx="2" /><path d="M7 8h6" /><path d="M7 11.5h6" /><path d="M7 15h3" /></svg></div>
-                            <div class="adm-card-title-wrap">
-                                <div class="adm-card-title">Содержание</div>
-                                <div class="adm-card-desc">О чём новость и что в ней написано</div>
+                    <div id="admin-tab-canvas" style="display:none">
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
+                        <div class="resize-form">
+                            <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
+                            <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
+                        </div>
+                        <div style="margin-bottom:12px;font-size:11px;color:var(--red);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L2 20h20L12 3z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none" /></svg> Изменение сохранит пиксели в пределах нового размера.</div>
+                        <button class="btn btn-primary" data-onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
+                        <div class="section-sep"></div>
+
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg> Задержка пикселей (Кулдаун)</div>
+                        <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
+                            <input type="range" class="admin-range" id="admin-cooldown-slider" min="0" max="30000" step="500" value="3000" data-oninput="updateCooldownLabel(this.value)">
+                            <span id="admin-cooldown-label" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);min-width:50px;">3.0с</span>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" data-onclick="adminSetCooldown()" style="margin-bottom:10px;">Применить</button>
+                        <div class="section-sep"></div>
+
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → превью → холст)</div>
+                        <div id="image-drop-zone" data-onclick="document.getElementById('admin-image-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
+                            <div style="font-size:28px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
+                            <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите или перетащите изображение</p>
+                            <p style="font-size:10px;color:var(--text3);margin-top:2px">Сначала откроется превью для позиционирования</p>
+                        </div>
+                        <input type="file" id="admin-image-file" accept="image/*" style="display:none" data-onchange="handleAdminImage(event)">
+                        <img id="image-preview" alt="Preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
+                        <button class="btn btn-primary" id="btn-place-image" data-onclick="startAdminImagePreview()" disabled style="margin-bottom:10px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.7-4.7" /></svg> Открыть превью</button>
+
+                        <div class="section-sep"></div>
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" /></svg> Глобальный трафарет (для всех)</div>
+                        <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" data-onclick="document.getElementById('admin-stencil-file').click()">
+                            <div style="font-size:22px"><svg class="icon icon-fill" viewBox="0 0 14 12" xmlns="http://www.w3.org/2000/svg"><path d="M12 0H2C1.46974 0.000579017 0.961373 0.211479 0.586426 0.586426C0.211479 0.961373 0.000579017 1.46974 0 2V10C0.000579017 10.5303 0.211479 11.0386 0.586426 11.4136C0.961373 11.7885 1.46974 11.9994 2 12H12C12.5303 11.9994 13.0386 11.7885 13.4136 11.4136C13.7885 11.0386 13.9994 10.5303 14 10V2C13.9994 1.46974 13.7885 0.961373 13.4136 0.586426C13.0386 0.211479 12.5303 0.000579017 12 0ZM9.5 2C9.79667 2 10.0867 2.08797 10.3334 2.2528C10.58 2.41762 10.7723 2.65189 10.8858 2.92597C10.9994 3.20006 11.0291 3.50166 10.9712 3.79264C10.9133 4.08361 10.7704 4.35088 10.5607 4.56066C10.3509 4.77044 10.0836 4.9133 9.79264 4.97118C9.50166 5.02906 9.20006 4.99935 8.92597 4.88582C8.65189 4.77229 8.41762 4.58003 8.2528 4.33336C8.08797 4.08668 8 3.79667 8 3.5C8.00041 3.1023 8.15858 2.72101 8.4398 2.4398C8.72101 2.15858 9.1023 2.00041 9.5 2ZM2 11C1.73478 11 1.48043 10.8946 1.29289 10.7071C1.10536 10.5196 1 10.2652 1 10V7.88656L3.96375 5.25219C4.2497 4.99858 4.62159 4.86354 5.00364 4.87457C5.38569 4.8856 5.74916 5.04188 6.02 5.31156L8.04969 7.33687L4.38656 11H2ZM13 10C13 10.2652 12.8946 10.5196 12.7071 10.7071C12.5196 10.8946 12.2652 11 12 11H5.80094L9.59531 7.20562C9.86396 6.97717 10.2049 6.8513 10.5575 6.85039C10.9102 6.84947 11.2517 6.97356 11.5216 7.20063L13 8.4325V10Z" /></svg></div>
+                            <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
+                        </div>
+                        <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" data-onchange="handleAdminGlobalStencil(event)">
+                        <button class="btn btn-secondary" id="btn-clear-global-stencil" data-onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
+
+                        <div class="section-sep"></div>
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
+                        <div class="setting-row" style="padding-top:0">
+                            <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
+                            <div class="toggle" id="admin-toggle-cursors" data-onclick="adminToggleCursors()"></div>
+                        </div>
+                        <div class="section-sep"></div>
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
+                        <button class="btn btn-danger" data-onclick="adminClearCanvas()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" /><path d="M10 11v6" /><path d="M14 11v6" /></svg> Очистить весь холст</button>
+                    </div>
+
+                    <div id="admin-tab-broadcast" style="display:none">
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
+                        <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
+                        <button class="btn btn-primary" data-onclick="adminBroadcast()" style="margin-bottom:14px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg> Отправить всем</button>
+                        <div class="section-sep"></div>
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
+                        <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
+                        <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
+                        <button class="btn btn-secondary" data-onclick="adminSendDM()">Отправить</button>
+                    </div>
+
+                    <div id="admin-tab-stats" style="display:none">
+                        <div class="admin-stats-grid">
+                            <div class="admin-stat"><div class="admin-stat-val" id="stat-total-users">—</div><div class="admin-stat-lbl">Игроков</div></div>
+                            <div class="admin-stat"><div class="admin-stat-val" id="stat-online">—</div><div class="admin-stat-lbl">Онлайн</div></div>
+                            <div class="admin-stat"><div class="admin-stat-val" id="stat-banned">—</div><div class="admin-stat-lbl">Забанено</div></div>
+                        </div>
+                        <div class="admin-stat" style="margin-bottom:9px;"><div class="admin-stat-val" id="stat-canvas-size">256×256</div><div class="admin-stat-lbl">Размер холста</div></div>
+                        <div class="admin-stat"><div class="admin-stat-val" id="stat-total-pixels">—</div><div class="admin-stat-lbl">Пикселей поставлено</div></div>
+                        <div class="section-sep"></div>
+                        <button class="btn btn-secondary" data-onclick="loadAdminStats()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg> Обновить</button>
+                    </div>
+
+                    <div id="admin-tab-clans" style="display:none">
+                        <input class="search-box" id="admin-clans-search" placeholder="Поиск клана..." data-oninput="filterAdminClans()">
+                        <div id="admin-clans-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+                        <div style="margin-top:10px;">
+                            <button class="btn btn-secondary btn-sm" data-onclick="loadAdminClans()">
+                                <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 12a9 9 0 0 1 15.5-6.3L21 8" /><path d="M21 3v5h-5" /><path d="M21 12a9 9 0 0 1-15.5 6.3L3 16" /><path d="M3 21v-5h5" /></svg>
+                                Обновить
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="admin-tab-news" style="display:none">
+                        <div id="admin-news-list-wrap">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                                <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Новости и события</div>
+                                <button class="btn btn-primary btn-sm" data-onclick="openNewsAdminForm(null)">+ Добавить</button>
                             </div>
+                            <div id="admin-news-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
                         </div>
-                        <div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="na-title" placeholder="Например: Большое обновление холста" data-oninput="newsAdminRefreshBgPreview()"></div>
-                        <div class="form-group"><label class="form-label">Краткое описание (для слайда и списка)</label><textarea class="broadcast-input" id="na-desc" rows="2" placeholder="Пара строк, анонсирующих новость..." data-oninput="newsAdminRefreshBgPreview()"></textarea></div>
-                        <div class="form-group" style="margin-bottom:0"><label class="form-label">Полный текст (для детального просмотра)</label><textarea class="broadcast-input" id="na-text" rows="4" placeholder="Полный текст новости..."></textarea></div>
-                    </div>
 
-                    <!-- Оформление -->
-                    <div class="adm-card">
-                        <div class="adm-card-head">
-                            <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="13.5" cy="6.5" r="1.5" /><circle cx="17.5" cy="10.5" r="1.5" /><circle cx="8.5" cy="7.5" r="1.5" /><circle cx="6.5" cy="12.5" r="1.5" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H16c3.3 0 6-2.7 6-6 0-4.4-4.5-8-10-8z" /></svg></div>
-                            <div class="adm-card-title-wrap">
-                                <div class="adm-card-title">Оформление</div>
-                                <div class="adm-card-desc">Иконка, бейджик и дата</div>
+                        <div id="admin-news-form" style="display:none">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
+                                <div id="admin-news-form-title" style="font-size:13px;font-weight:700;color:var(--text1);">Новая новость</div>
+                                <div class="panel-close" style="position:static" data-onclick="closeNewsAdminForm()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
                             </div>
-                        </div>
 
-                        <label class="form-label">Иконка новости</label>
-                        <div class="icon-type-toggle">
-                            <div class="icon-type-btn active" id="na-icon-type-emoji" data-onclick="newsAdminSetIconType('emoji')">😀 Эмодзи</div>
-                            <div class="icon-type-btn" id="na-icon-type-image" data-onclick="newsAdminSetIconType('image')">🖼️ Картинка</div>
-                        </div>
-
-                        <div class="na-icon-row" style="margin-bottom:14px;">
-                            <div class="na-icon-preview" id="na-icon-preview">📰</div>
-                            <div class="na-icon-content">
-                                <div id="na-icon-emoji-block">
-                                    <input class="form-input" id="na-art" placeholder="📰" maxlength="4" data-oninput="newsAdminOnArtInput()">
-                                    <div class="emoji-chip-grid" id="na-emoji-chips"></div>
+                            <!-- Содержание -->
+                            <div class="adm-card">
+                                <div class="adm-card-head">
+                                    <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="14" height="16" rx="2" /><path d="M7 8h6" /><path d="M7 11.5h6" /><path d="M7 15h3" /></svg></div>
+                                    <div class="adm-card-title-wrap">
+                                        <div class="adm-card-title">Содержание</div>
+                                        <div class="adm-card-desc">О чём новость и что в ней написано</div>
+                                    </div>
                                 </div>
-                                <div id="na-icon-image-block" style="display:none;">
-                                    <div class="na-icon-drop" id="na-icon-drop" data-onclick="document.getElementById('na-icon-file').click()">Нажмите, чтобы загрузить иконку</div>
-                                    <input type="file" id="na-icon-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminIconImage(event)">
+                                <div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="na-title" placeholder="Например: Большое обновление холста" data-oninput="newsAdminRefreshBgPreview()"></div>
+                                <div class="form-group"><label class="form-label">Краткое описание (для слайда и списка)</label><textarea class="broadcast-input" id="na-desc" rows="2" placeholder="Пара строк, анонсирующих новость..." data-oninput="newsAdminRefreshBgPreview()"></textarea></div>
+                                <div class="form-group" style="margin-bottom:0"><label class="form-label">Полный текст (для детального просмотра)</label><textarea class="broadcast-input" id="na-text" rows="4" placeholder="Полный текст новости..."></textarea></div>
+                            </div>
+
+                            <!-- Оформление -->
+                            <div class="adm-card">
+                                <div class="adm-card-head">
+                                    <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="13.5" cy="6.5" r="1.5" /><circle cx="17.5" cy="10.5" r="1.5" /><circle cx="8.5" cy="7.5" r="1.5" /><circle cx="6.5" cy="12.5" r="1.5" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H16c3.3 0 6-2.7 6-6 0-4.4-4.5-8-10-8z" /></svg></div>
+                                    <div class="adm-card-title-wrap">
+                                        <div class="adm-card-title">Оформление</div>
+                                        <div class="adm-card-desc">Иконка, бейджик и дата</div>
+                                    </div>
                                 </div>
-                            </div>
-                        </div>
 
-                        <div class="resize-form" style="margin-bottom:0;">
-                            <div><label class="form-label">Бейджик (тег)</label><input class="form-input" id="na-tag" placeholder="Анонс / Обновление" data-oninput="newsAdminRefreshBgPreview()"></div>
-                            <div><label class="form-label">Дата</label><input class="form-input" id="na-date" placeholder="напр. 01.07.2026"></div>
-                        </div>
-                    </div>
-
-                    <!-- Фон панели — не менять логику/поведение -->
-                    <div class="adm-card">
-                        <div class="adm-card-head">
-                            <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
-                            <div class="adm-card-title-wrap">
-                                <div class="adm-card-title">Фон панели</div>
-                                <div class="adm-card-desc">Например, готовый визуал из Figma</div>
-                            </div>
-                        </div>
-                        <div id="na-bg-drop" data-onclick="document.getElementById('na-bg-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
-                            <p style="font-size:12px;color:var(--text2);">Нажмите, чтобы загрузить картинку фона слайда</p>
-                            <p style="font-size:10px;color:var(--text3);margin-top:2px">Растянется на всю карточку слайда</p>
-                        </div>
-                        <input type="file" id="na-bg-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminBgImage(event)">
-                        <div id="na-bg-preview-wrap" style="display:none;margin-bottom:0;">
-                            <p style="font-size:10px;color:var(--text3);margin:0 0 6px;">Точная копия слайда (пропорции 1-в-1 как в новостях, измерены по реальному блоку):</p>
-                            <div id="na-bg-preview-frame" style="width:100%;display:flex;justify-content:center;">
-                                <div id="na-bg-preview" style="position:relative;overflow:hidden;border-radius:8px;border:1px solid var(--border2);background:#0c0c0f;"></div>
-                            </div>
-                            <div style="display:flex;gap:8px;margin-top:8px;">
-                                <button class="btn btn-primary btn-sm" data-onclick="openNewsCropModal()" style="flex:1;">🎯 Изменить позиционирование</button>
-                                <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminBgImage()" style="flex:1;">Убрать фон</button>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Таймер события — свёрнуто по умолчанию -->
-                    <details class="adm-card" id="na-card-timer">
-                        <summary>
-                            <div class="adm-card-head">
-                                <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg></div>
-                                <div class="adm-card-title-wrap">
-                                    <div class="adm-card-title">Таймер события</div>
-                                    <div class="adm-card-desc">Обратный отсчёт до даты на слайде</div>
+                                <label class="form-label">Иконка новости</label>
+                                <div class="icon-type-toggle">
+                                    <div class="icon-type-btn active" id="na-icon-type-emoji" data-onclick="newsAdminSetIconType('emoji')">😀 Эмодзи</div>
+                                    <div class="icon-type-btn" id="na-icon-type-image" data-onclick="newsAdminSetIconType('image')">🖼️ Картинка</div>
                                 </div>
-                            </div>
-                            <div class="adm-card-badge" id="na-timer-badge">Выкл</div>
-                            <svg class="icon adm-chev" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" /></svg>
-                        </summary>
-                        <div class="adm-card-body">
-                            <div class="form-group" style="margin-bottom:4px"><input class="form-input" id="na-timer" type="datetime-local" data-onchange="newsAdminUpdateTimerBadge()"></div>
-                            <p style="font-size:10px;color:var(--text3);margin:0;">Если указано — на слайде появится красивый обратный отсчёт до этой даты</p>
-                        </div>
-                    </details>
 
-                    <!-- Видимость элементов слайда — свёрнуто по умолчанию -->
-                    <details class="adm-card" id="na-card-visibility">
-                        <summary>
-                            <div class="adm-card-head">
-                                <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg></div>
-                                <div class="adm-card-title-wrap">
-                                    <div class="adm-card-title">Видимость элементов</div>
-                                    <div class="adm-card-desc">Что показывать поверх фона</div>
+                                <div class="na-icon-row" style="margin-bottom:14px;">
+                                    <div class="na-icon-preview" id="na-icon-preview">📰</div>
+                                    <div class="na-icon-content">
+                                        <div id="na-icon-emoji-block">
+                                            <input class="form-input" id="na-art" placeholder="📰" maxlength="4" data-oninput="newsAdminOnArtInput()">
+                                            <div class="emoji-chip-grid" id="na-emoji-chips"></div>
+                                        </div>
+                                        <div id="na-icon-image-block" style="display:none;">
+                                            <div class="na-icon-drop" id="na-icon-drop" data-onclick="document.getElementById('na-icon-file').click()">Нажмите, чтобы загрузить иконку</div>
+                                            <input type="file" id="na-icon-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminIconImage(event)">
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="resize-form" style="margin-bottom:0;">
+                                    <div><label class="form-label">Бейджик (тег)</label><input class="form-input" id="na-tag" placeholder="Анонс / Обновление" data-oninput="newsAdminRefreshBgPreview()"></div>
+                                    <div><label class="form-label">Дата</label><input class="form-input" id="na-date" placeholder="напр. 01.07.2026"></div>
                                 </div>
                             </div>
-                            <svg class="icon adm-chev" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" /></svg>
-                        </summary>
-                        <div class="adm-card-body">
-                            <p style="font-size:10px;color:var(--text3);margin:-2px 0 6px;">Выключите лишнее, если весь визуал уже нарисован на картинке фона</p>
-                            <div class="setting-row" style="padding-top:0"><div><div class="setting-label">Иконка (news-slide-art)</div></div><div class="toggle on" id="na-toggle-art" data-onclick="newsAdminToggle('art');newsAdminRefreshBgPreview()"></div></div>
-                            <div class="setting-row"><div><div class="setting-label">Бейджик (news-slide-tag)</div></div><div class="toggle on" id="na-toggle-tag" data-onclick="newsAdminToggle('tag');newsAdminRefreshBgPreview()"></div></div>
-                            <div class="setting-row" style="border-bottom:none"><div><div class="setting-label">Заголовок и описание</div></div><div class="toggle on" id="na-toggle-text" data-onclick="newsAdminToggle('text');newsAdminRefreshBgPreview()"></div></div>
-                        </div>
-                    </details>
 
-                    <div style="display:flex;gap:8px;margin-top:4px;">
-                        <button class="btn btn-secondary" data-onclick="closeNewsAdminForm()">Отмена</button>
-                        <button class="btn btn-primary" data-onclick="saveNewsAdmin()">💾 Сохранить</button>
-                    </div>
-                </div>
-            </div>
-
-            <div id="admin-tab-timelapse" style="display:none">
-
-                <!-- Статус записи -->
-                <div class="tl-rec-card">
-                    <div class="tl-rec-header">
-                        <div class="tl-rec-dot idle" id="tl-rec-dot"></div>
-                        <div class="tl-rec-card-text">
-                            <div class="tl-rec-title" id="tl-rec-title">Запись не ведётся</div>
-                            <div class="tl-rec-sub" id="tl-rec-info">Нажми «Начать», чтобы запустить тайм-лапс холста</div>
-                        </div>
-                        <button class="tl-icon-btn" id="tl-refresh-btn" data-onclick="tlRefreshStatus()" title="Обновить статус">↺</button>
-                    </div>
-                    <div class="tl-rec-actions">
-                        <button class="tl-btn tl-btn-primary" id="tl-rec-start" data-onclick="tlStartRecording()">▶ Начать</button>
-                        <button class="tl-btn tl-btn-danger" id="tl-rec-stop" disabled data-onclick="tlStopServer()">■ Стоп</button>
-                    </div>
-                    <div class="tl-rec-hint">R2 · автосейв каждые 5 мин или 10 000 пикселей</div>
-                </div>
-
-                <!-- Список сессий -->
-                <div class="tl-section">
-                    <div class="tl-section-head">
-                        <span>📂 Записанные сессии</span>
-                        <button class="tl-btn tl-btn-ghost tl-btn-sm" id="tl-load-btn" data-onclick="tlLoadSessions()">↻ Обновить</button>
-                    </div>
-                    <div id="tl-session-list" class="tl-session-list">
-                        <div class="tl-empty-hint">Нажми «Обновить», чтобы увидеть записанные сессии</div>
-                    </div>
-                </div>
-
-                <!-- Плеер (скрыт до выбора сессии) -->
-                <div id="tl-player-section" class="tl-player-section" style="display:none">
-                    <div class="tl-section-sep"></div>
-
-                    <button class="tl-btn tl-btn-primary tl-btn-full" id="tl-prepare-btn" data-onclick="tlLoadAndPrepare()">
-                        ⬇ Загрузить сессию
-                    </button>
-
-                    <div class="tl-load-track"><div id="tl-load-bar" class="tl-load-fill" style="width:0%"></div></div>
-
-                    <!-- tl-player-core: переносится целиком в fullscreen-оверлей и обратно -->
-                    <div id="tl-player-core">
-                        <div id="tl-canvas-wrap" class="tl-canvas-wrap">
-                            <button class="tl-fullscreen-btn" id="tl-fullscreen-btn" data-onclick="tlToggleFullscreen()" title="На весь экран">⛶</button>
-                            <canvas id="tl-canvas"></canvas>
-                        </div>
-
-                        <div class="tl-progress-wrap">
-                            <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
-                                <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                            <!-- Фон панели — не менять логику/поведение -->
+                            <div class="adm-card">
+                                <div class="adm-card-head">
+                                    <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
+                                    <div class="adm-card-title-wrap">
+                                        <div class="adm-card-title">Фон панели</div>
+                                        <div class="adm-card-desc">Например, готовый визуал из Figma</div>
+                                    </div>
+                                </div>
+                                <div id="na-bg-drop" data-onclick="document.getElementById('na-bg-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:16px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
+                                    <p style="font-size:12px;color:var(--text2);">Нажмите, чтобы загрузить картинку фона слайда</p>
+                                    <p style="font-size:10px;color:var(--text3);margin-top:2px">Растянется на всю карточку слайда</p>
+                                </div>
+                                <input type="file" id="na-bg-file" accept="image/*" style="display:none" data-onchange="handleNewsAdminBgImage(event)">
+                                <div id="na-bg-preview-wrap" style="display:none;margin-bottom:0;">
+                                    <p style="font-size:10px;color:var(--text3);margin:0 0 6px;">Точная копия слайда (пропорции 1-в-1 как в новостях, измерены по реальному блоку):</p>
+                                    <div id="na-bg-preview-frame" style="width:100%;display:flex;justify-content:center;">
+                                        <div id="na-bg-preview" style="position:relative;overflow:hidden;border-radius:8px;border:1px solid var(--border2);background:#0c0c0f;"></div>
+                                    </div>
+                                    <div style="display:flex;gap:8px;margin-top:8px;">
+                                        <button class="btn btn-primary btn-sm" data-onclick="openNewsCropModal()" style="flex:1;">🎯 Изменить позиционирование</button>
+                                        <button class="btn btn-danger btn-sm" data-onclick="clearNewsAdminBgImage()" style="flex:1;">Убрать фон</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
-                        </div>
 
-                        <div class="tl-controls-row">
-                            <div class="tl-ctrl-buttons">
-                                <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
-                                <button class="tl-ctrl-btn tl-ctrl-play tl-play-btn-sync" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
-                                <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
-                                <button class="tl-ctrl-btn" id="tl-video-export-btn" disabled data-onclick="tlOpenVideoExport()" title="Экспорт в MP4/WebM видео">🎥</button>
-                            </div>
-                            <div class="tl-speed-group">
-                                <button class="tl-speed-btn" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
-                                <button class="tl-speed-btn" data-speed="2" data-onclick="tlSetSpeed(2)">×2</button>
-                                <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
-                                <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
-                                <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
-                                <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
-                                <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
+                            <!-- Таймер события — свёрнуто по умолчанию -->
+                            <details class="adm-card" id="na-card-timer">
+                                <summary>
+                                    <div class="adm-card-head">
+                                        <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg></div>
+                                        <div class="adm-card-title-wrap">
+                                            <div class="adm-card-title">Таймер события</div>
+                                            <div class="adm-card-desc">Обратный отсчёт до даты на слайде</div>
+                                        </div>
+                                    </div>
+                                    <div class="adm-card-badge" id="na-timer-badge">Выкл</div>
+                                    <svg class="icon adm-chev" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" /></svg>
+                                </summary>
+                                <div class="adm-card-body">
+                                    <div class="form-group" style="margin-bottom:4px"><input class="form-input" id="na-timer" type="datetime-local" data-onchange="newsAdminUpdateTimerBadge()"></div>
+                                    <p style="font-size:10px;color:var(--text3);margin:0;">Если указано — на слайде появится красивый обратный отсчёт до этой даты</p>
+                                </div>
+                            </details>
+
+                            <!-- Видимость элементов слайда — свёрнуто по умолчанию -->
+                            <details class="adm-card" id="na-card-visibility">
+                                <summary>
+                                    <div class="adm-card-head">
+                                        <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg></div>
+                                        <div class="adm-card-title-wrap">
+                                            <div class="adm-card-title">Видимость элементов</div>
+                                            <div class="adm-card-desc">Что показывать поверх фона</div>
+                                        </div>
+                                    </div>
+                                    <svg class="icon adm-chev" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6" /></svg>
+                                </summary>
+                                <div class="adm-card-body">
+                                    <p style="font-size:10px;color:var(--text3);margin:-2px 0 6px;">Выключите лишнее, если весь визуал уже нарисован на картинке фона</p>
+                                    <div class="setting-row" style="padding-top:0"><div><div class="setting-label">Иконка (news-slide-art)</div></div><div class="toggle on" id="na-toggle-art" data-onclick="newsAdminToggle('art');newsAdminRefreshBgPreview()"></div></div>
+                                    <div class="setting-row"><div><div class="setting-label">Бейджик (news-slide-tag)</div></div><div class="toggle on" id="na-toggle-tag" data-onclick="newsAdminToggle('tag');newsAdminRefreshBgPreview()"></div></div>
+                                    <div class="setting-row" style="border-bottom:none"><div><div class="setting-label">Заголовок и описание</div></div><div class="toggle on" id="na-toggle-text" data-onclick="newsAdminToggle('text');newsAdminRefreshBgPreview()"></div></div>
+                                </div>
+                            </details>
+
+                            <div style="display:flex;gap:8px;margin-top:4px;">
+                                <button class="btn btn-secondary" data-onclick="closeNewsAdminForm()">Отмена</button>
+                                <button class="btn btn-primary" data-onclick="saveNewsAdmin()">💾 Сохранить</button>
                             </div>
                         </div>
                     </div>
-                </div>
 
-                <div id="tl-status" class="tl-status-line"></div>
+                    <div id="admin-tab-lockdown" style="display:none">
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🔒 Локаут Пиксель Батла</div>
+                        <p style="font-size:11px;color:var(--text3);margin:0 0 12px;">Пока локаут активен, обычные игроки видят экран блокировки с таймером вместо холста. Админы работают как обычно. Ровно в указанное время доступ откроется автоматически у всех.</p>
 
-            </div>
+                        <div id="admin-lockdown-status" style="padding:10px 12px;border-radius:10px;margin-bottom:14px;font-size:12px;font-weight:600;">—</div>
+
+                        <div class="form-group">
+                            <label class="form-label">Сообщение для игроков</label>
+                            <textarea class="form-input" id="admin-lockdown-message" rows="2" placeholder="Скоро вернёмся! Идёт подготовка к новому сезону."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Закрыть на сколько минут</label>
+                            <input class="form-input" id="admin-lockdown-minutes" type="number" min="1" value="60">
+                        </div>
+                        <button class="btn btn-danger" data-onclick="adminSetLockdown(true)" style="margin-bottom:8px;">🔒 Закрыть Пиксель Батл</button>
+                        <button class="btn btn-secondary" data-onclick="adminSetLockdown(false)">🔓 Открыть немедленно</button>
+                    </div>
+
+                    <div id="admin-tab-ads" style="display:none">
+                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">📢 Реклама</div>
+                        <p style="font-size:11px;color:var(--text3);margin:0 0 12px;">Картинка + ссылка показываются игрокам с заданным интервалом. Пользователь может закрыть рекламу — она вернётся через указанный интервал.</p>
+
+                        <div class="setting-row" style="padding-top:0">
+                            <div><div class="setting-label">Реклама включена</div><div class="setting-desc">Показывать баннер/попап игрокам</div></div>
+                            <div class="toggle" id="admin-ads-toggle" data-onclick="this.classList.toggle('on')"></div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label">Тип рекламы</label>
+                            <select class="form-input" id="admin-ads-type">
+                                <option value="banner">Баннер (под шапкой)</option>
+                                <option value="popup">Попап (по центру экрана)</option>
+                            </select>
+                        </div>
+
+                        <div id="ads-admin-drop" data-onclick="document.getElementById('admin-ads-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-bottom:8px;">
+                            <div style="font-size:22px">🖼️</div>
+                            <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите, чтобы загрузить картинку рекламы</p>
+                        </div>
+                        <input type="file" id="admin-ads-file" accept="image/*" style="display:none" data-onchange="handleAdsAdminImage(event)">
+                        <img id="admin-ads-preview" alt="preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
+
+                        <div class="form-group">
+                            <label class="form-label">Ссылка (куда ведёт реклама)</label>
+                            <input class="form-input" id="admin-ads-link" placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Интервал показа (минуты)</label>
+                            <input class="form-input" id="admin-ads-interval" type="number" min="1" value="5">
+                        </div>
+                        <button class="btn btn-primary" data-onclick="adminSaveAds()">Сохранить настройки рекламы</button>
+                    </div>
+
+                    <div id="admin-tab-timelapse" style="display:none">
+
+                        <!-- Статус записи -->
+                        <div class="tl-rec-card">
+                            <div class="tl-rec-header">
+                                <div class="tl-rec-dot idle" id="tl-rec-dot"></div>
+                                <div class="tl-rec-card-text">
+                                    <div class="tl-rec-title" id="tl-rec-title">Запись не ведётся</div>
+                                    <div class="tl-rec-sub" id="tl-rec-info">Нажми «Начать», чтобы запустить тайм-лапс холста</div>
+                                </div>
+                                <button class="tl-icon-btn" id="tl-refresh-btn" data-onclick="tlRefreshStatus()" title="Обновить статус">↺</button>
+                            </div>
+                            <div class="tl-rec-actions">
+                                <button class="tl-btn tl-btn-primary" id="tl-rec-start" data-onclick="tlStartRecording()">▶ Начать</button>
+                                <button class="tl-btn tl-btn-danger" id="tl-rec-stop" disabled data-onclick="tlStopServer()">■ Стоп</button>
+                            </div>
+                            <div class="tl-rec-hint">R2 · автосейв каждые 5 мин или 10 000 пикселей</div>
+                        </div>
+
+                        <!-- Список сессий -->
+                        <div class="tl-section">
+                            <div class="tl-section-head">
+                                <span>📂 Записанные сессии</span>
+                                <button class="tl-btn tl-btn-ghost tl-btn-sm" id="tl-load-btn" data-onclick="tlLoadSessions()">↻ Обновить</button>
+                            </div>
+                            <div id="tl-session-list" class="tl-session-list">
+                                <div class="tl-empty-hint">Нажми «Обновить», чтобы увидеть записанные сессии</div>
+                            </div>
+                        </div>
+
+                        <!-- Плеер (скрыт до выбора сессии) -->
+                        <div id="tl-player-section" class="tl-player-section" style="display:none">
+                            <div class="tl-section-sep"></div>
+
+                            <button class="tl-btn tl-btn-primary tl-btn-full" id="tl-prepare-btn" data-onclick="tlLoadAndPrepare()">
+                                ⬇ Загрузить сессию
+                            </button>
+
+                            <div class="tl-load-track"><div id="tl-load-bar" class="tl-load-fill" style="width:0%"></div></div>
+
+                            <!-- tl-player-core: переносится целиком в fullscreen-оверлей и обратно -->
+                            <div id="tl-player-core">
+                                <div id="tl-canvas-wrap" class="tl-canvas-wrap">
+                                    <button class="tl-fullscreen-btn" id="tl-fullscreen-btn" data-onclick="tlToggleFullscreen()" title="На весь экран">⛶</button>
+                                    <canvas id="tl-canvas"></canvas>
+                                </div>
+
+                                <div class="tl-progress-wrap">
+                                    <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
+                                        <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                                    </div>
+                                    <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
+                                </div>
+
+                                <div class="tl-controls-row">
+                                    <div class="tl-ctrl-buttons">
+                                        <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
+                                        <button class="tl-ctrl-btn tl-ctrl-play tl-play-btn-sync" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
+                                        <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
+                                        <button class="tl-ctrl-btn" id="tl-video-export-btn" disabled data-onclick="tlOpenVideoExport()" title="Экспорт в MP4/WebM видео">🎥</button>
+                                    </div>
+                                    <div class="tl-speed-group">
+                                        <button class="tl-speed-btn" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
+                                        <button class="tl-speed-btn" data-speed="2" data-onclick="tlSetSpeed(2)">×2</button>
+                                        <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
+                                        <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
+                                        <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
+                                        <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
+                                        <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="tl-status" class="tl-status-line"></div>
+
+                    </div>
+
+                </div><!-- /#admin-content .clan-content -->
+            </div><!-- /.clan-shell-main -->
+        </div>
+    </div>
+
+    <!-- ── ADMIN: карточка управления игроком (модалка поверх админ-панели) ── -->
+    <div id="admin-user-backdrop" class="modal-backdrop"></div>
+    <div id="admin-user-dialog" class="aum-dialog" role="dialog" aria-modal="true">
+        <div class="aum-head">
+            <div class="aum-head-title">Управление игроком</div>
+            <div class="panel-close" style="position:static" data-onclick="closeAdminUserModal()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+        </div>
+        <div class="aum-body" id="admin-user-body">
+            <div style="color:var(--text3);text-align:center;padding:30px;">Загрузка...</div>
         </div>
     </div>
 

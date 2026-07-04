@@ -2531,23 +2531,155 @@ function filterAdminUsers(){
 function renderAdminUsers(users){
   const c=document.getElementById('admin-users-list');
   if (!users.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Пусто</div>';return;}
-  c.innerHTML=users.map(u=>`
-    <div class="user-card">
-      <div class="user-card-top">
-        <div class="user-card-name ${u.banned?'user-card-banned':''}">${esc(u.username)} <span style="color:var(--text3);font-size:11px">(${u.pixels||0} px · 🪙${u.coins||0})</span></div>
-        <span class="user-badge ${u.role==='admin'?'badge-admin':u.role==='vip'?'badge-vip':'badge-user'}">${(u.role||'user').toUpperCase()}</span>
-        ${u.banned?'<span class="user-badge badge-banned">BANNED</span>':''}
+  c.innerHTML=users.map(u=>{
+    const roleBadge = u.role==='admin' ? '<span class="user-badge badge-admin">ADMIN</span>'
+                     : u.role==='vip'   ? '<span class="user-badge badge-vip">VIP</span>' : '';
+    return `
+    <div class="admin-player-row ${u.banned?'apr-banned':''}">
+      <div class="apr-info" data-onclick="openAdminUserProfile('${esc(u.username)}')">
+        ${cpAvatarHTML(u.username,'sm',{emoji:u.emoji,avatar:u.avatar,rank:u.rank,showDot:false})}
+        <div class="apr-namewrap">
+          <div class="apr-name ${u.banned?'apr-name-banned':''}">${esc(u.username)}</div>
+          <div class="apr-sub">${u.rank||'Новичок'} · ${u.pixels||0}px · 🪙${u.coins||0}${u.clan?' · '+esc(u.clan):''}</div>
+        </div>
       </div>
-      <div class="user-actions">
-        <button class="action-btn ab-role" data-onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='admin'?'user':'admin'}')">${u.role==='admin'?'Снять админа':'Дать админа'}</button>
-        <button class="action-btn ab-vip" data-onclick="adminCmd('set_role','${esc(u.username)}','${u.role==='vip'?'user':'vip'}')">${u.role==='vip'?'Снять VIP':'Дать VIP'}</button>
-        <button class="action-btn ab-timeout" data-onclick="adminCmd('timeout','${esc(u.username)}',300)">5м</button>
-        <button class="action-btn ab-timeout" data-onclick="adminCmd('timeout','${esc(u.username)}',3600)">1ч</button>
-        <button class="action-btn ${u.banned?'ab-unban':'ab-ban'}" data-onclick="adminCmd('${u.banned?'unban':'ban'}','${esc(u.username)}',null)">${u.banned?'Разбанить':'Забанить'}</button>
-        <button class="action-btn ab-msg" data-onclick="prefillDM('${esc(u.username)}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="5" width="18" height="14" rx="1.5"/><path d="M3.5 6.5l8.5 6 8.5-6"/></svg></button>
-        <button class="action-btn ab-role" data-onclick="promptGiveCoins('${esc(u.username)}')">🪙+</button>
+      <div class="apr-badges">
+        ${roleBadge}
+        ${u.banned?'<span class="user-badge badge-banned">BAN</span>':''}
       </div>
-    </div>`).join('');
+      <button class="apr-manage-btn" data-onclick="openAdminUserProfile('${esc(u.username)}')">
+        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="width:13px;height:13px;"><circle cx="12" cy="12" r="3" /><path d="M19.4 13.5a7.4 7.4 0 0 0 0-3l1.8-1.4-2-3.4-2.1.7a7.4 7.4 0 0 0-2.6-1.5L14 2h-4l-.5 2.4a7.4 7.4 0 0 0-2.6 1.5l-2.1-.7-2 3.4 1.8 1.4a7.4 7.4 0 0 0 0 3L2.8 14.9l2 3.4 2.1-.7c.75.66 1.62 1.18 2.6 1.5L10 22h4l.5-2.4a7.4 7.4 0 0 0 2.6-1.5l2.1.7 2-3.4-1.8-1.4z" /></svg>
+        Управление
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════════
+//  АДМИН: карточка управления игроком (модалка)
+// ══════════════════════════════════════════════════════════
+let _adminUserTarget = null;
+
+function openAdminUserProfile(username){
+  _adminUserTarget = username;
+  document.getElementById('admin-user-backdrop').classList.add('show');
+  document.getElementById('admin-user-dialog').classList.add('show');
+  document.getElementById('admin-user-body').innerHTML = '<div style="color:var(--text3);text-align:center;padding:30px;">Загрузка...</div>';
+  sendJSON({action:'admin_cmd', cmd:'get_user_detail', target:username});
+}
+
+function closeAdminUserModal(){
+  document.getElementById('admin-user-backdrop').classList.remove('show');
+  document.getElementById('admin-user-dialog').classList.remove('show');
+  _adminUserTarget = null;
+}
+
+document.getElementById('admin-user-backdrop')?.addEventListener('click', closeAdminUserModal);
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && document.getElementById('admin-user-dialog')?.classList.contains('show')) closeAdminUserModal();
+});
+
+function renderAdminUserModal(u){
+  if (!u || u.username !== _adminUserTarget) return;
+  const body = document.getElementById('admin-user-body');
+  const roles = ['user','vip','admin'];
+  const roleLabels = {user:'Игрок', vip:'VIP', admin:'Админ'};
+  const timeoutActive = (u.timeout_until||0) > Date.now();
+
+  body.innerHTML = `
+    <div class="aum-hero">
+      ${cpAvatarHTML(u.username,'',{emoji:u.emoji,avatar:u.avatar,rank:u.rank,online:u.online,showDot:true})}
+      <div class="aum-hero-info">
+        <div class="aum-hero-name">${esc(u.username)}</div>
+        <div class="aum-hero-sub"><span class="aum-online-dot ${u.online?'online':''}"></span>${u.online?'В сети':'Не в сети'} · ${esc(u.rank||'Новичок')}${u.clan?' · клан '+esc(u.clan):''}${timeoutActive?' · ⏳ таймаут':''}${u.banned?' · 🚫 забанен':''}</div>
+      </div>
+    </div>
+
+    <div class="aum-stat-grid">
+      <div class="aum-stat">
+        <div class="aum-stat-lbl">🪙 Монеты</div>
+        <div class="aum-stat-editrow">
+          <input type="number" id="aum-coins-input" value="${u.coins||0}" min="0">
+          <button data-onclick="aumSaveCoins()">OK</button>
+        </div>
+      </div>
+      <div class="aum-stat">
+        <div class="aum-stat-lbl">🎨 Пиксели</div>
+        <div class="aum-stat-editrow">
+          <input type="number" id="aum-pixels-input" value="${u.pixels||0}" min="0">
+          <button data-onclick="aumSavePixels()">OK</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="aum-section-title">Привилегия</div>
+    <div class="aum-role-grid">
+      ${roles.map(r=>`<div class="aum-role-btn ${u.role===r?'active':''}" data-role="${r}" data-onclick="aumSetRole('${r}')">${roleLabels[r]}</div>`).join('')}
+    </div>
+
+    <div class="aum-section-title">Модерация</div>
+    <div class="aum-action-grid">
+      <button class="aum-action-btn" data-onclick="aumTimeout(300)">⏳ Таймаут 5м</button>
+      <button class="aum-action-btn" data-onclick="aumTimeout(3600)">⏳ Таймаут 1ч</button>
+      <button class="aum-action-btn ${u.banned?'aum-good':'aum-danger'}" data-onclick="aumToggleBan(${!!u.banned})">${u.banned?'✅ Разбанить':'🚫 Забанить'}</button>
+      <button class="aum-action-btn aum-danger" data-onclick="aumKickSession()">🔌 Отключить сессию</button>
+    </div>
+
+    <div class="aum-section-title">Сообщение игроку</div>
+    <div class="aum-msg-row">
+      <input class="form-input" id="aum-msg-input" placeholder="Текст сообщения...">
+      <button class="btn btn-secondary btn-sm" data-onclick="aumSendMessage()">Отправить</button>
+    </div>
+  `;
+}
+
+function aumRefresh(){ if (_adminUserTarget) sendJSON({action:'admin_cmd', cmd:'get_user_detail', target:_adminUserTarget}); }
+
+function aumSaveCoins(){
+  const v = parseInt(document.getElementById('aum-coins-input').value);
+  if (isNaN(v)||v<0) { showToast('Некорректное число','error'); return; }
+  sendJSON({action:'admin_cmd', cmd:'set_coins', target:_adminUserTarget, params:v});
+  setTimeout(()=>{ aumRefresh(); loadAdminUsers(adminPage); }, 250);
+}
+
+function aumSavePixels(){
+  const v = parseInt(document.getElementById('aum-pixels-input').value);
+  if (isNaN(v)||v<0) { showToast('Некорректное число','error'); return; }
+  sendJSON({action:'admin_cmd', cmd:'set_pixels', target:_adminUserTarget, params:v});
+  setTimeout(()=>{ aumRefresh(); loadAdminUsers(adminPage); }, 250);
+}
+
+function aumSetRole(role){
+  sendJSON({action:'admin_cmd', cmd:'set_role', target:_adminUserTarget, params:role});
+  setTimeout(()=>{ aumRefresh(); loadAdminUsers(adminPage); }, 250);
+}
+
+function aumTimeout(secs){
+  sendJSON({action:'admin_cmd', cmd:'timeout', target:_adminUserTarget, params:secs});
+  setTimeout(aumRefresh, 250);
+}
+
+async function aumToggleBan(currentlyBanned){
+  if (!currentlyBanned) {
+    const ok = await showConfirm(`Забанить ${_adminUserTarget}?`, { title:'Бан игрока', icon:'🚫', danger:true, confirmText:'Забанить' });
+    if (!ok) return;
+  }
+  sendJSON({action:'admin_cmd', cmd: currentlyBanned?'unban':'ban', target:_adminUserTarget, params:null});
+  setTimeout(()=>{ aumRefresh(); loadAdminUsers(adminPage); }, 250);
+}
+
+async function aumKickSession(){
+  const ok = await showConfirm(`Отключить текущую сессию ${_adminUserTarget}?`, { title:'Отключить игрока', icon:'🔌' });
+  if (!ok) return;
+  sendJSON({action:'admin_cmd', cmd:'kick_session', target:_adminUserTarget, params:null});
+}
+
+function aumSendMessage(){
+  const msg = document.getElementById('aum-msg-input').value.trim();
+  if (!msg) { showToast('Введите сообщение','error'); return; }
+  sendJSON({action:'admin_cmd', cmd:'send_dm', target:_adminUserTarget, params:msg});
+  document.getElementById('aum-msg-input').value='';
+  showToast(`Отправлено ${_adminUserTarget}`,'success');
 }
 async function promptGiveCoins(username){
   const val = await showPrompt(`Сколько монет выдать ${username}?`, '', { title: 'Выдать монеты', icon: '🪙' });
@@ -2682,13 +2814,164 @@ function playClick(){
   }catch(_){}
 }
 
+const ADMIN_TABS = ['users','canvas','broadcast','stats','clans','news','lockdown','ads','timelapse'];
 function switchAdminTab(tab){
-  ['users','canvas','broadcast','stats','clans','news','timelapse'].forEach(t=>{ document.getElementById(`admin-tab-${t}`).style.display=t===tab?'':'none'; });
-  document.querySelectorAll('.admin-tab').forEach((el,i)=>{ el.classList.toggle('active',['users','canvas','broadcast','stats','clans','news','timelapse'][i]===tab); });
+  ADMIN_TABS.forEach(t=>{ const el=document.getElementById(`admin-tab-${t}`); if (el) el.style.display=t===tab?'':'none'; });
+  document.querySelectorAll('#admin-sidenav .csn-item').forEach(el=>{ el.classList.toggle('active', el.dataset.tab===tab); });
+  if (tab==='users') loadAdminUsers(adminPage);
   if (tab==='stats') loadAdminStats();
   if (tab==='clans') loadAdminClans();
   if (tab==='news') { renderAdminNewsList(); closeNewsAdminForm(); }
+  if (tab==='lockdown') renderAdminLockdownTab();
+  if (tab==='ads') renderAdminAdsTab();
   if (tab==='timelapse') tlRefreshStatus();
+}
+
+// ══════════════════════════════════════════════════════════
+//  ЛОКАУТ — экран блокировки Пиксель Батла
+// ══════════════════════════════════════════════════════════
+function renderAdminLockdownTab() {
+  const box = document.getElementById('admin-lockdown-status');
+  if (!box) return;
+  document.getElementById('admin-lockdown-message').value = lockdownState.message || '';
+  if (lockdownState.active) {
+    const leftMs = Math.max(0, (lockdownState.until||0) - Date.now());
+    box.textContent = `🔒 Закрыт — откроется через ${formatLockdownDuration(leftMs)}`;
+    box.style.background = 'rgba(228,0,0,.12)'; box.style.color = 'var(--red)';
+  } else {
+    box.textContent = '🔓 Пиксель Батл открыт для всех';
+    box.style.background = 'rgba(0,204,120,.12)'; box.style.color = 'var(--accent2)';
+  }
+}
+
+function formatLockdownDuration(ms) {
+  const s = Math.ceil(ms/1000);
+  const h = Math.floor(s/3600), m = Math.floor((s%3600)/60), sec = s%60;
+  return `${h}ч ${m}м ${sec}с`;
+}
+
+function adminSetLockdown(open) {
+  if (!open) {
+    sendJSON({ action:'admin_cmd', cmd:'lockdown_set', params:{ active:false, until:0, message:'' } });
+    return;
+  }
+  const minutes = Math.max(1, parseInt(document.getElementById('admin-lockdown-minutes').value) || 60);
+  const message = document.getElementById('admin-lockdown-message').value || '';
+  const until = Date.now() + minutes*60000;
+  sendJSON({ action:'admin_cmd', cmd:'lockdown_set', params:{ active:true, until, message } });
+}
+
+// Применяет полученное с сервера состояние локаута ко ВСЕМ клиентам —
+// показывает/скрывает полноэкранную заглушку и держит живой таймер.
+function applyLockdownState() {
+  const screen = document.getElementById('lockdown-screen');
+  if (!screen) return;
+  if (lockdownCountdownTimer) { clearInterval(lockdownCountdownTimer); lockdownCountdownTimer = null; }
+
+  const isAdminUser = isLoggedIn && isAdmin;
+  const shouldShow = lockdownState.active && lockdownState.until > Date.now() && !isAdminUser;
+
+  screen.classList.toggle('show', shouldShow);
+  if (!shouldShow) { renderAdminLockdownTab(); return; }
+
+  document.getElementById('lockdown-message').textContent = lockdownState.message || 'Скоро вернёмся!';
+
+  const tick = () => {
+    const left = lockdownState.until - Date.now();
+    if (left <= 0) {
+      screen.classList.remove('show');
+      clearInterval(lockdownCountdownTimer); lockdownCountdownTimer = null;
+      return;
+    }
+    const s = Math.floor(left/1000);
+    document.getElementById('lockdown-hh').textContent = String(Math.floor(s/3600)).padStart(2,'0');
+    document.getElementById('lockdown-mm').textContent = String(Math.floor((s%3600)/60)).padStart(2,'0');
+    document.getElementById('lockdown-ss').textContent = String(s%60).padStart(2,'0');
+  };
+  tick();
+  lockdownCountdownTimer = setInterval(tick, 1000);
+  renderAdminLockdownTab();
+}
+
+// ══════════════════════════════════════════════════════════
+//  РЕКЛАМА
+// ══════════════════════════════════════════════════════════
+function renderAdminAdsTab() {
+  const toggle = document.getElementById('admin-ads-toggle');
+  if (!toggle) return;
+  toggle.classList.toggle('on', !!adsConfig.active);
+  document.getElementById('admin-ads-type').value = adsConfig.type || 'banner';
+  document.getElementById('admin-ads-link').value = adsConfig.link || '';
+  document.getElementById('admin-ads-interval').value = adsConfig.intervalMinutes || 5;
+  adsAdminImageUrl = adsConfig.imageUrl || null;
+  const prev = document.getElementById('admin-ads-preview');
+  if (adsAdminImageUrl) { prev.src = getProxiedImageUrl(adsAdminImageUrl); prev.style.display = ''; }
+  else { prev.style.display = 'none'; }
+}
+
+async function handleAdsAdminImage(event) {
+  const file = event.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async ev => {
+    showToast('Загрузка картинки в облако...', 'info');
+    try {
+      const res = await fetch(getApiUrl() + '/upload-template', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: ev.target.result, name: 'ad_image', username: currentUser }),
+      });
+      const data = await res.json();
+      if (data.url) {
+        adsAdminImageUrl = data.url;
+        const prev = document.getElementById('admin-ads-preview');
+        prev.src = getProxiedImageUrl(data.url); prev.style.display = '';
+        showToast('Картинка загружена!', 'success');
+      } else { showToast('Ошибка загрузки: ' + (data.error||'нет ссылки'), 'error'); }
+    } catch(e) { showToast('Ошибка сети при загрузке картинки', 'error'); }
+  };
+  reader.readAsDataURL(file);
+}
+
+function adminSaveAds() {
+  const active = document.getElementById('admin-ads-toggle').classList.contains('on');
+  const type = document.getElementById('admin-ads-type').value;
+  const link = document.getElementById('admin-ads-link').value.trim();
+  const intervalMinutes = parseInt(document.getElementById('admin-ads-interval').value) || 5;
+  if (active && !adsAdminImageUrl) { showToast('Сначала загрузите картинку рекламы', 'error'); return; }
+  sendJSON({ action:'admin_cmd', cmd:'ads_set', params:{ active, type, imageUrl: adsAdminImageUrl||'', link, intervalMinutes } });
+}
+
+// Применяет конфиг рекламы, пришедший с сервера, у ВСЕХ пользователей.
+function applyAdsConfig() {
+  if (adsShowTimer) { clearInterval(adsShowTimer); adsShowTimer = null; }
+  if (!adsConfig.active || !adsConfig.imageUrl) { closeAdBanner(); closeAdPopup(); return; }
+
+  showCurrentAd();
+  adsShowTimer = setInterval(showCurrentAd, Math.max(1, adsConfig.intervalMinutes) * 60000);
+}
+
+function showCurrentAd() {
+  if (!adsConfig.active || !adsConfig.imageUrl) return;
+  if (adsConfig.type === 'popup') showAdPopup(); else showAdBanner();
+}
+
+function showAdBanner() {
+  const el = document.getElementById('ad-banner'); if (!el) return;
+  document.getElementById('ad-banner-bg').style.backgroundImage = `url('${getProxiedImageUrl(adsConfig.imageUrl)}')`;
+  el.classList.add('show');
+}
+function closeAdBanner() { document.getElementById('ad-banner')?.classList.remove('show'); }
+
+function showAdPopup() {
+  const el = document.getElementById('ad-popup-backdrop'); if (!el) return;
+  document.getElementById('ad-popup-image').src = getProxiedImageUrl(adsConfig.imageUrl);
+  el.classList.add('show');
+}
+function closeAdPopup() { document.getElementById('ad-popup-backdrop')?.classList.remove('show'); }
+
+function adClickThrough() {
+  if (adsConfig.link) window.open(adsConfig.link, '_blank');
+  closeAdBanner(); closeAdPopup();
 }
 function showPanel(id){
   hideAllPanels();

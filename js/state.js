@@ -120,6 +120,15 @@ let stencilUploadGen = 0; // увеличивается при каждой но
 // Active item usage
 let activeItem = null;
 
+// ── ЛОКАУТ (глобальное закрытие Пиксель Батла) ──
+let lockdownState = { active:false, until:0, message:'' };
+let lockdownCountdownTimer = null;
+
+// ── РЕКЛАМА ──
+let adsConfig = { active:false, type:'banner', imageUrl:'', link:'', intervalMinutes:5 };
+let adsShowTimer = null;
+let adsAdminImageUrl = null; // временное хранилище загруженной картинки рекламы, пока открыта форма в админке
+
 // ── ПРИКРЕПЛЕНИЕ МЕСТА НА ХОЛСТЕ К СООБЩЕНИЮ В ЧАТЕ ──
 // true = попап чата скрыт, ждём клика по холсту, чтобы взять координаты
 // и вставить их в поле ввода того чата/ЛС, из которого был вызван режим.

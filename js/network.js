@@ -107,6 +107,11 @@ function handleJSON(d) {
     adminTotalPages=d.total_pages||1;
     renderAdminUsers(allAdminUsers);
     document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
+    const navCount=document.getElementById('admin-nav-user-count');
+    if (navCount) navCount.textContent = d.total!=null ? d.total : allAdminUsers.length;
+  }
+  else if (a==='admin_user_detail') {
+    if (typeof renderAdminUserModal === 'function') renderAdminUserModal(d.user);
   }
   else if (a==='admin_clans_list') {
     if (typeof renderAdminClans === 'function') renderAdminClans(d.clans||[]);
@@ -372,6 +377,9 @@ function applyServerSettings(s) {
   if (!serverCursorsEnabled&&!clanShareCursor) clearCursorFlags();
   const slider = document.getElementById('admin-cooldown-slider');
   if (slider && s.cooldownMs) { slider.value = s.cooldownMs; updateCooldownLabel(s.cooldownMs); }
+
+  if (s.lockdown && typeof applyLockdownState === 'function') { lockdownState = s.lockdown; applyLockdownState(); }
+  if (s.ads && typeof applyAdsConfig === 'function') { adsConfig = s.ads; applyAdsConfig(); }
 }
 
 // ── SOCIAL HUB: исходящие запросы к серверу ──

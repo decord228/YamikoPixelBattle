@@ -3005,7 +3005,21 @@ function showAdPopup() {
 function closeAdPopup() { document.getElementById('ad-popup-backdrop')?.classList.remove('show'); }
 
 function adClickThrough() {
-  if (adsConfig.link) window.open(adsConfig.link, '_blank');
+  if (adsConfig.link) {
+    // Внутри Discord Activity страница живёт в сендбоксированном iframe без
+    // allow-popups — window.open() там молча ничего не делает (проверить
+    // можно по консоли: ошибок нет, просто клик "проваливается"). Discord даёт
+    // для этого отдельную команду SDK, которая показывает пользователю
+    // модалку "Открыть ссылку?" и переводит на внешний сайт по подтверждению.
+    if (typeof IS_DISCORD_ACTIVITY !== 'undefined' && IS_DISCORD_ACTIVITY && discordSdk) {
+      discordSdk.commands.openExternalLink({ url: adsConfig.link }).catch(err => {
+        console.error('[ads] openExternalLink failed:', err);
+        showToast?.('Не удалось открыть ссылку', 'error');
+      });
+    } else {
+      window.open(adsConfig.link, '_blank');
+    }
+  }
   closeAdBanner(); closeAdPopup();
 }
 function showPanel(id){

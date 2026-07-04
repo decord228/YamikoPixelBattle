@@ -42,10 +42,18 @@ async function init() {
   }
 }
 
+// Экземпляр Discord SDK хранится глобально (не только внутри
+// initDiscordActivity), чтобы им могли пользоваться другие части кода —
+// например, клик по рекламному баннеру должен открывать внешнюю ссылку через
+// discordSdk.commands.openExternalLink(), а не window.open(), который молча
+// блокируется песочницей iframe Discord Activity (нет allow-popups).
+let discordSdk = null;
+
 async function initDiscordActivity() {
   let sdk;
   try {
     sdk = new window.DiscordSDK(DISCORD_CLIENT_ID);
+    discordSdk = sdk;
     await sdk.ready();
     console.log('[Discord] SDK ready, instanceId:', sdk.instanceId);
   } catch (e) {

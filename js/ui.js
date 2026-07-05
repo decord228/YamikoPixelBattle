@@ -1019,10 +1019,20 @@ function createClan(){
   sendJSON({action:'clan_create',name,tag,description:desc});
 }
 
-function joinClan(explicitName){
+function joinClan(explicitName, btnEl){
   const name=(explicitName||document.getElementById('clan-join-name')?.value||'').trim();
   if (!name){showToast('Введите название клана','error');return;}
   sendJSON({action:'clan_join',name});
+  // Раньше кнопка "Запрос" оставалась активной до перезахода в панель клана,
+  // т.к. сервер при join_type==='request' шлёт только toast, без обновления
+  // списка кланов. Обновляем кнопку сразу же на клиенте (оптимистично).
+  if (btnEl && btnEl.classList.contains('is-request')) {
+    btnEl.disabled = true;
+    btnEl.classList.remove('is-request');
+    btnEl.classList.add('is-disabled');
+    btnEl.title = 'Заявка уже отправлена';
+    btnEl.innerHTML = 'Отправлено';
+  }
 }
 
 // ── Определяет, может ли текущий пользователь вступить в клан из списка ──
@@ -1222,7 +1232,8 @@ function transferLeadershipFromSettings() {
   transferLeadership(sel.value);
 }
 
-function renderClanRequests(requests) {
+function renderClanRequests(requests, requestCards) {
+  requestCards = requestCards || {};
   const c = document.getElementById('clan-requests-list');
   const badge = document.getElementById('clan-req-count');
   if (badge) {
@@ -1233,12 +1244,19 @@ function renderClanRequests(requests) {
     c.innerHTML = '<div class="clan-empty-state">📭<div>Заявок на вступление нет</div></div>';
     return;
   }
-  c.innerHTML = `<div class="clan-req-list">` + requests.map(r => `
-    <div class="clan-req-card">
-      <div class="clan-req-avatar">🙋</div>
-      <div class="clan-req-info">
-        <div class="clan-req-name">${esc(r)}</div>
-        <div class="clan-req-sub">Хочет вступить в клан</div>
+  // Карточка заявки теперь использует тот же .member-row, что и список
+  // участников/лидерборд (растянута по ширине, с баннером и настоящей
+  // аватаркой), вместо узкой .clan-req-card с эмодзи-заглушкой 🙋.
+  c.innerHTML = `<div class="clan-req-list">` + requests.map(r => {
+    const card = requestCards[r] || {};
+    const b = profileBannerRowHTML(card.banner);
+    return `
+    <div class="member-row clan-req-row${b.cls}">
+      ${b.html}
+      <div class="member-row-info" data-onclick="openProfile('${esc(r)}')" style="cursor:pointer">
+        ${cpAvatarHTML(r, 'sm', {emoji: card.emoji, avatar: card.avatar, rank: card.rank})}
+        <span class="member-row-name">${esc(r)}</span>
+        <span class="clan-req-sub">Хочет вступить в клан</span>
       </div>
       <div class="clan-req-actions">
         <button class="clan-req-btn clan-req-accept" data-onclick="sendJSON({action:'clan_accept_request',username:'${esc(r)}'})" title="Принять">
@@ -1248,7 +1266,8 @@ function renderClanRequests(requests) {
           <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12"/><path d="M18 6L6 18"/></svg>
         </button>
       </div>
-    </div>`).join('') + `</div>`;
+    </div>`;
+  }).join('') + `</div>`;
 }
 
 // ══════════════════════════════════════════════════
@@ -2310,7 +2329,7 @@ function renderClanBrowseList(clans){
     const glowColor = tc + '38';
     const js = clanBrowseJoinState(cl);
     const btnClass = 'clan-hcard-join' + (js.canJoin ? (js.label==='Запрос' ? ' is-request' : '') : ' is-disabled');
-    const btnAction = js.canJoin ? `joinClan('${esc(cl.name).replace(/'/g,"\\'")}')` : '';
+    const btnAction = js.canJoin ? `joinClan('${esc(cl.name).replace(/'/g,"\\'")}', this)` : '';
     return `
     <div class="clan-hcard">
       ${bannerUrl ? clanBannerImgTag(bannerUrl, bannerCrop) : ''}
@@ -3175,7 +3194,7 @@ function updateInspector(mx, my, px, py, fromCache) {
 
   document.getElementById('inspector-color').style.background=col.c;
   document.getElementById('inspector-text').innerHTML=
-    `<span>${px},${py} — ${col.n}</span>${ownerHtml}`;
+    `<span>${px},${py} — ${col.n}</span>${ownerHtml ? `<span style="color:var(--text3);opacity:.5;">•</span>${ownerHtml}` : ''}`;
 
   // Если ещё нет в кэше — запрашиваем у сервера с дебаунсом.
   // ВАЖНО: раньше клетка помечалась 'loading' в кэше СРАЗУ при наведении,
@@ -4324,7 +4343,7 @@ function renderProfileBannerHeader(p, isSelf) {
       <div class="clan-banner-info">
         <div class="clan-banner-name-row">
           <span class="clan-banner-name">${esc(p.username)}</span>
-          <span class="clan-banner-tag" style="color:var(--text2);border-color:var(--border2)">${esc(roleLabel)}</span>
+          <span class="clan-banner-tag phud-role-${p.role==='admin'?'admin':p.role==='vip'?'vip':'user'}" style="border:1px solid transparent;">${esc(roleLabel)}</span>
           ${clanTag}
         </div>
         <div class="clan-banner-desc">${esc(p.rank||'Новичок')} · ${(p.pixels||0).toLocaleString()} пикселей</div>

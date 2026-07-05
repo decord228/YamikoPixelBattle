@@ -250,7 +250,7 @@ function handleJSON(d) {
     document.getElementById('clan-motd-text').textContent = d.motd || 'Добро пожаловать в клан!';
   }
   else if (a==='clan_requests') {
-    renderClanRequests(d.requests || []);
+    renderClanRequests(d.requests || [], d.request_cards || {});
   }
   else if (a==='chat_message') {
     if (d.msg) {

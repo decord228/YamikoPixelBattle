@@ -1456,7 +1456,7 @@ html, body {
 }
 
 #chat-popup-panel .cp-msg-continued {
-    padding-left: 52px;
+    padding-left: 60px;
 }
 
     #chat-popup-panel .cp-msg-continued .cp-msg-time-hover {
@@ -6038,7 +6038,7 @@ details.adm-card {
     flex: 1;
     min-width: 0;
     overflow-y: auto;
-    padding: 20px 24px 24px;
+    padding: 20px 24px 32px;
 }
 
     /* Режим для вкладки "Участники": сам .clan-content не скроллится — высота
@@ -6583,6 +6583,18 @@ details.adm-card {
     flex-shrink: 0;
 }
 
+/* Заявка на вступление теперь рендерится как .member-row (полная ширина,
+   баннер, настоящая аватарка) — .clan-req-row лишь докидывает подпись
+   "Хочет вступить в клан" рядом с ником, в стиле остальных списков. */
+.clan-req-row .member-row-info {
+    flex: 1;
+}
+
+.clan-req-row .clan-req-sub {
+    margin-top: 0;
+    margin-left: 4px;
+}
+
 .clan-req-btn {
     width: 32px;
     height: 32px;
@@ -6755,14 +6767,14 @@ details.adm-card {
 
 .clan-icon-grid {
     display: grid;
-    grid-template-columns: repeat(9,1fr);
-    gap: 4px;
+    grid-template-columns: repeat(8,1fr);
+    gap: 6px;
 }
 
 .clan-color-grid {
     display: grid;
-    grid-template-columns: repeat(12,1fr);
-    gap: 4px;
+    grid-template-columns: repeat(10,1fr);
+    gap: 6px;
 }
 
 .clan-rank-sys-hint {
@@ -6776,9 +6788,15 @@ details.adm-card {
 }
 
 .clan-perm-grid {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
     gap: 6px;
+}
+
+@media (max-width: 640px) {
+    .clan-perm-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 .clan-perm-toggle-row {
@@ -7463,8 +7481,8 @@ body.canvas-attach-picking #canvas-wrap {
 
 #inspector-text {
     display: flex;
-    flex-direction: column;
-    gap: 2px;
+    align-items: center;
+    gap: 8px;
     line-height: 1.4;
 }
 
@@ -7472,6 +7490,9 @@ body.canvas-attach-picking #canvas-wrap {
     color: #a78bfa;
     font-size: 10px;
     opacity: 0.9;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
 }
 
     .inspector-owner b {
@@ -9493,7 +9514,7 @@ body.mini-mode #backdrop {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
-    padding: 16px 22px 8px;
+    padding: 10px 12px 8px;
     display: flex;
     flex-direction: column;
     gap: 2px;
@@ -9571,7 +9592,7 @@ body.mini-mode #backdrop {
 }
 
 #clan-inner-chat .cp-msg-continued {
-    padding-left: 52px;
+    padding-left: 60px;
 }
 
     #clan-inner-chat .cp-msg-continued .cp-msg-time-hover {

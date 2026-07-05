@@ -407,12 +407,15 @@ function setStencilToolActive(active) {
   const p = document.getElementById('stencil-panel');
   if (p) p.style.display = active ? 'block' : 'none';
   document.getElementById('btn-tool-stencil')?.classList.toggle('active', active);
+  if (!active && typeof toggleTemplatesPopup === 'function') toggleTemplatesPopup(false);
 }
 
 function toggleStencilEdit() {
   if (stencilLocked) { showToast('Это трафарет соклановца — менять положение и размер нельзя', 'error'); return; }
   stencilEditMode = !stencilEditMode;
   document.getElementById('stencil-edit-toggle').classList.toggle('on', stencilEditMode);
+  const stateEl = document.getElementById('stencil-edit-state');
+  if (stateEl) stateEl.textContent = stencilEditMode ? 'ВКЛ' : 'ВЫКЛ';
   renderOverlay();
   if (stencilEditMode) {
       showToast('Режим редактирования: ВКЛ. Рисование заблокировано.', 'info');
@@ -600,6 +603,7 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
         stencilLocked=false;
         stencilOwnerName='';
         document.getElementById('stencil-edit-toggle').classList.add('on');
+        { const stateEl = document.getElementById('stencil-edit-state'); if (stateEl) stateEl.textContent = 'ВКЛ'; }
         updateStencilLockUI();
         setStencilToolActive(true);
         
@@ -652,25 +656,91 @@ function promptSaveStencil() { doSaveStencil(); }
 
 function renderSavedStencils() {
   const c = document.getElementById('saved-stencils-list');
+  const badge = document.getElementById('stencil-saved-count');
+  if (badge) {
+    const n = (savedStencils || []).length;
+    badge.textContent = n;
+    badge.style.display = n > 0 ? 'flex' : 'none';
+  }
   if (!c) return;
   if (!savedStencils || !savedStencils.length) {
-    c.innerHTML = '<div class="stencil-list-empty">Сохранённых шаблонов нет</div>';
+    c.innerHTML = '<div class="dock-thumb-empty">Шаблонов нет</div>';
     return;
   }
   // Сервер хранит массив { name, stencil: { img, rect, opacity } }
   c.innerHTML = savedStencils.map((s, i) => {
     const r = s.stencil && s.stencil.rect;
+    const img = s.stencil && s.stencil.img;
     const safeN = esc(s.name || ('Шаблон ' + (i + 1)));
-    return `<div class="stencil-item">
-      <div class="stencil-item-info">
-        <div class="stencil-item-name">${safeN}</div>
-        <div class="stencil-item-meta">${r ? r.w + '×' + r.h + ' пикс.' : ''}</div>
+    const thumbUrl = img ? (typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(img) : img) : '';
+    const isActive = stencilActive && personalStencilUrl === img;
+    return `<div class="dock-thumb-card" data-onclick="loadSavedStencil(${i})">
+      <div class="dock-thumb-pic${isActive ? ' dock-thumb-pic-active' : ''}" style="${thumbUrl ? `background-image:url('${thumbUrl}')` : ''}"></div>
+      <div class="dock-thumb-body">
+        <div class="dock-thumb-name">${safeN}</div>
+        <div class="dock-thumb-meta${isActive ? ' dock-thumb-meta-active' : ''}">${isActive ? 'показан' : (r ? r.w + '×' + r.h : '')}</div>
       </div>
-      <button class="stencil-item-load" data-onclick="loadSavedStencil(${i})">Загр.</button>
-      <button class="stencil-item-delete" data-onclick="deleteSavedStencil(${i})">✕</button>
+      <div class="dock-thumb-del" data-onclick="event.stopPropagation();deleteSavedStencil(${i})" title="Удалить шаблон">✕</div>
     </div>`;
   }).join('');
 }
+
+// Открывает/закрывает модалку-попап со списком сохранённых шаблонов —
+// всплывает над кнопкой-списком рядом с полем сохранения.
+// Попап — элемент body (position:fixed), поэтому при каждом открытии и при
+// ресайзе/скролле пересчитываем его координаты от текущего bounding rect
+// кнопки #stencil-list-btn (раньше вычисление было чисто через CSS
+// position:absolute внутри .stencil-dock, но у того overflow:hidden
+// обрезал попап сверху/снизу).
+function _positionTemplatesPopup() {
+  const p = document.getElementById('templates-popup');
+  const btn = document.getElementById('stencil-list-btn');
+  if (!p || !btn || p.style.display === 'none') return;
+  const r = btn.getBoundingClientRect();
+  const margin = 12;
+  const popupW = p.offsetWidth || 260;
+  const popupH = p.offsetHeight || 320;
+
+  let left = r.right - popupW;
+  left = Math.max(8, Math.min(left, window.innerWidth - popupW - 8));
+
+  let top = r.top - margin - popupH;
+  let placedAbove = true;
+  if (top < 8) {
+    // Недостаточно места сверху — показываем попап под кнопкой
+    top = r.bottom + margin;
+    placedAbove = false;
+  }
+  top = Math.max(8, Math.min(top, window.innerHeight - popupH - 8));
+
+  p.style.left = left + 'px';
+  p.style.top = top + 'px';
+  p.classList.toggle('dock-templates-popup-below', !placedAbove);
+}
+
+function toggleTemplatesPopup(forceState) {
+  const p = document.getElementById('templates-popup');
+  if (!p) return;
+  const willShow = typeof forceState === 'boolean' ? forceState : (p.style.display === 'none' || !p.style.display);
+  p.style.display = willShow ? 'flex' : 'none';
+  if (willShow) {
+    renderSavedStencils();
+    _positionTemplatesPopup();
+  }
+}
+
+window.addEventListener('resize', () => _positionTemplatesPopup());
+// Панель трафарета (.stencil-dock-bar) скроллится по X — если попап открыт,
+// держим его прижатым к кнопке, а не к устаревшим координатам.
+document.getElementById('stencil-dock-scroll')?.addEventListener('scroll', () => _positionTemplatesPopup());
+
+// Клик вне попапа (и вне кнопки, которая его открывает) — закрывает его.
+document.addEventListener('click', (ev) => {
+  const popup = document.getElementById('templates-popup');
+  if (!popup || popup.style.display === 'none') return;
+  if (ev.target.closest('#templates-popup') || ev.target.closest('#stencil-list-btn')) return;
+  popup.style.display = 'none';
+});
 
 function loadSavedStencil(i) {
   const s = savedStencils[i];
@@ -755,22 +825,25 @@ function renderClanStencilsList() {
   const c = document.getElementById('clan-stencils-list');
   if (!c) return;
   if (!clanSharedStencil) {
-    c.innerHTML = '<div class="stencil-list-empty">Никто не поделился трафаретом</div>';
+    c.innerHTML = '<div class="dock-thumb-empty">Никто не поделился</div>';
     return;
   }
   const entry = clanSharedStencil;
   const isMine = entry.owner === currentUser;
-  const isShowingThis = stencilActive && personalStencilUrl === (entry.stencil && entry.stencil.img);
+  const img = entry.stencil && entry.stencil.img;
+  const thumbUrl = img ? (typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(img) : img) : '';
+  const isShowingThis = stencilActive && personalStencilUrl === img;
+  const r = entry.stencil && entry.stencil.rect;
   c.innerHTML = `
-    <div class="stencil-item${isMine ? ' stencil-item-mine' : ''}">
-      <span class="stencil-item-emoji">${esc(entry.emoji||'👾')}</span>
-      <div class="stencil-item-info" data-onclick="loadClanMemberStencil()" style="cursor:pointer;">
-        <div class="stencil-item-name">${isMine ? 'Ваш трафарет' : esc(entry.owner)}${isShowingThis ? ' · сейчас показан' : ''}</div>
-        <div class="stencil-item-meta">${entry.stencil&&entry.stencil.rect?entry.stencil.rect.w+'×'+entry.stencil.rect.h+' пикс.':''}</div>
+    <div class="dock-thumb-card${isMine ? ' dock-thumb-card-mine' : ''}" data-onclick="loadClanMemberStencil()">
+      <div class="dock-thumb-pic${isShowingThis ? ' dock-thumb-pic-active' : ''}" style="${thumbUrl ? `background-image:url('${thumbUrl}')` : ''}">${thumbUrl ? '' : esc(entry.emoji||'👾')}</div>
+      <div class="dock-thumb-body">
+        <div class="dock-thumb-name">${isMine ? 'Ваш трафарет' : esc(entry.owner)}</div>
+        <div class="dock-thumb-meta${isShowingThis ? ' dock-thumb-meta-active' : ''}">${isShowingThis ? 'показан' : (r ? r.w + '×' + r.h : '')}</div>
       </div>
       ${isMine
-        ? `<button class="stencil-item-delete" data-onclick="unshareClanStencil()" title="Снять трафарет с клана">✕</button>`
-        : `<span class="stencil-item-action" data-onclick="loadClanMemberStencil()" style="cursor:pointer;">${isShowingThis ? 'ПОКАЗАН' : 'ВЗЯТЬ'}</span>`
+        ? `<div class="dock-thumb-del" data-onclick="event.stopPropagation();unshareClanStencil()" title="Снять трафарет с клана">✕</div>`
+        : `<div class="dock-thumb-take">${isShowingThis ? 'ПОКАЗ' : 'ВЗЯТЬ'}</div>`
       }
     </div>`;
 }
@@ -806,6 +879,7 @@ function applySharedStencil(data, locked = false, ownerName = ''){
     stencilLocked=locked;
     stencilOwnerName = locked ? (ownerName || '') : '';
     document.getElementById('stencil-edit-toggle').classList.remove('on');
+    { const stateEl = document.getElementById('stencil-edit-state'); if (stateEl) stateEl.textContent = 'ВЫКЛ'; }
     setStencilToolActive(true);
     document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
     document.getElementById('stencil-opacity-val').textContent = (stencilOpacity * 100) + '%';
@@ -856,31 +930,29 @@ function updateStencilPanelClanStatus() {
   }
   if (rowEl) rowEl.style.display = '';
 
+  // В доке кнопка компактная — иконка + короткая подпись; полный статус (кто
+  // сейчас делится) уходит в title (всплывающая подсказка), чтобы не раздувать бар.
   if (stencilLocked) {
     // Сейчас показан чужой трафарет — делиться им от своего имени нельзя,
     // зато можно показать, кто именно сейчас держит трафарет клана.
-    statusEl.textContent = clanSharedStencil ? `Сейчас делится: ${clanSharedStencil.owner}` : '';
-    btnEl.textContent = 'ПРОСМОТР';
-    btnEl.className = 'btn btn-secondary btn-sm';
-    btnEl.style.background = '';
+    statusEl.textContent = 'ПРОСМОТР';
+    btnEl.className = 'dock-btn dock-share-btn dock-share-secondary';
+    btnEl.title = clanSharedStencil ? `Сейчас делится: ${clanSharedStencil.owner}` : '';
     btnEl.setAttribute('data-onclick', "showToast('Загрузите свою картинку, чтобы поделиться','info')");
   } else if (!clanSharedStencil) {
-    statusEl.textContent = 'Никто не делится';
-    btnEl.textContent = 'ОТПРАВИТЬ';
-    btnEl.className = 'btn btn-primary btn-sm';
-    btnEl.style.background = 'var(--accent2)';
+    statusEl.textContent = 'ОТПРАВИТЬ';
+    btnEl.className = 'dock-btn dock-share-btn dock-share-primary';
+    btnEl.title = 'Поделиться трафаретом с кланом';
     btnEl.setAttribute('data-onclick', 'shareStencilToClan()');
   } else if (clanSharedStencil.owner === currentUser) {
-    statusEl.textContent = 'Ваш трафарет виден всему клану';
-    btnEl.textContent = 'СНЯТЬ';
-    btnEl.className = 'btn btn-danger btn-sm';
-    btnEl.style.background = '';
+    statusEl.textContent = 'СНЯТЬ';
+    btnEl.className = 'dock-btn dock-share-btn dock-share-danger';
+    btnEl.title = 'Ваш трафарет виден всему клану';
     btnEl.setAttribute('data-onclick', 'unshareClanStencil()');
   } else {
-    statusEl.textContent = `Сейчас делится: ${clanSharedStencil.owner}`;
-    btnEl.textContent = 'ЗАНЯТО';
-    btnEl.className = 'btn btn-secondary btn-sm';
-    btnEl.style.background = '';
+    statusEl.textContent = 'ЗАНЯТО';
+    btnEl.className = 'dock-btn dock-share-btn dock-share-secondary';
+    btnEl.title = `Сейчас делится: ${clanSharedStencil.owner}`;
     btnEl.setAttribute('data-onclick', 'shareStencilToClan()');
   }
 }

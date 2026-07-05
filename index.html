@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260705-04';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260705-14';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -145,6 +145,21 @@
             <button class="btn btn-secondary" data-onclick="closeClanBannerCropModal(false)">Отмена</button>
             <button class="btn btn-primary" data-onclick="closeClanBannerCropModal(true)">Применить</button>
         </div>
+    </div>
+
+    <!-- ── CLAN RANK EDITOR MODAL ── -->
+    <div id="rme-backdrop" class="modal-backdrop" data-onclick="closeClanRankEditor()"></div>
+    <div id="rme-dialog" class="rme-dialog" role="dialog" aria-modal="true">
+        <div class="rme-header">
+            <div class="rme-header-icon" id="rme-icon-preview">⭐</div>
+            <div class="rme-header-text">
+                <div class="rme-title" id="rme-title">Новое звание</div>
+                <div class="rme-subtitle" id="rme-subtitle">Настройте вид и права звания</div>
+            </div>
+            <div class="panel-close" data-onclick="closeClanRankEditor()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+        </div>
+        <div class="rme-body" id="rme-body"></div>
+        <div class="rme-footer" id="rme-footer"></div>
     </div>
 
     <div id="ui">
@@ -515,6 +530,7 @@
                             <div id="profile-banner-picker"></div>
                         </div>
                         <div id="prof-tab-friends" style="display:none">
+                            <button class="btn btn-primary" id="profile-add-friend-btn" data-onclick="openAddFriend()" style="margin-bottom:14px;width:100%;justify-content:center;flex-shrink:0;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M19 8v6M22 11h-6" /></svg> Добавить друга</button>
                             <div id="profile-friends-list"></div>
                         </div>
                         <div id="prof-tab-achievements" style="display:none">
@@ -717,7 +733,6 @@
                                 <div class="clan-ranks-toolbar-hint">Звания определяют, что может делать каждый участник клана</div>
                                 <button class="btn btn-primary btn-sm" id="clan-rank-add-btn" data-onclick="openClanRankEditor(null)" style="display:none;flex-shrink:0;">+ Новое звание</button>
                             </div>
-                            <div id="clan-rank-editor" class="clan-rank-editor" style="display:none"></div>
                             <div id="clan-ranks-list" class="clan-ranks-list"></div>
                         </div>
 
@@ -938,7 +953,7 @@
                     </div>
                 </nav>
 
-                <div class="clan-content" id="admin-content">
+                <div class="clan-content clan-content-fixed" id="admin-content">
 
                     <div id="admin-tab-users">
                         <div class="clan-info-card-title-row" style="margin-bottom:12px;">

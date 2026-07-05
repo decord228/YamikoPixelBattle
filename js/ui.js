@@ -123,6 +123,12 @@ function switchProfileTab(tab) {
   document.querySelectorAll('#profile-sidenav .csn-item[data-tab]').forEach(el=>{
     el.classList.toggle('active', el.getAttribute('data-tab')===tab);
   });
+  // Кнопка "Добавить друга" остаётся сверху, скроллится только сам список
+  // (заявки + друзья) — тот же паттерн, что и у "Игроки" в админке/
+  // "Участники" в клане.
+  document.querySelectorAll('#profile-panel .clan-content').forEach(el => {
+    el.classList.toggle('clan-content-fixed', tab === 'friends');
+  });
   const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
   if (tab === 'banner') {
     if (isSelf && typeof buildBannerPicker === 'function') buildBannerPicker();
@@ -1002,6 +1008,7 @@ function switchClanInnerTab(tab) {
   // Для остальных вкладок оставляем обычный скролл всего .clan-content.
   document.querySelectorAll('#clan-view-in-clan .clan-content').forEach(el => {
     el.classList.toggle('clan-content-fixed', tab === 'members');
+    el.classList.toggle('clan-content-flush', tab === 'chat');
   });
   if (tab === 'requests') sendJSON({action:'clan_get_requests'});
   if (tab === 'ranks') { clanRanksEditingId = null; renderClanRanksTab(); }
@@ -2171,26 +2178,53 @@ function renderClanRanksTab() {
     const canEdit = iCanManage && (r.id === 'leader' ? false : r.priority < myPriority || r.id === 'member');
     const canDelete = iCanManage && !r.isDefault && r.priority < myPriority;
     const memberCount = counts[r.id] || 0;
-    return `<div class="clan-rank-card" style="--rank-color:${r.color}">
-      <div class="clan-rank-card-icon" style="background:${r.color}22;border-color:${r.color}55;color:${r.color}">${esc(r.icon)}</div>
+    const permCount = CLAN_PERMISSIONS.filter(p => r.permissions && r.permissions[p.key]).length;
+    const permLabel = r.id === 'leader' ? 'все права' : (permCount ? `${permCount} ${clanRuPermWord(permCount)}` : 'без прав');
+    return `<div class="clan-rank-card" style="--rank-color:${r.color}" data-onclick="openClanRankEditor('${esc(r.id)}')">
+      <div class="clan-rank-card-icon" style="color:${r.color}">${esc(r.icon)}</div>
       <div class="clan-rank-card-body">
         <div class="clan-rank-card-title">${esc(r.name)} ${r.isDefault ? `<span class="clan-rank-sys-tag">${r.id==='leader'?'системное':'базовое'}</span>` : ''}</div>
-        <div class="clan-rank-card-meta">${memberCount} ${memberCount===1?'участник':'участников'} · приоритет ${r.priority}</div>
-        <div class="clan-perm-row">${clanPermBadges(r)}</div>
+        <div class="clan-rank-card-meta">${memberCount} ${clanRuMemberWord(memberCount)}<span class="clan-rank-card-meta-dot"></span>приоритет ${r.priority}</div>
+      </div>
+      <div class="clan-rank-card-permsum" title="${esc(clanPermTitle(r))}">
+        <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2l7 4v6c0 5-3.4 8.4-7 10-3.6-1.6-7-5-7-10V6l7-4z"/></svg>
+        ${permLabel}
       </div>
       <div class="clan-rank-card-actions">
-        ${canEdit ? `<button class="member-action-btn" data-onclick="openClanRankEditor('${esc(r.id)}')" title="Редактировать">✏️</button>` : ''}
-        ${canDelete ? `<button class="member-action-btn member-kick-btn" data-onclick="deleteClanRank('${esc(r.id)}')" title="Удалить">🗑️</button>` : ''}
+        ${canDelete ? `<button class="member-action-btn member-kick-btn" data-onclick="event.stopPropagation();deleteClanRank('${esc(r.id)}')" title="Удалить">🗑️</button>` : ''}
       </div>
+      <div class="clan-rank-card-chevron"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M9 6l6 6-6 6"/></svg></div>
     </div>`;
   }).join('');
+}
+
+function clanRuMemberWord(n) {
+  const n10 = n % 10, n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return 'участник';
+  if ([2,3,4].includes(n10) && ![12,13,14].includes(n100)) return 'участника';
+  return 'участников';
+}
+function clanRuPermWord(n) {
+  const n10 = n % 10, n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return 'право';
+  if ([2,3,4].includes(n10) && ![12,13,14].includes(n100)) return 'права';
+  return 'прав';
+}
+function clanPermTitle(rank) {
+  if (rank.id === 'leader') return 'Обладает всеми правами клана';
+  const granted = CLAN_PERMISSIONS.filter(p => rank.permissions && rank.permissions[p.key]);
+  if (!granted.length) return 'Нет особых прав';
+  return granted.map(p => p.name).join(', ');
 }
 
 function openClanRankEditor(rankId) {
   clanRanksEditingId = rankId;
   const clan = clanFullData;
-  const editor = document.getElementById('clan-rank-editor');
-  if (!editor || !clan) return;
+  const backdrop = document.getElementById('rme-backdrop');
+  const dialog = document.getElementById('rme-dialog');
+  const body = document.getElementById('rme-body');
+  const footer = document.getElementById('rme-footer');
+  if (!dialog || !body || !clan) return;
 
   const isNew = !rankId;
   const rank = isNew ? { id:null, name:'', icon:'⭐', color:'#818cf8', priority: Math.max(1, clanPriorityOfUser(clan, currentUser) - 1), permissions:{} } : clanGetRanks(clan).find(r=>r.id===rankId);
@@ -2198,54 +2232,72 @@ function openClanRankEditor(rankId) {
   const isSystem = rank.id === 'leader' || rank.id === 'member';
   const myPriority = clanPriorityOfUser(clan, currentUser);
   const maxPriority = Math.max(1, myPriority - 1);
+  const iCanManage = clanHasPermUser(clan, currentUser, 'manage_ranks');
+  // Редактировать может только тот, у кого есть право manage_ranks И чей приоритет
+  // выше редактируемого звания (лидера редактировать нельзя никогда).
+  const canEdit = !isNew && iCanManage && rank.id !== 'leader' && (rank.priority < myPriority || rank.id === 'member');
+  const readOnly = !isNew && !canEdit;
 
-  editor.style.display = '';
-  editor.innerHTML = `
-    <div class="clan-rank-editor-header">${isNew ? '✨ Новое звание' : `✏️ Редактирование: ${esc(rank.name)}`}</div>
-    <div class="clan-rank-editor-row">
-      <div class="form-group" style="flex:2;min-width:140px;">
-        <label class="form-label">Название</label>
-        <input class="form-input" id="cre-name" maxlength="20" value="${esc(rank.name)}" placeholder="Например: Модератор">
+  dialog.style.setProperty('--rank-color', rank.color);
+  document.getElementById('rme-icon-preview').textContent = rank.icon;
+  document.getElementById('rme-icon-preview').style.color = rank.color;
+  document.getElementById('rme-title').textContent = isNew ? 'Новое звание' : esc(rank.name);
+  document.getElementById('rme-subtitle').textContent = isNew
+    ? 'Задайте вид и права нового звания'
+    : (readOnly ? 'Просмотр — нет прав на редактирование' : 'Настройте вид и права звания');
+
+  body.innerHTML = `
+    <div class="rme-section">
+      <div class="rme-section-title">Основное</div>
+      <div class="rme-identity-row">
+        <div class="rme-name-group">
+          <div class="form-group" style="margin-bottom:10px;">
+            <label class="form-label">Название</label>
+            <input class="form-input" id="cre-name" maxlength="20" value="${esc(rank.name)}" placeholder="Например: Модератор" ${readOnly ? 'disabled' : ''}>
+          </div>
+        </div>
       </div>
-      <div class="form-group" style="flex:1;min-width:90px;">
+      <div class="form-group" style="margin-bottom:${readOnly ? '0' : '10px'};">
         <label class="form-label">Значок</label>
-        <div id="cre-icon-preview" class="clan-rank-icon-preview">${esc(rank.icon)}</div>
+        <div id="cre-icon-grid" class="clan-icon-grid"></div>
       </div>
-      <div class="form-group" style="flex:1;min-width:90px;">
-        <label class="form-label">Цвет</label>
-        <div id="cre-color-preview" class="clan-rank-color-preview" style="background:${rank.color}"></div>
-      </div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Значок звания</label>
-      <div id="cre-icon-grid" class="clan-icon-grid"></div>
-    </div>
-    <div class="form-group">
-      <label class="form-label">Цвет звания</label>
-      <div id="cre-color-grid" class="clan-color-grid"></div>
+      ${!readOnly ? `
+      <div class="form-group" style="margin-bottom:0;">
+        <div class="rme-color-label-row">
+          <label class="form-label" style="margin-bottom:0;">Цвет</label>
+          <span id="cre-color-preview" class="rme-color-chip" style="background:${rank.color}"></span>
+        </div>
+        <div id="cre-color-grid" class="clan-color-grid"></div>
+      </div>` : ''}
     </div>
     ${!isSystem ? `
-    <div class="form-group">
-      <label class="form-label">Приоритет: <span id="cre-priority-val" style="color:var(--accent2);font-family:'Space Mono',monospace;">${rank.priority}</span> <span style="color:var(--text3);font-weight:400;">(чем выше — тем старше звание)</span></label>
+    <div class="rme-section">
+      <div class="rme-section-title">Приоритет</div>
+      <label class="form-label" style="text-transform:none;letter-spacing:0;font-weight:400;">
+        <span class="rme-priority-value" id="cre-priority-val">${rank.priority}</span>
+        <span class="rme-priority-hint"> — чем выше, тем старше звание</span>
+      </label>
       <input type="range" class="admin-range" id="cre-priority" min="1" max="${maxPriority}" step="1" value="${Math.min(rank.priority||1, maxPriority)}"
-        data-oninput="document.getElementById('cre-priority-val').textContent=this.value" style="width:100%;margin-top:6px;">
-    </div>` : `<div class="clan-rank-sys-hint">${rank.id==='leader' ? '👑 Лидер всегда обладает всеми правами — это нельзя изменить.' : '⚔️ Базовое звание получают все новые участники. У него нет приоритета — оно всегда самое младшее.'}</div>`}
-    <div class="form-group">
-      <label class="form-label">Права звания</label>
+        ${readOnly ? 'disabled' : ''}
+        data-oninput="document.getElementById('cre-priority-val').textContent=this.value" style="width:100%;margin-top:8px;">
+    </div>` : `<div class="rme-section"><div class="clan-rank-sys-hint">${rank.id==='leader' ? '👑 Лидер всегда обладает всеми правами — это нельзя изменить.' : '⚔️ Базовое звание получают все новые участники. У него нет приоритета — оно всегда самое младшее.'}</div></div>`}
+    <div class="rme-section" style="margin-bottom:6px;">
+      <div class="rme-section-title">Права доступа</div>
       <div class="clan-perm-grid" id="cre-perms">
         ${CLAN_PERMISSIONS.map(p => `
-          <label class="clan-perm-toggle-row ${isSystem && rank.id==='leader' ? 'disabled' : ''}">
-            <input type="checkbox" data-perm="${p.key}" ${rank.permissions && rank.permissions[p.key] ? 'checked' : ''} ${rank.id==='leader' ? 'disabled checked' : ''}>
+          <label class="clan-perm-toggle-row ${(rank.id==='leader' || readOnly) ? 'disabled' : ''}">
+            <input type="checkbox" data-perm="${p.key}" ${rank.permissions && rank.permissions[p.key] ? 'checked' : ''} ${(rank.id==='leader' || readOnly) ? 'disabled' : ''} ${rank.id==='leader' ? 'checked' : ''}>
             <span class="clan-perm-toggle-icon">${p.icon}</span>
             <span class="clan-perm-toggle-text"><strong>${esc(p.name)}</strong><small>${esc(p.desc)}</small></span>
           </label>`).join('')}
       </div>
     </div>
-    <div class="clan-rank-editor-footer">
-      <button class="btn btn-secondary btn-sm" data-onclick="closeClanRankEditor()">Отмена</button>
-      <button class="btn btn-primary btn-sm" data-onclick="saveClanRankEditor(${isNew ? 'null' : `'${esc(rank.id)}'`})">${isNew ? 'Создать звание' : 'Сохранить'}</button>
-    </div>
   `;
+
+  footer.innerHTML = readOnly
+    ? `<button class="btn btn-secondary btn-sm" data-onclick="closeClanRankEditor()">Закрыть</button>`
+    : `<button class="btn btn-secondary btn-sm" data-onclick="closeClanRankEditor()">Отмена</button>
+       <button class="btn btn-primary btn-sm" data-onclick="saveClanRankEditor(${isNew ? 'null' : `'${esc(rank.id)}'`})">${isNew ? 'Создать звание' : 'Сохранить'}</button>`;
 
   // icon grid
   const iconGrid = document.getElementById('cre-icon-grid');
@@ -2254,55 +2306,78 @@ function openClanRankEditor(rankId) {
     const d = document.createElement('div');
     d.className = 'av-opt' + (em === selIcon ? ' selected' : '');
     d.textContent = em;
-    d.onclick = () => {
-      selIcon = em;
-      document.getElementById('cre-icon-preview').textContent = em;
-      iconGrid.querySelectorAll('.av-opt').forEach(x => x.classList.remove('selected'));
-      d.classList.add('selected');
-    };
+    if (!readOnly) {
+      d.onclick = () => {
+        selIcon = em;
+        const preview = document.getElementById('rme-icon-preview');
+        preview.textContent = em;
+        iconGrid.querySelectorAll('.av-opt').forEach(x => x.classList.remove('selected'));
+        d.classList.add('selected');
+      };
+    } else {
+      d.style.cursor = 'default';
+      d.style.opacity = em === selIcon ? '1' : '.35';
+    }
     iconGrid.appendChild(d);
   });
-  editor.dataset.icon = selIcon;
-  iconGrid.addEventListener('click', () => { editor.dataset.icon = selIcon; });
 
   // color grid
-  const colorGrid = document.getElementById('cre-color-grid');
-  let selColor = rank.color;
-  CLAN_RANK_COLORS.forEach(c => {
-    const d = document.createElement('div');
-    d.className = 'color-cell' + (c === selColor ? ' selected' : '');
-    d.style.background = c;
-    d.onclick = () => {
-      selColor = c;
-      document.getElementById('cre-color-preview').style.background = c;
-      colorGrid.querySelectorAll('.color-cell').forEach(x => x.classList.remove('selected'));
-      d.classList.add('selected');
-    };
-    colorGrid.appendChild(d);
-  });
+  if (!readOnly) {
+    const colorGrid = document.getElementById('cre-color-grid');
+    let selColor = rank.color;
+    CLAN_RANK_COLORS.forEach(c => {
+      const d = document.createElement('div');
+      d.className = 'color-cell' + (c === selColor ? ' selected' : '');
+      d.style.background = c;
+      d.onclick = () => {
+        selColor = c;
+        document.getElementById('cre-color-preview').style.background = c;
+        document.getElementById('rme-icon-preview').style.color = c;
+        dialog.style.setProperty('--rank-color', c);
+        colorGrid.querySelectorAll('.color-cell').forEach(x => x.classList.remove('selected'));
+        d.classList.add('selected');
+      };
+      colorGrid.appendChild(d);
+    });
+    dialog._getColor = () => selColor;
+  }
+  dialog._getIcon = () => selIcon;
 
-  editor._getIcon = () => selIcon;
-  editor._getColor = () => selColor;
-  editor.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  document.getElementById('rme-backdrop').classList.add('show');
+  dialog.classList.add('show');
 }
+
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && document.getElementById('rme-dialog')?.classList.contains('show')) {
+    closeClanRankEditor();
+  }
+});
 
 function closeClanRankEditor() {
   clanRanksEditingId = null;
-  const editor = document.getElementById('clan-rank-editor');
-  if (editor) { editor.style.display = 'none'; editor.innerHTML = ''; }
+  const backdrop = document.getElementById('rme-backdrop');
+  const dialog = document.getElementById('rme-dialog');
+  if (backdrop) backdrop.classList.remove('show');
+  if (dialog) dialog.classList.remove('show');
+  setTimeout(() => {
+    const body = document.getElementById('rme-body');
+    const footer = document.getElementById('rme-footer');
+    if (body) body.innerHTML = '';
+    if (footer) footer.innerHTML = '';
+  }, 200);
 }
 
 function saveClanRankEditor(rankId) {
-  const editor = document.getElementById('clan-rank-editor');
-  if (!editor) return;
+  const dialog = document.getElementById('rme-dialog');
+  if (!dialog) return;
   const name = document.getElementById('cre-name').value.trim();
   if (!name) { showToast('Введите название звания', 'error'); return; }
-  const icon = editor._getIcon ? editor._getIcon() : '⭐';
-  const color = editor._getColor ? editor._getColor() : '#818cf8';
+  const icon = dialog._getIcon ? dialog._getIcon() : '⭐';
+  const color = dialog._getColor ? dialog._getColor() : '#818cf8';
   const priorityEl = document.getElementById('cre-priority');
   const priority = priorityEl ? parseInt(priorityEl.value) : undefined;
   const permissions = {};
-  editor.querySelectorAll('#cre-perms input[type=checkbox]').forEach(cb => { permissions[cb.dataset.perm] = cb.checked; });
+  dialog.querySelectorAll('#cre-perms input[type=checkbox]').forEach(cb => { permissions[cb.dataset.perm] = cb.checked; });
 
   if (!rankId) {
     sendJSON({action:'clan_rank_create', name, icon, color, priority, permissions});
@@ -2982,6 +3057,12 @@ const ADMIN_TABS = ['users','canvas','broadcast','stats','clans','news','lockdow
 function switchAdminTab(tab){
   ADMIN_TABS.forEach(t=>{ const el=document.getElementById(`admin-tab-${t}`); if (el) el.style.display=t===tab?'':'none'; });
   document.querySelectorAll('#admin-sidenav .csn-item').forEach(el=>{ el.classList.toggle('active', el.dataset.tab===tab); });
+  // Вкладка "Игроки" сама управляет своим скроллом (скроллится только
+  // .admin-players-list, заголовок/поиск и пагинация остаются на месте) —
+  // тот же паттерн, что и у вкладки "Участники" в клане (см. switchClanInnerTab).
+  document.querySelectorAll('#admin-panel .clan-content').forEach(el => {
+    el.classList.toggle('clan-content-fixed', tab === 'users');
+  });
   if (tab==='users') loadAdminUsers(adminPage);
   if (tab==='stats') loadAdminStats();
   if (tab==='clans') loadAdminClans();
@@ -4488,13 +4569,6 @@ function renderProfileFriendsTab() {
     sendJSON({ action:'friends_get' });
   }
   root.innerHTML = '';
-
-  const addBtn = document.createElement('button');
-  addBtn.className = 'btn btn-primary';
-  addBtn.style.cssText = 'margin-bottom:14px;width:100%;justify-content:center;';
-  addBtn.innerHTML = `<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg> Добавить друга`;
-  addBtn.onclick = () => openAddFriend();
-  root.appendChild(addBtn);
 
   if (cpIncoming.length) {
     const title = document.createElement('div');

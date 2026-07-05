@@ -511,43 +511,6 @@ html, body {
     flex-shrink: 0;
 }
 
-#phud-actions {
-    display: flex;
-    gap: 6px;
-    flex-shrink: 0;
-}
-
-.phud-btn {
-    width: auto;
-    height: 30px;
-    padding: 0 10px;
-    border-radius: var(--radius-sm);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 5px;
-    font-size: 14px;
-    cursor: pointer;
-    border: 1px solid var(--border2);
-    background: var(--surface2);
-    transition: .2s;
-}
-
-.phud-btn-label {
-    font-family: 'Unbounded', sans-serif;
-    font-size: 9px;
-    font-weight: 700;
-    color: var(--text2);
-    letter-spacing: .5px;
-    text-transform: uppercase;
-    white-space: nowrap;
-}
-
-.phud-btn:hover {
-    background: var(--surface3);
-    border-color: var(--accent);
-}
-
 /* ── LEADERBOARD PANEL — top-right ── */
 #leaderboard-panel {
     position: absolute;
@@ -818,74 +781,6 @@ html, body {
         box-shadow: 0 0 8px var(--accent-glow);
     }
 
-    #chat-popup-panel .cp-sb-newbtn {
-        width: 30px;
-        height: 30px;
-        border-radius: var(--radius-sm);
-        background: var(--surface2);
-        border: 1px solid var(--border2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: var(--text2);
-        transition: .15s;
-        cursor: pointer;
-    }
-
-        #chat-popup-panel .cp-sb-newbtn:hover {
-            background: var(--accent);
-            color: #fff;
-            border-color: var(--accent2);
-        }
-
-    #chat-popup-panel .cp-tab-switch {
-        margin: 0 16px 12px;
-        padding: 3px;
-        background: var(--surface);
-        border: 1px solid var(--border);
-        border-radius: var(--radius-pill);
-        display: flex;
-        gap: 2px;
-    }
-
-    #chat-popup-panel .cp-tab-btn {
-        flex: 1;
-        padding: 7px 10px;
-        border-radius: var(--radius-pill);
-        font-size: 12px;
-        font-weight: 700;
-        cursor: pointer;
-        color: var(--text2);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        transition: .15s;
-        background: none;
-        border: none;
-        font-family: inherit;
-    }
-
-        #chat-popup-panel .cp-tab-btn.active {
-            background: var(--accent);
-            color: #fff;
-            box-shadow: 0 2px 10px var(--accent-glow);
-        }
-
-    #chat-popup-panel .cp-badge {
-        background: var(--red);
-        color: #fff;
-        font-size: 10px;
-        font-weight: 800;
-        padding: 1px 5px;
-        border-radius: 99px;
-        line-height: 1.4;
-    }
-
-    #chat-popup-panel .cp-tab-btn.active .cp-badge {
-        background: rgba(255,255,255,.28);
-    }
-
     #chat-popup-panel .cp-search-box {
         margin: 0 16px 12px;
         height: 36px;
@@ -1112,12 +1007,6 @@ html, body {
     background: var(--green);
 }
 
-.cp-status-dot.drawing {
-    background: var(--drawing);
-    box-shadow: 0 0 6px var(--drawing-glow);
-    animation: cp-pulse-dot 1.4s ease-in-out infinite;
-}
-
 @keyframes cp-pulse-dot {
     0%,100% {
         opacity: 1;
@@ -1185,10 +1074,6 @@ html, body {
     box-shadow: 0 2px 8px var(--accent-glow);
 }
 
-#chat-popup-panel .cp-pin-ico {
-    color: var(--text3);
-}
-
 #chat-popup-panel .cp-freq-row {
     display: flex;
     align-items: center;
@@ -1227,31 +1112,6 @@ html, body {
         background: var(--red);
         border-color: var(--red);
         color: #fff;
-    }
-
-#chat-popup-panel .cp-addfriend-cta {
-    margin: 2px 8px 4px;
-    padding: 11px 12px;
-    border-radius: 12px;
-    border: 1.5px dashed var(--border2);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    color: var(--text2);
-    font-size: 12.5px;
-    font-weight: 700;
-    transition: .15s;
-}
-
-    #chat-popup-panel .cp-addfriend-cta:hover {
-        border-color: var(--accent);
-        color: var(--accent2);
-        background: var(--accent-glow);
-    }
-
-    #chat-popup-panel .cp-addfriend-cta .icon {
-        color: var(--accent2);
     }
 
 #chat-popup-panel .cp-empty-hint {
@@ -1504,44 +1364,10 @@ html, body {
     margin: 3px 0;
 }
 
-    #chat-popup-panel .cp-bubble-row.own {
-        align-self: flex-end;
-        flex-direction: row-reverse;
-    }
-
     #chat-popup-panel .cp-bubble-row .cp-avatar {
         align-self: flex-end;
         margin-bottom: 2px;
     }
-
-#chat-popup-panel .cp-bubble {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    padding: 9px 13px;
-    border-radius: 16px 16px 16px 5px;
-    font-size: 13px;
-    line-height: 1.55;
-    color: var(--text2);
-}
-
-#chat-popup-panel .cp-bubble-row.own .cp-bubble {
-    background: var(--accent);
-    color: #fff;
-    border-color: var(--accent2);
-    border-radius: 16px 16px 5px 16px;
-}
-
-    #chat-popup-panel .cp-bubble-row.own .cp-bubble .cp-msg-time {
-        color: rgba(255,255,255,.65);
-    }
-
-#chat-popup-panel .cp-bubble .cp-msg-time {
-    display: block;
-    margin-top: 4px;
-    font-size: 10px;
-    text-align: right;
-    color: var(--text3);
-}
 
 #chat-popup-panel .cp-canvas-card {
     width: 220px;
@@ -1828,12 +1654,6 @@ html, body {
     margin: 16px 0 8px;
 }
 
-#chat-popup-panel .cp-ip-mutual-txt {
-    font-size: 11.5px;
-    color: var(--text2);
-    margin-left: 10px;
-}
-
 #chat-popup-panel .cp-ip-actions {
     display: flex;
     flex-direction: column;
@@ -1864,32 +1684,10 @@ html, body {
         color: var(--text);
     }
 
-    #chat-popup-panel .cp-ip-btn.primary {
-        background: var(--accent);
-        border-color: var(--accent2);
-        color: #fff;
-    }
-
-        #chat-popup-panel .cp-ip-btn.primary:hover {
-            background: var(--accent2);
-        }
-
     #chat-popup-panel .cp-ip-btn.danger:hover {
         background: var(--red);
         border-color: var(--red);
         color: #fff;
-    }
-
-#chat-popup-panel .cp-ip-member-row {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 6px 4px;
-}
-
-    #chat-popup-panel .cp-ip-member-row .cp-row-name {
-        color: var(--text2);
-        font-size: 12.5px;
     }
 
 /* ---- add friend modal ----
@@ -2232,12 +2030,6 @@ html, body {
         width: 20px;
         height: 20px;
     }
-
-.phud-btn .icon {
-    width: 18px;
-    height: 18px;
-}
-
 
 /* ── SIDEBAR TOOLTIP ── */
 #sidebar-tooltip {
@@ -2605,20 +2397,8 @@ html, body {
 
 .news-slide-art-img,
 .news-list-item-icon-img,
-.admin-news-item-icon-img {
-    padding: 0;
-    overflow: hidden;
-}
-
-    .news-slide-art-img img,
-    .news-list-item-icon-img img,
-    .admin-news-item-icon-img img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        display: block;
-    }
-
+.news-slide-art-img img,
+.news-list-item-icon-img img,
 .news-slide-content {
     min-width: 0;
 }
@@ -3053,16 +2833,6 @@ html, body {
         background: rgba(239,68,68,.22);
     }
 
-.btn-success {
-    background: rgba(34,197,94,.12);
-    color: #4ade80;
-    border: 1px solid rgba(34,197,94,.25);
-}
-
-    .btn-success:hover {
-        background: rgba(34,197,94,.22);
-    }
-
 .btn-vip {
     background: rgba(245,158,11,.12);
     color: var(--vip);
@@ -3370,94 +3140,6 @@ html, body {
         box-shadow: 0 4px 16px var(--accent-glow);
     }
 
-/* ── PROFILE ── */
-#profile-avatar-ring {
-    width: 82px;
-    height: 82px;
-    border-radius: 50%;
-    background: linear-gradient(135deg,#6366f1,#818cf8,#a5b4fc);
-    padding: 2px;
-    cursor: pointer;
-    transition: .3s;
-    position: relative;
-    flex-shrink: 0;
-}
-
-    #profile-avatar-ring:hover {
-        transform: scale(1.05);
-        box-shadow: 0 0 24px var(--accent-glow);
-    }
-
-    #profile-avatar-ring canvas {
-        width: 100%;
-        height: 100%;
-        border-radius: 50%;
-        background: var(--surface2);
-        display: block;
-    }
-
-.avatar-overlay {
-    position: absolute;
-    inset: 0;
-    border-radius: 50%;
-    background: rgba(0,0,0,.55);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    opacity: 0;
-    transition: .2s;
-}
-
-#profile-avatar-ring:hover .avatar-overlay {
-    opacity: 1;
-}
-
-.profile-header {
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    margin-bottom: 18px;
-}
-
-.profile-name {
-    font-family: 'Unbounded',sans-serif;
-    font-size: 17px;
-    font-weight: 700;
-}
-
-.profile-role {
-    font-size: 11px;
-    margin-top: 3px;
-    padding: 2px 9px;
-    border-radius: var(--radius-pill);
-    display: inline-block;
-}
-
-.role-user {
-    background: rgba(161,161,170,.1);
-    color: var(--text2);
-}
-
-.role-admin {
-    background: rgba(99,102,241,.15);
-    color: var(--accent2);
-    border: 1px solid rgba(99,102,241,.3);
-}
-
-.role-vip {
-    background: rgba(245,158,11,.15);
-    color: var(--vip);
-    border: 1px solid rgba(245,158,11,.3);
-}
-
-.stat-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 9px;
-    margin-bottom: 14px;
-}
-
 .stat-grid-3 {
     display: grid;
     grid-template-columns: 1fr 1fr 1fr;
@@ -3522,12 +3204,6 @@ html, body {
 }
 
 /* ── EMOJI AVATARS ── */
-.avatar-options {
-    display: grid;
-    grid-template-columns: repeat(8,1fr);
-    gap: 6px;
-    margin: 10px 0;
-}
 
 .av-opt {
     aspect-ratio: 1;
@@ -3652,12 +3328,6 @@ html, body {
         height: 13px;
     }
 
-.lb-clan-tag {
-    font-size: 10px;
-    color: var(--text3);
-    font-family: 'Space Mono',monospace;
-}
-
 /* ── БАННЕР ПРОФИЛЯ (Этап 2, доработано) ──
    Раньше здесь было отдельное правило .lb-row.has-banner специально под
    клановый баннер в лидерборде (position/overflow/затемнение/text-shadow).
@@ -3712,7 +3382,6 @@ html, body {
 
 /* ── БАННЕР ПРОФИЛЯ: анимированные пресеты-скины (.pbanner-anim-*, .pbanner-geo-*, .pbanner-prem-*) вынесены в skins.css — подключается отдельным <link> в index.html после этого файла. Здесь остаётся только структурная вёрстка баннеров (ниже). ──*/
 
-
 .has-profile-banner > *:not(.row-banner-bg):not(.row-banner-overlay):not(.clan-banner-cover-img):not(.clan-banner-content):not(.clan-banner-edit-btn) {
     position: relative;
     z-index: 1;
@@ -3748,13 +3417,6 @@ html, body {
 .has-profile-banner .member-rank-select {
     background: rgba(10,10,14,.45) !important;
     border-color: rgba(255,255,255,.18) !important;
-}
-
-/* ── БАННЕР ПРОФИЛЯ: шапка панели профиля ── */
-#profile-header.has-profile-banner {
-    border-radius: 14px;
-    padding: 14px;
-    margin: -2px -2px 12px -2px;
 }
 
 /* ── БАННЕР ПРОФИЛЯ: пикер в панели профиля ──
@@ -5093,23 +4755,6 @@ details.adm-card {
         background: var(--accent-glow);
     }
 
-.na-icon-remove {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    width: 16px;
-    height: 16px;
-    border-radius: 50%;
-    background: rgba(0,0,0,.65);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 10px;
-    line-height: 1;
-    cursor: pointer;
-}
-
 /* Список новостей в админке — лёгкое обновление под карточный стиль */
 #admin-news-list-wrap .adm-card-title {
     margin-bottom: 2px;
@@ -5141,11 +4786,6 @@ details.adm-card {
     flex: 1;
 }
 
-.user-card-banned {
-    color: var(--red);
-    text-decoration: line-through;
-}
-
 .user-badge {
     font-size: 9px;
     padding: 2px 7px;
@@ -5164,11 +4804,6 @@ details.adm-card {
     background: rgba(245,158,11,.2);
     color: var(--vip);
     border: 1px solid rgba(245,158,11,.3);
-}
-
-.badge-user {
-    background: var(--surface3);
-    color: var(--text3);
 }
 
 .badge-banned {
@@ -5194,33 +4829,6 @@ details.adm-card {
     font-family: 'Inter',sans-serif;
 }
 
-.ab-role {
-    background: rgba(99,102,241,.15);
-    color: var(--accent2);
-}
-
-    .ab-role:hover {
-        background: rgba(99,102,241,.3);
-    }
-
-.ab-vip {
-    background: rgba(245,158,11,.15);
-    color: var(--vip);
-}
-
-    .ab-vip:hover {
-        background: rgba(245,158,11,.3);
-    }
-
-.ab-timeout {
-    background: rgba(234,179,8,.1);
-    color: #facc15;
-}
-
-    .ab-timeout:hover {
-        background: rgba(234,179,8,.25);
-    }
-
 .ab-ban {
     background: rgba(239,68,68,.12);
     color: #f87171;
@@ -5228,15 +4836,6 @@ details.adm-card {
 
     .ab-ban:hover {
         background: rgba(239,68,68,.22);
-    }
-
-.ab-unban {
-    background: rgba(34,197,94,.12);
-    color: #4ade80;
-}
-
-    .ab-unban:hover {
-        background: rgba(34,197,94,.22);
     }
 
 .ab-msg {
@@ -5409,29 +5008,6 @@ details.adm-card {
         cursor: pointer;
     }
 
-/* ── CLAN PANEL (standalone) ── */
-.clan-card {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 15px;
-    padding: 18px;
-    margin-bottom: 11px;
-    transition: .2s;
-}
-
-    .clan-card:hover {
-        border-color: var(--border2);
-    }
-
-.clan-name {
-    font-family: 'Unbounded',sans-serif;
-    font-size: 13px;
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
 .clan-tag {
     font-size: 10px;
     padding: 2px 8px;
@@ -5439,21 +5015,6 @@ details.adm-card {
     background: rgba(99,102,241,.2);
     color: var(--accent2);
     border: 1px solid rgba(99,102,241,.25);
-}
-
-.clan-meta {
-    font-size: 11px;
-    color: var(--text3);
-    margin-top: 5px;
-}
-
-.clan-leader-badge {
-    font-size: 10px;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    background: rgba(251,191,36,.12);
-    color: #fbbf24;
-    border: 1px solid rgba(251,191,36,.2);
 }
 
 .member-list {
@@ -5487,11 +5048,6 @@ details.adm-card {
     min-width: 0;
 }
 
-.member-row-emoji {
-    font-size: 14px;
-    flex-shrink: 0;
-}
-
 .member-row-crown {
     font-size: 13px;
     flex-shrink: 0;
@@ -5512,16 +5068,6 @@ details.adm-card {
         font-weight: 600;
     }
 
-.member-leader-badge {
-    font-size: 9px;
-    padding: 1px 6px;
-    border-radius: var(--radius-pill);
-    background: rgba(99,102,241,.15);
-    color: var(--accent2);
-    border: 1px solid rgba(99,102,241,.3);
-    flex-shrink: 0;
-}
-
 .member-kick-btn {
     background: none;
     border: none;
@@ -5538,35 +5084,6 @@ details.adm-card {
     .member-kick-btn:hover {
         color: var(--red);
         background: rgba(239,68,68,.12);
-    }
-
-/* keep .member-chip for legacy fallback */
-.member-chip {
-    font-size: 10px;
-    padding: 3px 9px;
-    border-radius: var(--radius-pill);
-    background: var(--surface3);
-    color: var(--text2);
-    border: 1px solid var(--border);
-}
-
-    .member-chip.leader {
-        background: rgba(99,102,241,.15);
-        color: var(--accent2);
-    }
-
-.clan-chat-msg {
-    font-size: 11px;
-    line-height: 1.4;
-    padding: 5px 8px;
-    border-radius: 8px;
-    background: var(--surface2);
-    margin-bottom: 4px;
-}
-
-    .clan-chat-msg .cm-user {
-        color: var(--accent2);
-        font-weight: 600;
     }
 
 .clan-motd {
@@ -5610,19 +5127,10 @@ details.adm-card {
     }
 
 #clan-view-no-clan {
-    padding: 22px 25px 25px;
+    padding: var(--clan-content-padding);
     overflow-y: auto;
     flex: 1;
     min-height: 0;
-}
-
-.clan-browse-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    max-height: 460px;
-    overflow-y: auto;
-    padding: 2px;
 }
 
 /* ── CLAN BROWSE: vertical list of full-width, thin horizontal clan rows ── */
@@ -5843,16 +5351,6 @@ details.adm-card {
             filter: none;
         }
 
-.clan-banner-price-pill {
-    font-size: 9.5px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: var(--radius-pill);
-    background: rgba(251,191,36,.14);
-    color: #fbbf24;
-    border: 1px solid rgba(251,191,36,.25);
-}
-
 /* ── Баннер клана в настройках: статус-пилюли (куплено/не куплено) ── */
 .clan-banner-tier-pill {
     display: inline-flex;
@@ -6047,23 +5545,51 @@ details.adm-card {
     }
 
 /* ── CONTENT AREA (scrolls independently of the sidebar) ── */
+:root {
+    --clan-content-padding: 20px 24px 1px;
+}
+
 .clan-content {
     flex: 1;
     min-width: 0;
     overflow-y: auto;
-    padding: 20px 24px 40px;
+    padding: var(--clan-content-padding);
 }
 
-    /* Режим для вкладки "Участники": сам .clan-content не скроллится — высота
+/* ЕДИНЫЙ отступ снизу для ЛЮБОГО скролл-контейнера клановых панелей
+   (.clan-content / .clan-content.clan-content-fixed / #admin-content /
+   #shop-content и т.д.) — чтобы последняя кнопка/элемент при скролле до
+   конца не упирались вплотную в нижний край. Раньше это было раскидано
+   по отдельным хардкод-исключениям для каждой панели (свой padding-bottom
+   у #shop-content, свой margin-bottom только для #admin/#shop/#profile-panel,
+   #clan-panel вообще пропущен) — теперь одно правило на CSS-переменной
+   покрывает все варианты разметки:
+     1) .clan-content сама рендерит вкладку как прямого child (#shop-content,
+        #admin-content, #clan-content внутри #clan-panel) → бьём по
+        .clan-content > *:last-child;
+     2) вкладка обёрнута в промежуточный <div> (#admin-tab-ads,
+        #prof-tab-settings и т.п.) → бьём по .clan-content > div > *:last-child.
+   Работает одинаково для #clan-panel, #admin-panel, #shop-panel, #profile-panel —
+   значение отступа меняется в одном месте (--clan-content-bottom-gap). */
+:root {
+    --clan-content-bottom-gap: 24px;
+}
+
+.clan-content > *:last-child,
+.clan-content > div > *:last-child {
+    margin-bottom: var(--clan-content-bottom-gap);
+}
+
+/* Режим для вкладки "Участники": сам .clan-content не скроллится — высота
    фиксирована по родителю, а #clan-inner-members растягивается на всю
    доступную высоту флекс-колонкой. Поиск и пагинация остаются на местах,
    скроллится только сам список участников (.member-list, flex:1 ниже). */
-    .clan-content.clan-content-fixed {
-        overflow-y: hidden;
-        display: flex;
-        flex-direction: column;
-        min-height: 0;
-    }
+.clan-content.clan-content-fixed {
+    overflow-y: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
 
 .clan-content-fixed #clan-inner-members {
     display: flex;
@@ -6077,6 +5603,68 @@ details.adm-card {
         min-height: 0;
         max-height: none;
     }
+
+/* Тот же паттерн для "Игроки" в админке: заголовок+поиск и пагинация
+   остаются на месте, скроллится только сам список игроков
+   (.admin-players-list уже flex:1/min-height:0/overflow-y:auto по
+   умолчанию — не работало, т.к. родитель #admin-tab-users не был
+   flex-колонкой с ограниченной высотой). */
+.clan-content-fixed #admin-tab-users {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+    .clan-content-fixed #admin-tab-users > .admin-players-list {
+        margin-bottom: 0;
+    }
+
+    /* Заголовок ("Игроки" + "Обновить") и поиск не должны сжиматься флексом
+   и визуально отделены от списка снизу — чтобы было явно видно, что это
+   зафиксированная шапка, а не часть скролла. */
+    .clan-content-fixed #admin-tab-users > .clan-info-card-title-row {
+        flex-shrink: 0;
+        padding-bottom: 10px;
+        margin-bottom: 10px;
+        border-bottom: 1px solid var(--border2);
+    }
+
+    .clan-content-fixed #admin-tab-users > #admin-search {
+        flex-shrink: 0;
+    }
+
+    /* Пагинация — зафиксированный футер, отделён сверху от списка игроков. */
+    .clan-content-fixed #admin-tab-users > .pagination {
+        flex-shrink: 0;
+        margin-top: 0;
+        padding-top: 10px;
+        border-top: 1px solid var(--border2);
+    }
+
+/* И для вкладки "Друзья" в профиле: кнопка "Добавить друга" остаётся
+   сверху, весь список (заявки + друзья) скроллится в середине. */
+.clan-content-fixed #prof-tab-friends {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+    .clan-content-fixed #prof-tab-friends #profile-friends-list {
+        gap: 5px;
+        flex: 1;
+        min-height: 0;
+        overflow-y: auto;
+    }
+
+/* Режим для вкладки "Чат": сообщения/поле ввода должны идти встык к краям
+   .clan-content (без стандартного отступа --clan-content-padding) — иначе
+   вокруг блока чата остаётся видимая рамка фона панели. Используется тот же
+   паттерн переключения класса из JS, что и для .clan-content-fixed. */
+.clan-content.clan-content-flush {
+    padding: 0;
+}
 
 .clan-chat-scroll {
     height: 100%;
@@ -6522,18 +6110,6 @@ details.adm-card {
     background: rgba(251,191,36,.12);
 }
 
-.clan-request-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    padding: 8px 10px;
-    margin-bottom: 6px;
-    border-radius: 8px;
-    background: var(--surface2);
-    border: 1px solid var(--border);
-}
-
 /* ── CLAN JOIN REQUESTS — redesign ── */
 .clan-req-list {
     display: flex;
@@ -6556,19 +6132,6 @@ details.adm-card {
         border-color: rgba(99,102,241,.35);
         background: linear-gradient(135deg, rgba(99,102,241,.1), var(--surface2));
     }
-
-.clan-req-avatar {
-    flex-shrink: 0;
-    width: 38px;
-    height: 38px;
-    border-radius: 11px;
-    background: rgba(99,102,241,.12);
-    border: 1px solid rgba(99,102,241,.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 17px;
-}
 
 .clan-req-info {
     flex: 1;
@@ -6665,35 +6228,56 @@ details.adm-card {
 .clan-ranks-list {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 6px;
 }
 
+/* Строгая минималистичная строка звания — весь ряд кликабелен и открывает
+   модалку редактирования (см. openClanRankEditor в ui.js). Цветной акцент
+   звания сведён к тонкой левой полоске + мягкой заливке значка, вместо
+   разноцветных рамок и заголовков — спокойнее и профессиональнее. */
 .clan-rank-card {
+    position: relative;
     display: flex;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    padding: 12px;
+    padding: 11px 12px 11px 14px;
     background: var(--surface2);
     border: 1px solid var(--border);
-    border-left: 3px solid var(--rank-color, var(--accent));
     border-radius: var(--radius-sm);
-    transition: border-color .15s, background .15s;
+    cursor: pointer;
+    transition: background .15s, border-color .15s;
 }
+
+    .clan-rank-card::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 10px;
+        bottom: 10px;
+        width: 3px;
+        border-radius: var(--radius-pill);
+        background: var(--rank-color, var(--accent));
+    }
 
     .clan-rank-card:hover {
         background: var(--surface3);
+        border-color: var(--border2);
+    }
+
+    .clan-rank-card:not(.clan-rank-card-static):active {
+        transform: scale(.997);
     }
 
 .clan-rank-card-icon {
-    width: 38px;
-    height: 38px;
+    width: 34px;
+    height: 34px;
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 18px;
-    border-radius: 11px;
-    border: 1px solid;
+    font-size: 15px;
+    border-radius: 10px;
+    background: color-mix(in srgb, var(--rank-color, var(--accent)) 16%, transparent);
 }
 
 .clan-rank-card-body {
@@ -6702,12 +6286,15 @@ details.adm-card {
 }
 
 .clan-rank-card-title {
-    font-size: 12px;
-    font-weight: 700;
+    font-size: 12.5px;
+    font-weight: 600;
     color: var(--text);
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 7px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .clan-rank-sys-tag {
@@ -6720,67 +6307,186 @@ details.adm-card {
     background: var(--surface3);
     color: var(--text3);
     border: 1px solid var(--border2);
-}
-
-.clan-rank-card-meta {
-    font-size: 10px;
-    color: var(--text3);
-    margin-top: 2px;
-    font-family: 'Space Mono',monospace;
-}
-
-.clan-rank-card-actions {
-    display: flex;
-    gap: 4px;
     flex-shrink: 0;
 }
 
-/* ── RANK EDITOR ── */
-.clan-rank-editor {
-    background: var(--surface2);
-    border: 1px solid var(--accent);
-    box-shadow: 0 0 0 3px var(--accent-glow);
-    border-radius: var(--radius-sm);
-    padding: 16px;
-    margin-bottom: 12px;
-}
-
-.clan-rank-editor-header {
-    font-family: 'Unbounded',sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    color: var(--text);
-    margin-bottom: 14px;
-}
-
-.clan-rank-editor-row {
+.clan-rank-card-meta {
+    font-size: 10.5px;
+    color: var(--text3);
+    margin-top: 2px;
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+    align-items: center;
+    gap: 5px;
 }
 
-.clan-rank-icon-preview {
-    width: 100%;
-    height: 38px;
+.clan-rank-card-meta-dot {
+    width: 2px;
+    height: 2px;
+    border-radius: 50%;
+    background: var(--text3);
+    flex-shrink: 0;
+}
+
+/* Компактная сводка прав в самом ряду списка — вместо полного набора
+   пилюль показываем счётчик, полный список виден уже внутри модалки. */
+.clan-rank-card-permsum {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 10.5px;
+    color: var(--text3);
+    flex-shrink: 0;
+    padding: 4px 9px;
+    border-radius: var(--radius-pill);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    white-space: nowrap;
+}
+
+    .clan-rank-card-permsum .icon {
+        width: 11px;
+        height: 11px;
+    }
+
+.clan-rank-card-chevron {
+    flex-shrink: 0;
+    color: var(--text3);
+    display: flex;
+}
+
+    .clan-rank-card-chevron .icon {
+        width: 15px;
+        height: 15px;
+    }
+
+.clan-rank-card-actions {
+    display: flex;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+/* ── RANK EDITOR MODAL ──
+   Отдельная модалка (не переиспользует .modal-dialog из confirm/prompt —
+   там текст по центру и фиксированная узкая ширина), построена по тому же
+   паттерну, что .ncm-dialog / .bcm-dialog: backdrop + fixed-центрированный
+   диалог с header/body(скролл)/footer. */
+.rme-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: min(480px, calc(100vw - 32px));
+    max-height: calc(100vh - 64px);
+    background: rgba(18,18,20,.97);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius);
+    backdrop-filter: blur(24px) saturate(180%);
+    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    box-shadow: 0 24px 64px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.03) inset;
+    z-index: 501;
+    display: flex;
+    flex-direction: column;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate(-50%, -50%) scale(.96);
+    transition: opacity .2s cubic-bezier(.34,1.56,.64,1), transform .2s cubic-bezier(.34,1.56,.64,1);
+}
+
+    .rme-dialog.show {
+        opacity: 1;
+        pointer-events: auto;
+        transform: translate(-50%, -50%) scale(1);
+    }
+
+.rme-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+.rme-header-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 18px;
-    background: var(--surface3);
-    border: 1px solid var(--border2);
-    border-radius: 10px;
+    background: color-mix(in srgb, var(--rank-color, var(--accent)) 16%, transparent);
+    transition: background .15s;
 }
 
+.rme-header-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.rme-title {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rme-subtitle {
+    font-size: 11px;
+    color: var(--text3);
+    margin-top: 1px;
+}
+
+.rme-body {
+    padding: 18px 20px 4px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.rme-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 14px 20px;
+    border-top: 1px solid var(--border);
+    flex-shrink: 0;
+}
+
+/* ── Секции внутри модалки звания ── */
+.rme-section {
+    margin-bottom: 18px;
+}
+
+.rme-section-title {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--text3);
+    margin-bottom: 9px;
+}
+
+.rme-identity-row {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.rme-name-group {
+    flex: 1;
+    min-width: 0;
+}
+
+.clan-rank-icon-preview,
 .clan-rank-color-preview {
-    width: 100%;
-    height: 38px;
-    border-radius: 10px;
-    border: 1px solid var(--border2);
+    display: none; /* заменены превью в шапке модалки + маленьким цветным чипом */
 }
 
 .clan-icon-grid {
     display: grid;
-    grid-template-columns: repeat(8,1fr);
+    grid-template-columns: repeat(9,1fr);
     gap: 6px;
 }
 
@@ -6790,14 +6496,42 @@ details.adm-card {
     gap: 6px;
 }
 
+.rme-color-label-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 9px;
+}
+
+.rme-color-chip {
+    width: 16px;
+    height: 16px;
+    border-radius: 5px;
+    border: 1px solid var(--border2);
+    flex-shrink: 0;
+}
+
+.rme-priority-value {
+    color: var(--accent2);
+    font-family: 'Space Mono',monospace;
+    font-weight: 700;
+}
+
+.rme-priority-hint {
+    color: var(--text3);
+    font-weight: 400;
+    text-transform: none;
+    letter-spacing: 0;
+}
+
 .clan-rank-sys-hint {
-    font-size: 10px;
+    font-size: 11px;
     color: var(--text3);
     line-height: 1.5;
-    padding: 9px 11px;
-    background: var(--surface3);
+    padding: 10px 12px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
     border-radius: var(--radius-sm);
-    margin-bottom: 12px;
 }
 
 .clan-perm-grid {
@@ -6817,7 +6551,7 @@ details.adm-card {
     align-items: center;
     gap: 10px;
     padding: 9px 10px;
-    background: var(--surface3);
+    background: var(--surface2);
     border: 1px solid var(--border);
     border-radius: 10px;
     cursor: pointer;
@@ -6826,6 +6560,7 @@ details.adm-card {
 
     .clan-perm-toggle-row:hover {
         border-color: var(--border2);
+        background: var(--surface3);
     }
 
     .clan-perm-toggle-row.disabled {
@@ -6864,13 +6599,6 @@ details.adm-card {
         color: var(--text3);
     }
 
-.clan-rank-editor-footer {
-    display: flex;
-    justify-content: flex-end;
-    gap: 8px;
-    margin-top: 14px;
-}
-
 @media (max-width: 640px) {
     .clan-hero {
         flex-wrap: wrap;
@@ -6892,39 +6620,16 @@ details.adm-card {
     .clan-color-grid {
         grid-template-columns: repeat(8,1fr);
     }
+
+    .rme-dialog {
+        width: calc(100vw - 24px);
+    }
 }
 
 /* ── SHOP PANEL (standalone) ── */
 #shop-panel {
     width: 600px;
 }
-
-.shop-section-title {
-    font-family: 'Unbounded',sans-serif;
-    font-size: 14px;
-    font-weight: 700;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-    color: var(--text2);
-    margin-bottom: 13px;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-    .shop-section-title::before {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--border);
-    }
-
-    .shop-section-title::after {
-        content: '';
-        flex: 1;
-        height: 1px;
-        background: var(--border);
-    }
 
 .shop-owned {
     display: inline-flex;
@@ -6937,58 +6642,6 @@ details.adm-card {
     border: 1px solid rgba(34,197,94,.2);
     padding: 3px 10px;
     border-radius: var(--radius-pill);
-}
-
-.inventory-grid {
-    display: grid;
-    grid-template-columns: repeat(4,1fr);
-    gap: 8px;
-    margin-bottom: 14px;
-}
-
-.inv-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 10px;
-    text-align: center;
-    cursor: pointer;
-    transition: .2s;
-    position: relative;
-}
-
-    .inv-item:hover {
-        border-color: var(--accent);
-        background: var(--surface3);
-    }
-
-    .inv-item.selected {
-        border-color: var(--accent);
-        box-shadow: 0 0 0 2px var(--accent-glow);
-    }
-
-.inv-item-icon {
-    font-size: 22px;
-    margin-bottom: 4px;
-}
-
-.inv-item-name {
-    font-size: 9px;
-    color: var(--text2);
-    font-weight: 600;
-    letter-spacing: .3px;
-}
-
-.inv-item-count {
-    position: absolute;
-    top: 5px;
-    right: 5px;
-    background: var(--accent);
-    color: #fff;
-    font-size: 8px;
-    font-weight: 700;
-    padding: 1px 4px;
-    border-radius: 3px;
 }
 
 /* ── STENCIL FLOATING PANEL ── */
@@ -7166,14 +6819,6 @@ details.adm-card {
         opacity: 0;
         transform: translateY(-10px) scale(.9);
     }
-}
-
-.toast-success::before {
-    content: '✓ ';
-}
-
-.toast-error::before {
-    content: '✕ ';
 }
 
 /* ── CUSTOM CONFIRM / PROMPT MODAL ── */
@@ -7421,10 +7066,6 @@ details.adm-card {
         .modal-btn-confirm.danger:hover {
             background: #f87171;
         }
-
-.toast-info::before {
-    content: '◈ ';
-}
 
 /* ── CANVAS ATTACH PICK MODE (прикрепление места из чата) ── */
 #canvas-attach-banner {
@@ -7684,14 +7325,6 @@ body.mini-mode #backdrop {
     border-radius: 4px;
 }
 
-/* ── STENCIL HIGHLIGHT ── */
-.stencil-hint {
-    position: absolute;
-    pointer-events: none;
-    border: 1px solid rgba(34,197,94,.7);
-    background: rgba(34,197,94,.15);
-}
-
 /* ── FLOAT ANIM ── */
 @keyframes float-in {
     from {
@@ -7806,18 +7439,6 @@ body.mini-mode #backdrop {
         height: 12px;
     }
 
-    .phud-btn {
-        height: 24px;
-        padding: 0 7px;
-        font-size: 11px;
-        border-radius: 7px;
-        gap: 3px;
-    }
-
-    .phud-btn-label {
-        font-size: 8px;
-    }
-
     /* ── SIDEBAR — горизонтальный скроллируемый тулбар снизу ── */
     #sidebar {
         /* Сброс desktop-стилей */
@@ -7879,7 +7500,6 @@ body.mini-mode #backdrop {
         .sidebar-btn .tip {
             display: none;
         }
-
 
     /* ── SIDEBAR TOOLTIP ── */
     #sidebar-tooltip {
@@ -7966,11 +7586,6 @@ body.mini-mode #backdrop {
 
     #admin-panel, #clan-panel, #shop-panel, #profile-panel {
         width: calc(100vw - 16px);
-    }
-
-    .admin-tabs .admin-tab {
-        font-size: 9px;
-        padding: 6px 3px;
     }
 
     #stencil-panel {
@@ -8980,7 +8595,6 @@ body.mini-mode #backdrop {
     }
 }
 
-
 /* ════════════════════════════════════════════════════════════
    ДОБАВИТЬ В КОНЕЦ style.css
    (заменяет/дополняет секции clan-hero и clan chat)
@@ -9287,10 +8901,9 @@ body.mini-mode #backdrop {
 /* Sidenav/контент у профиля — тот же .clan-sidenav/.clan-content, просто
    чуть шире (в клан-меню 216px рассчитаны на более длинные пункты вроде
    "Магазин клана" — у профиля пункты короче, но оставляем одинаковую
-   ширину ради единого визуального языка, правило №2 плана). */
-#profile-panel .clan-content {
-    padding: 26px 30px 30px;
-}
+   ширину ради единого визуального языка, правило №2 плана).
+   Отступы контента больше не переопределяются здесь отдельно — используется
+   общий --clan-content-padding, единый для всех клановых панелей. */
 
 .profile-banner-avatar {
     border-radius: 50%;
@@ -9640,7 +9253,7 @@ body.mini-mode #backdrop {
 .clan-chat-v2-input-row {
     display: flex;
     gap: 7px;
-    padding: 10px 8px 4px;
+    padding: 15px 15px 0px;
     border-top: 1px solid var(--border);
     flex-shrink: 0;
 }

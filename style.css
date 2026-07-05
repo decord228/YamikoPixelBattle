@@ -6589,8 +6589,8 @@ details.adm-card {
     bottom: 16px;
     transform: translateX(-50%);
     z-index: 30;
-    width: calc(100vw - 32px);
-    max-width: 1360px;
+    width: fit-content;
+    max-width: calc(100vw - 32px);
     background: rgba(15,15,17,0.92);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -6603,7 +6603,7 @@ details.adm-card {
 .stencil-dock-bar {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     padding: 10px 14px;
 }
 
@@ -6614,15 +6614,13 @@ details.adm-card {
 .stencil-dock-scroll {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
+    flex: 1 1 auto;
     min-width: 0;
-    padding-right: 16px;
     overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
     scrollbar-color: var(--surface3) transparent;
-    mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
-    -webkit-mask-image: linear-gradient(to right, black 0, black calc(100% - 14px), transparent 100%);
 }
 
     .stencil-dock-scroll::-webkit-scrollbar {
@@ -6977,7 +6975,7 @@ details.adm-card {
 .dock-gallery {
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 10px;
     flex-shrink: 0;
 }
 
@@ -7049,7 +7047,7 @@ details.adm-card {
 }
 
     .dock-save-card input {
-        width: 96px;
+        width: 80px;
         background: transparent;
         border: none;
         outline: none;

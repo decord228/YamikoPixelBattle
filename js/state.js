@@ -6,6 +6,30 @@ let canvasW = 256, canvasH = 256;
 let canvasData = new Uint8Array(canvasW * canvasH);
 let selectedColor = 0;
 let cooldown = 0, cooldownTime = 3.0, cooldownTimer = null;
+// ── КУЛДАУН-УСКОРИТЕЛИ (магазин) ──
+// baseCooldownTime — базовый кулдаун от сервера (settings.cooldownMs).
+// cooldownBoostPct/Until — активный процентный буст поверх базового;
+// cooldownTime всегда пересчитывается через recomputeCooldownTime().
+let baseCooldownTime = 3.0, cooldownBoostPct = 0, cooldownBoostUntil = 0, cooldownBoostExpireTimer = null;
+function recomputeCooldownTime() {
+  const active = cooldownBoostUntil > Date.now() && cooldownBoostPct > 0;
+  cooldownTime = active ? +(baseCooldownTime * (1 - cooldownBoostPct / 100)).toFixed(2) : baseCooldownTime;
+  clearTimeout(cooldownBoostExpireTimer);
+  if (active) {
+    cooldownBoostExpireTimer = setTimeout(() => {
+      cooldownBoostPct = 0; cooldownBoostUntil = 0;
+      recomputeCooldownTime();
+      if (typeof showToast === 'function') showToast('⌛ Действие ускорителя кулдауна закончилось', 'info');
+      if (typeof buildShopUI === 'function') buildShopUI();
+    }, cooldownBoostUntil - Date.now());
+  }
+}
+function applyCooldownBoost(pct, until) {
+  cooldownBoostPct = pct || 0;
+  cooldownBoostUntil = until || 0;
+  recomputeCooldownTime();
+  if (typeof buildShopUI === 'function') buildShopUI();
+}
 let isLoggedIn = false, isAdmin = false, isVip = false;
 let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾', currentAvatar = null;

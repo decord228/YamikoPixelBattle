@@ -81,6 +81,7 @@ function handleJSON(d) {
     if (typeof renderSavedStencils === 'function') renderSavedStencils();
     if (d.canvas_w&&d.canvas_h&&(d.canvas_w!==canvasW||d.canvas_h!==canvasH)) resizeCanvas(d.canvas_w,d.canvas_h);
     if (d.settings) applyServerSettings(d.settings);
+    applyCooldownBoost(d.cooldown_boost?.pct || 0, d.cooldown_boost?.until || 0);
     // Раньше себя не было в cpUserCache вообще (сервер намеренно не включает
     // самого игрока в список "онлайн" — это нормально для списка ДРУГИХ
     // пользователей). Но из-за этого cpUser(currentUser)/cpAvatarEl всегда
@@ -282,6 +283,10 @@ function handleJSON(d) {
     if (friendsTabEl && friendsTabEl.style.display !== 'none' && typeof renderProfileFriendsTab === 'function') {
       renderProfileFriendsTab();
     }
+    const achTabEl = document.getElementById('prof-tab-achievements');
+    if (achTabEl && achTabEl.style.display !== 'none' && typeof renderProfileAchievementsTab === 'function') {
+      renderProfileAchievementsTab();
+    }
     // Новый друг может ещё не иметь записи в cpDmConversations (она заводится
     // только когда есть история сообщений или это уже друг) — подтягиваем
     // актуальный список ЛС сразу, чтобы открыть переписку без перезахода в чат.
@@ -368,6 +373,9 @@ function handleJSON(d) {
       updateInspector(null, null, d.x, d.y, true);
     }
   }
+  else if (a === 'cooldown_boost_update') {
+    applyCooldownBoost(d.pct || 0, d.until || 0);
+  }
   else if (a === 'timelapse_status') {
     if (typeof tlHandleStatus === 'function') tlHandleStatus(d);
   }
@@ -384,7 +392,7 @@ function handleJSON(d) {
 function applyServerSettings(s) {
   if (!s) return;
   serverCursorsEnabled=!!s.cursorTrackingEnabled;
-  if (s.cooldownMs) cooldownTime=s.cooldownMs/1000;
+  if (s.cooldownMs) { baseCooldownTime=s.cooldownMs/1000; recomputeCooldownTime(); }
   const atog=document.getElementById('admin-toggle-cursors');
   if (atog) atog.classList.toggle('on',serverCursorsEnabled);
   if (!serverCursorsEnabled&&!clanShareCursor) clearCursorFlags();

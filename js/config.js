@@ -39,21 +39,46 @@ const CLAN_RANK_COLORS = ['#fbbf24','#f97316','#ef4444','#ec4899','#a855f7','#81
 const CLAN_RANK_ICONS = ['👑','🎖️','⭐','🛡️','⚔️','🏹','🔥','💎','🦅','🐺','🎯','🚀','🧠','🔧','🎨','📢','🏆','☠️'];
 
 // ── SHOP ITEMS ──
+// icon — SVG-разметка в едином стиле с остальным приложением (обводка,
+// currentColor, viewBox 24×24, class="icon"), а не эмодзи — эмодзи в
+// карточках магазина выглядели дёшево на фоне остального интерфейса.
+const ICON_PALETTE = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3C7 3 3 6.8 3 11.4c0 3.6 2.7 5.4 5.4 5.4h1c.6 0 1 .5 1 1.1 0 .9-.8 1.4-.8 2.3 0 .8.7 1.4 1.7 1.4 4.5 0 8.7-3.8 8.7-9.2C21.9 7.3 17.6 3 12 3z"/><circle cx="7.5" cy="11" r="1.1" fill="currentColor" stroke="none"/><circle cx="11" cy="7.7" r="1.1" fill="currentColor" stroke="none"/><circle cx="15.3" cy="8.3" r="1.1" fill="currentColor" stroke="none"/><circle cx="17" cy="12.3" r="1.1" fill="currentColor" stroke="none"/></svg>';
+const ICON_PALETTE_PLUS = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M11 3C6.6 3 3 6.5 3 10.8c0 3.4 2.5 5.2 5 5.2h.9c.6 0 1 .5 1 1 0 .9-.7 1.3-.7 2.2 0 .8.6 1.3 1.6 1.3 4.2 0 8-3.6 8-8.7C18.8 7 14.8 3 11 3z"/><circle cx="7" cy="10.3" r="1" fill="currentColor" stroke="none"/><circle cx="10.2" cy="7.3" r="1" fill="currentColor" stroke="none"/><circle cx="14.1" cy="7.9" r="1" fill="currentColor" stroke="none"/><path d="M19.5 4v4"/><path d="M17.5 6h4"/></svg>';
+const ICON_BOMB = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="14" r="7"/><path d="M15.5 8.5L18 6"/><path d="M17 4l3 1-1 3"/></svg>';
+const ICON_RAINBOW = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 18a9 9 0 0 1 18 0"/><path d="M6.5 18a5.5 5.5 0 0 1 11 0"/></svg>';
+const ICON_ERASER = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M14 3l6 6-7.5 7.5"/><path d="M9 17l-5.5 3.5"/><path d="M5.5 14.5L13 7l4 4-7.5 7.5-6-2z"/></svg>';
+const ICON_MIRROR = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><ellipse cx="12" cy="9.5" rx="6" ry="7"/><path d="M9 19h6"/><path d="M12 16.5V19"/></svg>';
+const ICON_BOLT = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M13 2L4 14h6l-1 8 9-12h-6l1-8z"/></svg>';
+const ICON_BOLT_DOUBLE = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10.5 2L4 12h4.5l-1 10 7-10H10l1-10z"/><path d="M17.5 6L14 12h2.5l-1.5 6"/></svg>';
+const ICON_ROCKET = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c3 2 5 6 5 10 0 2-.5 4-1.5 5.5L12 22l-3.5-4.5C7.5 16 7 14 7 12c0-4 2-8 5-10z"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M7 15c-2 0-3.5 1.5-4 4 2.5.5 4-1 4-1"/><path d="M17 15c2 0 3.5 1.5 4 4-2.5.5-4-1-4-1"/></svg>';
+const ICON_RADIATION = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="2.2"/><path d="M12 2.5v5"/><path d="M12 16.5v5"/><path d="M4.3 7l4.4 2.5"/><path d="M15.3 14.5l4.4 2.5"/><path d="M19.7 7l-4.4 2.5"/><path d="M8.7 14.5L4.3 17"/></svg>';
+
 const SHOP_ITEMS_USER = [
-  {id:'stencil_auto_1',title:'Авто-подбор цветов Ур.1',desc:'Автоматически выбирает ближайший цвет палитры при наведении на трафарет.',icon:'🤖',cost:100,type:'upgrade'},
-  {id:'stencil_auto_2',title:'Авто-подбор цветов Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',icon:'🤖✨',cost:300,type:'upgrade',requires:'stencil_auto_1'},
+  {id:'stencil_auto_1',title:'Авто-подбор цветов Ур.1',desc:'Автоматически выбирает ближайший цвет палитры при наведении на трафарет.',icon:ICON_PALETTE,cost:100,type:'upgrade'},
+  {id:'stencil_auto_2',title:'Авто-подбор цветов Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',icon:ICON_PALETTE_PLUS,cost:300,type:'upgrade',requires:'stencil_auto_1'},
 ];
 
 const SHOP_ITEMS_VIP = [
-  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом. 🎯',icon:'💣',cost:50,type:'consumable',count:1},
-  {id:'rainbow_5x5',title:'Радужный взрыв 5×5',desc:'Заполняет квадрат 5×5 случайными цветами из палитры. Хаос гарантирован! 🌈',icon:'🌈',cost:80,type:'consumable',count:1},
-  {id:'eraser_10x10',title:'Большой Ластик 10×10',desc:'Стирает (заливает белым) квадрат 10×10. Идеален для расчистки места.',icon:'🧹',cost:120,type:'consumable',count:1},
-  {id:'mirror_stamp',title:'Зеркальный штамп',desc:'Копирует область 5×5 под курсором и вставляет с зеркальным отражением.',icon:'🪞',cost:200,type:'consumable',count:1},
+  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:50,type:'consumable',count:1},
+  {id:'rainbow_5x5',title:'Радужный взрыв 5×5',desc:'Заполняет квадрат 5×5 случайными цветами из палитры. Хаос гарантирован!',icon:ICON_RAINBOW,cost:80,type:'consumable',count:1},
+  {id:'eraser_10x10',title:'Большой Ластик 10×10',desc:'Стирает (заливает белым) квадрат 10×10. Идеален для расчистки места.',icon:ICON_ERASER,cost:120,type:'consumable',count:1},
+  {id:'mirror_stamp',title:'Зеркальный штамп',desc:'Копирует область 5×5 под курсором и вставляет с зеркальным отражением.',icon:ICON_MIRROR,cost:200,type:'consumable',count:1},
+];
+
+// ── УСКОРИТЕЛИ КУЛДАУНА ──
+// type:'cooldown_boost' — при использовании временно снижает кулдаун
+// установки пикселя на pct% на durationMin минут. Действует именно в
+// процентах (а не в фикс. секундах), чтобы работать предсказуемо при любом
+// базовом кулдауне, который задаёт админ через слайдер.
+const SHOP_ITEMS_COOLDOWN = [
+  {id:'cooldown_boost_25',title:'Ускоритель −25%',desc:'Снижает кулдаун установки пикселя на 25% на 15 минут.',icon:ICON_BOLT,cost:60,type:'cooldown_boost',pct:25,durationMin:15,count:1},
+  {id:'cooldown_boost_50',title:'Ускоритель −50%',desc:'Снижает кулдаун установки пикселя на 50% на 15 минут.',icon:ICON_BOLT_DOUBLE,cost:130,type:'cooldown_boost',pct:50,durationMin:15,count:1},
+  {id:'cooldown_boost_90',title:'Турбо-режим −90%',desc:'Снижает кулдаун установки пикселя на 90% на 5 минут. Для настоящего спринта!',icon:ICON_ROCKET,cost:220,type:'cooldown_boost',pct:90,durationMin:5,count:1},
 ];
 
 const SHOP_ITEMS_ADMIN = [
-  {id:'admin_nuke',title:'☢️ Ядерная кнопка',desc:'Полностью очищает весь холст. Используй с умом!',icon:'☢️',cost:0,type:'admin_tool'},
-  {id:'admin_rainbow',title:'🌈 Радужный шторм',desc:'Заливает весь холст случайными цветами.',icon:'🌈',cost:0,type:'admin_tool'},
+  {id:'admin_nuke',title:'Ядерная кнопка',desc:'Полностью очищает весь холст. Используй с умом!',icon:ICON_RADIATION,cost:0,type:'admin_tool'},
+  {id:'admin_rainbow',title:'Радужный шторм',desc:'Заливает весь холст случайными цветами.',icon:ICON_RAINBOW,cost:0,type:'admin_tool'},
 ];
 
 // ── КЛАН: МАГАЗИН ──
@@ -92,6 +117,29 @@ const CLAN_SHOP_ITEMS = [
     cost:500, type:'banner', requiresPerm:'manage_settings', requires:'banner_static',
   },
 ];
+// ── АЧИВКИ ──
+// Полностью выводятся из уже существующих клиентских глобалок (currentPixels,
+// currentCoins, currentClan, purchasedItems, isVip/isAdmin, cpFriends,
+// sessionPixels) — никаких новых полей на сервере/в БД не требуется,
+// поэтому это не расходует ни байта дополнительного места в Redis.
+// stats передаётся из buildAchievementStats() в ui.js.
+const ACHIEVEMENTS = [
+  { id:'first_pixel',   title:'Первый мазок',      desc:'Поставь свой первый пиксель',            icon:'🖌️', check: s => s.pixels >= 1 },
+  { id:'pixels_50',     title:'Начинающий',        desc:'Поставь 50 пикселей',                    icon:'🌱', check: s => s.pixels >= 50 },
+  { id:'pixels_200',    title:'Художник',          desc:'Поставь 200 пикселей',                   icon:'🎨', check: s => s.pixels >= 200 },
+  { id:'pixels_1000',   title:'Легенда',           desc:'Поставь 1000 пикселей',                  icon:'⭐', check: s => s.pixels >= 1000 },
+  { id:'pixels_5000',   title:'Архитектор',        desc:'Поставь 5000 пикселей',                  icon:'🏛️', check: s => s.pixels >= 5000 },
+  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Поставь 20 000 пикселей',                icon:'👑', check: s => s.pixels >= 20000 },
+  { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', check: s => s.coins >= 500 },
+  { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', check: s => s.coins >= 5000 },
+  { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', check: s => s.purchasedCount > 0 },
+  { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', check: s => !!s.clan },
+  { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', check: s => s.friendsCount >= 1 },
+  { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', check: s => s.friendsCount >= 5 },
+  { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🔥', check: s => s.sessionPixels >= 100 },
+  { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'💎', check: s => s.isVip || s.isAdmin },
+];
+
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');
 
 // Discord Application (Client) ID — публичное значение, безопасно хранить в клиентском коде

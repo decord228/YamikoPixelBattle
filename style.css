@@ -4262,14 +4262,14 @@ html, body {
         transform: translateX(18px);
     }
 
-/* ── ADMIN v2 — sidenav + content shell, same skeleton as #clan-panel ── */
-#admin-panel {
+/* ── ADMIN v2 / SHOP v2 — sidenav + content shell, same skeleton as #clan-panel ── */
+#admin-panel, #shop-panel {
     width: 980px;
     height: 690px;
     max-height: calc(100vh - 64px);
 }
 
-    #admin-panel .panel-body {
+    #admin-panel .panel-body, #shop-panel .panel-body {
         padding: 0;
         overflow: hidden;
         display: flex;
@@ -4277,42 +4277,42 @@ html, body {
         min-height: 0;
     }
 
-    #admin-panel .clan-shell-main {
+    #admin-panel .clan-shell-main, #shop-panel .clan-shell-main {
         flex: 1;
         min-height: 0;
     }
 
-    #admin-panel .clan-sidenav {
+    #admin-panel .clan-sidenav, #shop-panel .clan-sidenav {
         width: 200px;
     }
 
-    #admin-panel .clan-content {
+    #admin-panel .clan-content, #shop-panel .clan-content {
         display: flex;
         flex-direction: column;
         min-height: 0;
     }
 
-        #admin-panel .clan-content > div {
+        #admin-panel .clan-content > div, #shop-panel .clan-content > div {
             min-height: 0;
         }
 
 @media (max-width: 900px) {
-    #admin-panel {
+    #admin-panel, #shop-panel {
         width: calc(100vw - 24px);
     }
 }
 
 @media (max-width: 760px) {
-    #admin-panel {
+    #admin-panel, #shop-panel {
         width: calc(100vw - 16px);
         height: calc(100vh - 80px);
     }
 
-        #admin-panel .clan-shell-main {
+        #admin-panel .clan-shell-main, #shop-panel .clan-shell-main {
             flex-direction: column;
         }
 
-        #admin-panel .clan-sidenav {
+        #admin-panel .clan-sidenav, #shop-panel .clan-sidenav {
             width: 100%;
             flex-direction: row;
             flex-wrap: nowrap;
@@ -4324,10 +4324,53 @@ html, body {
             gap: 6px;
         }
 
-        #admin-panel .csn-item {
+        #admin-panel .csn-item, #shop-panel .csn-item {
             flex: 0 0 auto;
             padding: 8px 12px;
         }
+}
+
+/* ── SHOP intro banner + wallet chip (reuses clan-shop-intro visual language) ── */
+.shop-page-intro {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: linear-gradient(135deg, var(--surface2), var(--surface3));
+    border: 1px solid var(--border2);
+    border-radius: 14px;
+    padding: 14px 16px;
+    margin-bottom: 14px;
+}
+
+.shop-page-intro-icon {
+    font-size: 26px;
+    flex-shrink: 0;
+}
+
+.shop-page-intro-title {
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.shop-page-intro-desc {
+    font-size: 11.5px;
+    color: var(--text2);
+    line-height: 1.4;
+}
+
+.shop-wallet-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 999px;
+    padding: 5px 12px;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px;
+    color: var(--accent2);
+    font-weight: 600;
 }
 
 /* Player list — leaderboard-style rows reusing .member-row skeleton */
@@ -6852,61 +6895,6 @@ details.adm-card {
         background: var(--border);
     }
 
-.shop-section {
-    margin-bottom: 18px;
-}
-
-.shop-item {
-    background: var(--surface2);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 16px;
-    margin-bottom: 10px;
-    transition: .2s;
-    position: relative;
-}
-
-    .shop-item:hover {
-        border-color: var(--border2);
-    }
-
-    .shop-item.vip-item {
-        border-color: rgba(245,158,11,.2);
-        background: rgba(245,158,11,.04);
-    }
-
-    .shop-item.admin-item {
-        border-color: rgba(99,102,241,.2);
-        background: rgba(99,102,241,.04);
-    }
-
-.shop-item-title {
-    font-family: 'Unbounded',sans-serif;
-    font-size: 12px;
-    font-weight: 700;
-    margin-bottom: 4px;
-}
-
-.shop-item-desc {
-    font-size: 11px;
-    color: var(--text2);
-    margin-bottom: 10px;
-    line-height: 1.5;
-}
-
-.shop-price {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    font-size: 11px;
-    font-weight: 700;
-    color: #fbbf24;
-    background: rgba(251,191,36,.1);
-    border: 1px solid rgba(251,191,36,.2);
-    padding: 3px 10px;
-    border-radius: var(--radius-pill);
-}
-
 .shop-owned {
     display: inline-flex;
     align-items: center;
@@ -6918,21 +6906,6 @@ details.adm-card {
     border: 1px solid rgba(34,197,94,.2);
     padding: 3px 10px;
     border-radius: var(--radius-pill);
-}
-
-.shop-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.shop-lock {
-    position: absolute;
-    top: 12px;
-    right: 12px;
-    font-size: 14px;
-    opacity: .5;
 }
 
 .inventory-grid {

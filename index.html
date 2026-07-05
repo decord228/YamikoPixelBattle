@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260633-09';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260634-01';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -19,7 +19,7 @@
       почти всегда кэш именно по этому URL. window.BUILD_V используется и
       тут для CSS, и ниже для JS-файлов (см. script type="module" перед
       </body>) — меняйте его в ОДНОМ месте при каждом деплое.
-    -->     
+    -->
 </head>
 <body>
 
@@ -488,6 +488,10 @@
                             <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="8" r="3" /><path d="M3.5 19c0-3.3 2.7-5.5 5.5-5.5s5.5 2.2 5.5 5.5" /><path d="M16 8.3a2.6 2.6 0 1 1 0 5.1" /><path d="M16 14c2.4 0 4.5 1.8 4.5 5" /></svg>
                             <span>Друзья</span>
                         </div>
+                        <div class="csn-item" id="profile-nav-achievements" data-tab="achievements" data-onclick="switchProfileTab('achievements')">
+                            <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z" /><path d="M9.5 12l1.8 1.8L14.5 10" /></svg>
+                            <span>Ачивки</span>
+                        </div>
                         <div class="csn-spacer"></div>
                         <div class="csn-sep" id="profile-nav-settings-sep"></div>
                         <div class="csn-item" id="profile-nav-settings" data-tab="settings" data-onclick="switchProfileTab('settings')">
@@ -512,6 +516,9 @@
                         </div>
                         <div id="prof-tab-friends" style="display:none">
                             <div id="profile-friends-list"></div>
+                        </div>
+                        <div id="prof-tab-achievements" style="display:none">
+                            <div id="profile-achievements-list"></div>
                         </div>
                         <div id="prof-tab-settings" style="display:none">
                             <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Настройки холста</div>

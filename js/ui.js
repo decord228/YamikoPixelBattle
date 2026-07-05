@@ -112,7 +112,7 @@ function saveSession(u,p){try{localStorage.setItem('pb_session',JSON.stringify({
 function loadSession(){try{const s=localStorage.getItem('pb_session');return s?JSON.parse(s):null;}catch(_){return null;}}
 function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
 
-const PROFILE_TABS = ['overview','banner','friends','settings'];
+const PROFILE_TABS = ['overview','banner','friends','achievements','settings'];
 
 function switchProfileTab(tab) {
   if (!PROFILE_TABS.includes(tab)) tab = 'overview';
@@ -129,7 +129,50 @@ function switchProfileTab(tab) {
     else renderReadOnlyBannerTab(viewingProfileData);
   }
   if (tab === 'friends' && isSelf) renderProfileFriendsTab();
+  if (tab === 'achievements' && isSelf) renderProfileAchievementsTab();
   if (tab === 'overview') renderProfileClanCard(isSelf ? null : viewingProfileData);
+}
+
+// ── АЧИВКИ ──
+// Полностью считаются на клиенте из уже загруженных глобалок — никаких
+// дополнительных запросов к серверу и полей в БД не требуется.
+function buildAchievementStats() {
+  return {
+    pixels: currentPixels || 0,
+    coins: currentCoins || 0,
+    clan: currentClan || '',
+    purchasedCount: Array.isArray(purchasedItems) ? purchasedItems.length : 0,
+    friendsCount: Array.isArray(cpFriends) ? cpFriends.length : 0,
+    sessionPixels: sessionPixels || 0,
+    isVip: !!isVip,
+    isAdmin: !!isAdmin,
+  };
+}
+
+function renderProfileAchievementsTab() {
+  const box = document.getElementById('profile-achievements-list');
+  if (!box) return;
+  if (!cpFriends.length) sendJSON({ action:'friends_get' });
+  const stats = buildAchievementStats();
+  const unlocked = ACHIEVEMENTS.filter(a => { try { return a.check(stats); } catch(_) { return false; } });
+  const locked = ACHIEVEMENTS.filter(a => !unlocked.includes(a));
+
+  const summary = `<div class="clan-shop-balance-row" style="margin-bottom:12px;">
+    <div class="clan-shop-balance-label">🏆 Получено ачивок</div>
+    <div class="clan-shop-balance-amount">${unlocked.length} / ${ACHIEVEMENTS.length}</div>
+  </div>`;
+
+  const card = a => `
+    <div class="clan-shop-item ${unlocked.includes(a) ? 'is-owned' : ''}" style="${unlocked.includes(a)?'':'opacity:.55'}">
+      <div class="clan-shop-item-icon">${a.icon}</div>
+      <div class="clan-shop-item-body">
+        <div class="clan-shop-item-title">${esc(a.title)}</div>
+        <div class="clan-shop-item-desc">${esc(a.desc)}</div>
+      </div>
+      <div class="clan-shop-item-action">${unlocked.includes(a) ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Есть</span>' : '<span class="shop-lock-inline" title="Ещё не выполнено">🔒</span>'}</div>
+    </div>`;
+
+  box.innerHTML = summary + `<div class="clan-shop-items-list">${unlocked.map(card).join('')}${locked.map(card).join('')}</div>`;
 }
 
 // ── АВАТАР ПРОФИЛЯ: только Discord ──
@@ -322,6 +365,12 @@ function cancelUseItem() {
 }
 
 function activateItem(itemId) {
+  // Кулдаун-ускорители не привязаны к точке на холсте — активируются сразу,
+  // без режима "кликни на холст" (в отличие от бомбочки/ластика/etc).
+  if (itemId.startsWith('cooldown_boost_')) {
+    sendJSON({action:'use_item', item_id: itemId});
+    return;
+  }
   activeItem = itemId;
   const names = {
     bomb_3x3: '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="11" cy="14" r="7"/><path d="M15.5 8.5L18 6"/><path d="M17 4l3 1-1 3"/></svg> Бомбочка 3×3 — кликни на холст',
@@ -2319,66 +2368,119 @@ function buildShopUI(){
     return;
   }
 
-  // ── ОБЫЧНЫЕ УЛУЧШЕНИЯ ──
-  let genHtml = '';
-  SHOP_ITEMS_USER.forEach(item => {
+  // ── ОБЫЧНЫЕ УЛУЧШЕНИЯ (единый стиль с .clan-shop-item — см. клан/профиль/админку) ──
+  const genHtml = SHOP_ITEMS_USER.map(item => {
     const owned = purchasedItems.includes(item.id);
     const reqMet = !item.requires || purchasedItems.includes(item.requires);
-    genHtml += `<div class="shop-item">
-      <div class="shop-header">
-        <div class="shop-item-title">${item.icon} ${item.title}</div>
-        ${owned ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>' : `<span class="shop-price">🪙 ${item.cost}</span>`}
+    let actionHtml;
+    if (owned) actionHtml = `<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>`;
+    else if (!reqMet) actionHtml = `<span class="shop-lock-inline" title="Требуется: ${esc(item.requires)}">🔒</span>`;
+    else actionHtml = `<button class="btn btn-primary btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>`;
+    return `
+    <div class="clan-shop-item ${owned?'is-owned':''}">
+      <div class="clan-shop-item-icon">${item.icon}</div>
+      <div class="clan-shop-item-body">
+        <div class="clan-shop-item-title">${esc(item.title)}</div>
+        <div class="clan-shop-item-desc">${esc(item.desc)}</div>
       </div>
-      <div class="shop-item-desc">${item.desc}</div>
-      ${!owned && reqMet ? `<button class="btn btn-primary btn-sm" data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>` : ''}
-      ${!owned && !reqMet ? `<div style="font-size:10px;color:var(--text3);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg> Требуется: ${item.requires}</div>` : ''}
+      <div class="clan-shop-item-action">${actionHtml}</div>
     </div>`;
-  });
-  listGeneral.innerHTML = genHtml;
+  }).join('');
+  listGeneral.innerHTML = `<div class="clan-shop-items-list">${genHtml}</div>`;
 
-  // ── VIP РАСХОДНИКИ ──
+  // ── VIP: КУЛДАУН-УСКОРИТЕЛИ + РАСХОДНИКИ ──
   let vipHtml = '';
   if (isVip || isAdmin) {
-    SHOP_ITEMS_VIP.forEach(item => {
+    const boostActive = cooldownBoostUntil > Date.now() && cooldownBoostPct > 0;
+    const boostBanner = boostActive
+      ? `<div class="clan-shop-balance-row" style="margin-bottom:10px;">
+           <div class="clan-shop-balance-label">⚡ Активный ускоритель: −${cooldownBoostPct}%</div>
+           <div class="clan-shop-balance-amount" id="shop-boost-timer">${Math.ceil((cooldownBoostUntil-Date.now())/1000)}с</div>
+         </div>`
+      : '';
+
+    const boostItems = SHOP_ITEMS_COOLDOWN.map(item => {
       const count = getItemCount(item.id);
-      vipHtml += `<div class="shop-item vip-item">
-        <div class="shop-header">
-          <div class="shop-item-title">${item.icon} ${item.title}</div>
-          <span class="shop-price">🪙 ${item.cost}</span>
+      const actionHtml = `
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+          <button class="btn btn-vip btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')" ${boostActive?'disabled title="Уже активен другой ускоритель"':''}>Активировать (${count})</button>` : ''}
+        </div>`;
+      return `
+      <div class="clan-shop-item">
+        <div class="clan-shop-item-icon">${item.icon}</div>
+        <div class="clan-shop-item-body">
+          <div class="clan-shop-item-title">${esc(item.title)}</div>
+          <div class="clan-shop-item-desc">${esc(item.desc)}</div>
         </div>
-        <div class="shop-item-desc">${item.desc}</div>
-        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-          <button class="btn btn-vip btn-sm" data-onclick="buyItem('${item.id}')">Купить (${item.cost} 🪙)</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor" stroke="none"/></svg> Использовать (${count})</button>` : ''}
-        </div>
+        <div class="clan-shop-item-action">${actionHtml}</div>
       </div>`;
-    });
+    }).join('');
+
+    const consumableItems = SHOP_ITEMS_VIP.map(item => {
+      const count = getItemCount(item.id);
+      const actionHtml = `
+        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
+          <button class="btn btn-vip btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')">Использовать (${count})</button>` : ''}
+        </div>`;
+      return `
+      <div class="clan-shop-item">
+        <div class="clan-shop-item-icon">${item.icon}</div>
+        <div class="clan-shop-item-body">
+          <div class="clan-shop-item-title">${esc(item.title)}</div>
+          <div class="clan-shop-item-desc">${esc(item.desc)}</div>
+        </div>
+        <div class="clan-shop-item-action">${actionHtml}</div>
+      </div>`;
+    }).join('');
+
+    vipHtml = `
+      ${boostBanner}
+      <div class="clan-shop-section-title">⚡ Кулдаун-ускорители</div>
+      <div class="clan-shop-items-list">${boostItems}</div>
+      <div class="clan-shop-section-title is-spaced">🎁 Расходники</div>
+      <div class="clan-shop-items-list">${consumableItems}</div>`;
   } else {
-    vipHtml = `<div class="shop-item" style="opacity:.5">
-        <div class="shop-lock"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div><div class="shop-item-title">Расходники для VIP</div>
-        <div class="shop-item-desc">Получите VIP-статус чтобы разблокировать взрывчатку, ластики, зеркала и многое другое!</div>
+    vipHtml = `<div class="clan-shop-item" style="opacity:.55">
+        <div class="clan-shop-item-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <div class="clan-shop-item-body">
+          <div class="clan-shop-item-title">Расходники для VIP</div>
+          <div class="clan-shop-item-desc">Получите VIP-статус, чтобы разблокировать ускорители кулдауна, взрывчатку, ластики и многое другое!</div>
+        </div>
       </div>`;
   }
   listVip.innerHTML = vipHtml;
+  if (boostCountdownTimer) clearInterval(boostCountdownTimer);
+  if (cooldownBoostUntil > Date.now()) {
+    boostCountdownTimer = setInterval(() => {
+      const el = document.getElementById('shop-boost-timer');
+      const left = Math.ceil((cooldownBoostUntil - Date.now()) / 1000);
+      if (!el || left <= 0) { clearInterval(boostCountdownTimer); return; }
+      el.textContent = left + 'с';
+    }, 1000);
+  }
 
   // ── АДМИН-ЧИТЫ ──
   if (adminTabBtn) adminTabBtn.style.display = isAdmin ? '' : 'none';
   if (isAdmin) {
-    let adminHtml = '';
-    SHOP_ITEMS_ADMIN.forEach(item => {
-      adminHtml += `<div class="shop-item admin-item">
-        <div class="shop-header"><div class="shop-item-title">${item.icon} ${item.title}</div><span style="font-size:10px;color:var(--text3);">БЕСПЛАТНО</span></div>
-        <div class="shop-item-desc">${item.desc}</div>
-        <button class="btn btn-primary btn-sm" data-onclick="useAdminShopItem('${item.id}')">Применить</button>
-      </div>`;
-    });
-    listAdmin.innerHTML = adminHtml;
+    const adminHtml = SHOP_ITEMS_ADMIN.map(item => `
+      <div class="clan-shop-item">
+        <div class="clan-shop-item-icon">${item.icon}</div>
+        <div class="clan-shop-item-body">
+          <div class="clan-shop-item-title">${esc(item.title)}</div>
+          <div class="clan-shop-item-desc">${esc(item.desc)}</div>
+        </div>
+        <div class="clan-shop-item-action"><button class="btn btn-primary btn-sm" data-onclick="useAdminShopItem('${item.id}')">Применить</button></div>
+      </div>`).join('');
+    listAdmin.innerHTML = `<div class="clan-shop-items-list">${adminHtml}</div>`;
   } else {
     listAdmin.innerHTML = '';
     // Если не админ и почему-то была открыта вкладка admin — вернёмся на general
     if (document.getElementById('shop-tab-admin')?.style.display !== 'none') switchShopTab('general');
   }
 }
+let boostCountdownTimer = null;
 
 function getItemCount(itemId) { return Array.isArray(purchasedItems) ? purchasedItems.filter(i => i === itemId).length : 0; }
 function buyItem(itemId) { sendJSON({action:'shop_buy', itemId: itemId}); }
@@ -3075,13 +3177,28 @@ function updateInspector(mx, my, px, py, fromCache) {
   document.getElementById('inspector-text').innerHTML=
     `<span>${px},${py} — ${col.n}</span>${ownerHtml}`;
 
-  // Если ещё нет в кэше — запрашиваем у сервера с дебаунсом
-  if (!cached && !fromCache && isLoggedIn) {
-    pixelOwnerCache.set(key, 'loading');
+  // Если ещё нет в кэше — запрашиваем у сервера с дебаунсом.
+  // ВАЖНО: раньше клетка помечалась 'loading' в кэше СРАЗУ при наведении,
+  // а реальный запрос (из-за clearTimeout) уходил на сервер только для
+  // последней позиции при быстром движении мыши — все промежуточные клетки
+  // навсегда зависали с "⏳", т.к. условие `!cached` больше никогда не
+  // выполнялось для них повторно. Теперь 'loading' в кэш пишем только в
+  // момент реальной отправки запроса (когда дебаунс сработал), а не при
+  // каждом наведении — тогда непосредимые клетки останутся "без метки"
+  // (просто без подписи автора) и корректно перезапросятся при следующем
+  // наведении на них.
+  if ((!cached || cached === 'stale') && !fromCache && isLoggedIn) {
     clearTimeout(pixelInfoDebounceTimer);
     pixelInfoLastPos = { x: px, y: py };
     pixelInfoDebounceTimer = setTimeout(() => {
+      const reqKey = `${pixelInfoLastPos.x},${pixelInfoLastPos.y}`;
+      pixelOwnerCache.set(reqKey, 'loading');
       sendJSON({ action: 'pixel_info', x: pixelInfoLastPos.x, y: pixelInfoLastPos.y });
+      // Страховка: если ответ от сервера потеряется (обрыв соединения и т.п.),
+      // клетка не должна виснуть с "⏳" навсегда — через 5с разрешаем повторный запрос.
+      setTimeout(() => {
+        if (pixelOwnerCache.get(reqKey) === 'loading') pixelOwnerCache.delete(reqKey);
+      }, 5000);
     }, 250);
   }
 
@@ -4260,6 +4377,7 @@ function renderProfileData(d) {
   document.getElementById('profile-nav-settings').style.display = isSelf ? '' : 'none';
   document.getElementById('profile-nav-settings-sep').style.display = isSelf ? '' : 'none';
   document.getElementById('profile-nav-friends').style.display = isSelf ? '' : 'none';
+  document.getElementById('profile-nav-achievements').style.display = isSelf ? '' : 'none';
 
   if (isSelf) {
     updateProfileStats(currentPixels, currentRank);

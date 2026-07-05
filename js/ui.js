@@ -1241,9 +1241,17 @@ function renderClanRequests(requests, requestCards) {
     else badge.style.display = 'none';
   }
   if (!requests.length) {
+    c.className = 'clan-empty-state';
     c.innerHTML = '<div class="clan-empty-state">📭<div>Заявок на вступление нет</div></div>';
     return;
   }
+  // #clan-requests-list несёт класс .clan-empty-state прямо в разметке
+  // index.html (как плейсхолдер на старте) — он центрирует контент и не даёт
+  // рядам растянуться на всю ширину. Раньше при непустом списке класс с
+  // контейнера никогда не снимался (менялся только innerHTML), поэтому
+  // .member-row всегда рендерился внутри центрирующего flex и выглядел как
+  // узкая "плашка" вместо растянутой на всю ширину карточки.
+  c.className = '';
   // Карточка заявки теперь использует тот же .member-row, что и список
   // участников/лидерборд (растянута по ширине, с баннером и настоящей
   // аватаркой), вместо узкой .clan-req-card с эмодзи-заглушкой 🙋.
@@ -4343,7 +4351,7 @@ function renderProfileBannerHeader(p, isSelf) {
       <div class="clan-banner-info">
         <div class="clan-banner-name-row">
           <span class="clan-banner-name">${esc(p.username)}</span>
-          <span class="clan-banner-tag phud-role-${p.role==='admin'?'admin':p.role==='vip'?'vip':'user'}" style="border:1px solid transparent;">${esc(roleLabel)}</span>
+          <span class="clan-banner-tag phud-role-${p.role==='admin'?'admin':p.role==='vip'?'vip':'user'}" style="border:1px solid ${p.role==='admin'?'rgba(99,102,241,.35)':p.role==='vip'?'rgba(245,158,11,.35)':'var(--border2)'};">${esc(roleLabel)}</span>
           ${clanTag}
         </div>
         <div class="clan-banner-desc">${esc(p.rank||'Новичок')} · ${(p.pixels||0).toLocaleString()} пикселей</div>

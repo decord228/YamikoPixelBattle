@@ -1456,7 +1456,8 @@ html, body {
 }
 
 #chat-popup-panel .cp-msg-continued {
-    padding-left: 60px;
+    /* Реальное значение задаётся ниже комбинированным селектором
+       .cp-msg-continued-row.cp-msg-continued — см. пояснение там. */
 }
 
     #chat-popup-panel .cp-msg-continued .cp-msg-time-hover {
@@ -1482,6 +1483,18 @@ html, body {
 
     #chat-popup-panel .cp-msg-continued-row:hover {
         background: var(--surface);
+    }
+
+    /* Текст в продолженной строке должен начинаться там же, где текст в шапке
+   сообщения: там это padding-left(8) + avatar(40) + gap(12) = 60px.
+   Но у continued-row внутри уже есть .cp-msg-time-hover (34px) + gap(12px)
+   ПЕРЕД текстом — они тоже считаются в общий отступ. Поэтому здесь нужно
+   не 60, а 60 − 34 − 12 = 14px padding-left, иначе текст уезжает
+   на лишние 46px вправо (это и была причина "перегиба" после первого
+   фикса). Комбинированный селектор нужен, чтобы не проиграть каскаду
+   шорткату `padding: 2px 8px` в правиле выше. */
+    #chat-popup-panel .cp-msg-continued-row.cp-msg-continued {
+        padding-left: 14px;
     }
 
 #chat-popup-panel .cp-bubble-row {
@@ -6038,7 +6051,7 @@ details.adm-card {
     flex: 1;
     min-width: 0;
     overflow-y: auto;
-    padding: 20px 24px 32px;
+    padding: 20px 24px 40px;
 }
 
     /* Режим для вкладки "Участники": сам .clan-content не скроллится — высота
@@ -9592,7 +9605,7 @@ body.mini-mode #backdrop {
 }
 
 #clan-inner-chat .cp-msg-continued {
-    padding-left: 60px;
+    /* Реальное значение — в комбинированном селекторе ниже. */
 }
 
     #clan-inner-chat .cp-msg-continued .cp-msg-time-hover {
@@ -9618,6 +9631,10 @@ body.mini-mode #backdrop {
 
     #clan-inner-chat .cp-msg-continued-row:hover {
         background: var(--surface);
+    }
+
+    #clan-inner-chat .cp-msg-continued-row.cp-msg-continued {
+        padding-left: 14px;
     }
 
 .clan-chat-v2-input-row {

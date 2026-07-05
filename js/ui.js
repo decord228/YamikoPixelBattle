@@ -260,7 +260,8 @@ function buildColorGrid() {
 function selectColor(idx) {
   selectedColor=idx;
   document.querySelectorAll('.color-cell').forEach((c,i)=>c.classList.toggle('selected',i===idx));
-  document.getElementById('color-name-bar').textContent=PALETTE[idx]?.n||'';
+  const p = PALETTE[idx];
+  document.getElementById('color-name-bar').textContent = p ? `${p.n} · ${p.c.toUpperCase()}` : '';
   if (isLoggedIn) sendJSON({action:'cursor',x:hoveredPixel.x,y:hoveredPixel.y,c:idx});
 }
 
@@ -407,8 +408,65 @@ function setStencilToolActive(active) {
   const p = document.getElementById('stencil-panel');
   if (p) p.style.display = active ? 'block' : 'none';
   document.getElementById('btn-tool-stencil')?.classList.toggle('active', active);
+  if (active) _positionStencilPanel();
   if (!active && typeof toggleTemplatesPopup === 'function') toggleTemplatesPopup(false);
 }
+
+// Панель трафарета теперь вертикальная (контент идёт сверху вниз, см. CSS)
+// и всплывает справа от сайдбара — визуал (цвета, блюр, скругления, все
+// внутренние элементы) не менялся, поменялась только раскладка и якорь
+// позиционирования. Раньше панель центрировалась по вертикали относительно
+// кнопки "Трафарет"; теперь она выравнивается по всей левой колонке
+// (#left-col = profile-hud + sidebar) с ОДИНАКОВЫМ отступом (STENCIL_DOCK_GAP)
+// и сверху (как у верхней панели/сайдбара), и слева (от правого края
+// сайдбара) — так панель визуально продолжает левую колонку, а не висит
+// произвольно на уровне кнопки.
+const STENCIL_DOCK_GAP = 6; // тот же отступ, что и у #left-col/#top-bar-row от края экрана
+
+function _positionStencilPanel() {
+  const p = document.getElementById('stencil-panel');
+  const btn = document.getElementById('btn-tool-stencil');
+  const leftCol = document.getElementById('left-col');
+  const sidebar = document.getElementById('sidebar');
+  if (!p || !btn || p.style.display === 'none') return;
+  if (window.innerWidth <= 640) {
+    // На мобильных .stencil-dock остаётся полноширинным доком снизу (см. CSS
+    // @media max-width:640px) — сбрасываем инлайновые left/top/max-height,
+    // чтобы не перекрывать мобильную раскладку тем, что осталось от
+    // прошлого открытия на десктопе.
+    p.style.left = '';
+    p.style.top = '';
+    p.style.maxHeight = '';
+    return;
+  }
+
+  // Левый край — от #sidebar (узкая колонка иконок-инструментов), а НЕ от
+  // #left-col целиком: #left-col включает ещё и широкую карточку профиля
+  // сверху (profile-hud), и её ширина шире тулбара, из-за чего панель
+  // раньше уезжала далеко вправо, в промежуток между profile-hud и топбаром.
+  // Верх/низ по-прежнему берём от #left-col — он покрывает profile-hud +
+  // sidebar целиком, поэтому его верхняя и нижняя границы совпадают с
+  // границами всей левой колонки (тот же отступ, что у верхней панели).
+  const barRect = (sidebar || leftCol || btn).getBoundingClientRect();
+  const lcr = (leftCol || barRect);
+
+  let left = barRect.right + STENCIL_DOCK_GAP;
+  const w = p.offsetWidth || 300;
+  left = Math.min(left, window.innerWidth - w - 8);
+  left = Math.max(8, left);
+
+  let top = btn.getBoundingClientRect().top;
+  top = Math.max(8, top);
+
+  let maxHeight = lcr.bottom - top;
+  maxHeight = Math.max(200, Math.min(maxHeight, window.innerHeight - top - 8));
+
+  p.style.left = left + 'px';
+  p.style.top = top + 'px';
+  p.style.maxHeight = maxHeight + 'px';
+}
+
+window.addEventListener('resize', () => _positionStencilPanel());
 
 function toggleStencilEdit() {
   if (stencilLocked) { showToast('Это трафарет соклановца — менять положение и размер нельзя', 'error'); return; }

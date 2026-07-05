@@ -2880,7 +2880,9 @@ html, body {
     border: 1px solid var(--border);
     border-radius: 12px;
     transition: border-color .15s, background .15s, transform .15s;
-    max-width: 190px;
+    width: 100%;
+    max-width: none;
+    box-sizing: border-box;
 }
 
     .dock-thumb-card:hover {
@@ -2932,7 +2934,7 @@ html, body {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 100px;
+    max-width: none;
 }
 
 .dock-thumb-meta {
@@ -6585,12 +6587,18 @@ details.adm-card {
 /* ── STENCIL DOCK (низ экрана, горизонтальный) ── */
 .stencil-dock {
     position: fixed;
-    left: 50%;
-    bottom: 16px;
-    transform: translateX(-50%);
     z-index: 30;
-    width: fit-content;
+    width: 300px;
     max-width: calc(100vw - 32px);
+    /* display:flex + flex-direction:column здесь важны: max-height (задаётся
+       инлайново из JS, см. _positionStencilPanel) работает как настоящее
+       ограничение именно потому, что .stencil-dock — сам flex-контейнер, а
+       не потому, что дети растянуты через height:100% (проценты от высоты
+       не резолвятся без явного height у родителя). Так закреплённая нижняя
+       группа кнопок (dock-group-actions) всегда остаётся видимой, а
+       скроллится только средняя часть (.stencil-dock-scroll). */
+    display: flex;
+    flex-direction: column;
     background: rgba(15,15,17,0.92);
     backdrop-filter: blur(24px) saturate(180%);
     -webkit-backdrop-filter: blur(24px) saturate(180%);
@@ -6600,31 +6608,41 @@ details.adm-card {
     overflow: hidden;
 }
 
+/* ── Вертикальная раскладка (десктоп) ──
+   Раньше контент шёл в ряд (горизонтальный флаут-бар). Теперь весь контент
+   идёт сверху вниз и растягивается на всю ширину контейнера — визуал кнопок
+   и внутренних панелей не менялся, поменялось только направление потока.
+   На мобильных (см. @media max-width:640px) раскладка остаётся прежней —
+   горизонтальный док внизу экрана. */
 .stencil-dock-bar {
     display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 14px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    padding: 14px;
+    flex: 1 1 auto;
+    min-height: 0;
+    box-sizing: border-box;
 }
 
-/* Скроллящаяся часть бара — всё, кроме закреплённых кнопок
-   "поделиться/закрыть". Раньше overflow-x:auto стоял на всём .stencil-dock-bar
-   целиком, из-за чего последняя группа кнопок уезжала за пределы видимой
-   области на узких экранах и обрезалась контейнером. */
+/* Скроллящаяся часть — всё, кроме закреплённых кнопок "поделиться/закрыть".
+   Раньше скроллилась по X, теперь скроллится по Y, т.к. панель вертикальная;
+   закреплённая группа действий остаётся снаружи и всегда на виду снизу. */
 .stencil-dock-scroll {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
     flex: 1 1 auto;
-    min-width: 0;
-    overflow-x: auto;
-    overflow-y: hidden;
+    min-height: 0;
+    overflow-x: hidden;
+    overflow-y: auto;
     scrollbar-width: thin;
     scrollbar-color: var(--surface3) transparent;
 }
 
     .stencil-dock-scroll::-webkit-scrollbar {
-        height: 5px;
+        width: 5px;
     }
 
     .stencil-dock-scroll::-webkit-scrollbar-thumb {
@@ -6637,7 +6655,8 @@ details.adm-card {
 }
 
 .dock-sep {
-    width: 1px;
+    height: 1px;
+    width: 100%;
     align-self: stretch;
     background: var(--border);
     flex-shrink: 0;
@@ -6645,7 +6664,8 @@ details.adm-card {
 
 .dock-group {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 10px;
     flex-shrink: 0;
 }
@@ -6658,6 +6678,7 @@ details.adm-card {
 .dock-edit-toggle {
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 10px;
     padding: 10px 16px;
     border-radius: 14px;
@@ -6667,8 +6688,7 @@ details.adm-card {
     user-select: none;
     background: linear-gradient(135deg, #ef4444, #dc2626);
     border: 1px solid rgba(255,255,255,.15);
-    box-shadow: 0 4px 16px rgba(239, 68, 68, .35), inset 0 1px 0 rgba(255,255,255,.15);
-    transition: background .2s, box-shadow .2s, transform .15s;
+    transition: background .2s, transform .15s;
 }
 
     .dock-edit-toggle:hover {
@@ -6677,7 +6697,6 @@ details.adm-card {
 
     .dock-edit-toggle.on {
         background: linear-gradient(135deg, #22c55e, #16a34a);
-        box-shadow: 0 4px 16px rgba(34, 197, 94, .35), inset 0 1px 0 rgba(255,255,255,.15);
     }
 
     .dock-edit-toggle svg {
@@ -6861,6 +6880,7 @@ details.adm-card {
     background: rgba(99, 102, 241, 0.12);
     border-color: rgba(99, 102, 241, 0.35);
     color: var(--accent);
+    justify-content: center;
 }
 
 .dock-btn-close {
@@ -6892,7 +6912,7 @@ details.adm-card {
 
 /* — Настройки (режим/прозрачность/масштаб) — */
 .dock-group-settings {
-    gap: 16px;
+    gap: 14px;
 }
 
 .dock-lock-badge {
@@ -6907,7 +6927,9 @@ details.adm-card {
     font-size: 10.5px;
     font-weight: 600;
     white-space: nowrap;
-    max-width: 220px;
+    max-width: none;
+    width: 100%;
+    box-sizing: border-box;
 }
 
     .dock-lock-badge span {
@@ -6920,6 +6942,7 @@ details.adm-card {
     align-items: center;
     gap: 7px;
     white-space: nowrap;
+    width: 100%;
 }
 
 .dock-control-icon {
@@ -6933,10 +6956,13 @@ details.adm-card {
     color: var(--text2);
     text-transform: uppercase;
     letter-spacing: .3px;
+    flex-shrink: 0;
 }
 
 .dock-control-opacity input[type="range"] {
-    width: 90px;
+    flex: 1 1 auto;
+    min-width: 0;
+    width: auto;
 }
 
 .dock-control-value {
@@ -6944,15 +6970,18 @@ details.adm-card {
     font-weight: 700;
     color: var(--accent);
     min-width: 30px;
+    flex-shrink: 0;
+    text-align: right;
 }
 
 .dock-scale-btns {
     display: flex;
     gap: 4px;
+    flex: 1 1 auto;
 }
 
 .dock-scale-btn {
-    width: 56px;
+    flex: 1 1 0;
     height: 52px;
     display: flex;
     align-items: center;
@@ -6971,16 +7000,18 @@ details.adm-card {
         color: var(--accent);
     }
 
-/* — Галерея трафаретов (горизонтальная прокрутка) — */
+/* — Галерея трафаретов — */
 .dock-gallery {
     display: flex;
-    align-items: center;
-    gap: 10px;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 14px;
     flex-shrink: 0;
 }
 
 .dock-gallery-sep {
-    width: 1px;
+    height: 1px;
+    width: 100%;
     align-self: stretch;
     background: var(--border);
     flex-shrink: 0;
@@ -6991,6 +7022,7 @@ details.adm-card {
     flex-direction: column;
     gap: 5px;
     flex-shrink: 0;
+    width: 100%;
 }
 
 .dock-gallery-head {
@@ -7025,8 +7057,11 @@ details.adm-card {
 
 .dock-thumb-row {
     display: flex;
-    align-items: center;
+    flex-direction: column;
+    align-items: stretch;
     gap: 7px;
+    overflow-x: hidden;
+    max-width: 100%;
 }
 
 .dock-thumb-row-inline {
@@ -7040,6 +7075,8 @@ details.adm-card {
     align-items: center;
     gap: 5px;
     flex-shrink: 0;
+    width: 100%;
+    box-sizing: border-box;
     background: var(--bg3);
     border: 1px dashed var(--border2);
     border-radius: 12px;
@@ -7047,7 +7084,9 @@ details.adm-card {
 }
 
     .dock-save-card input {
-        width: 80px;
+        flex: 1 1 auto;
+        min-width: 0;
+        width: auto;
         background: transparent;
         border: none;
         outline: none;
@@ -7079,10 +7118,21 @@ details.adm-card {
    скруглённого правого края .stencil-dock, иначе overflow:hidden контейнера
    срезает круглую иконку кнопки поделиться. — */
 .dock-group-actions {
-    margin-right: 4px;
+    flex-direction: row;
+    align-items: stretch;
+    margin-right: 0;
     flex-shrink: 0;
     gap: 8px;
 }
+
+    .dock-group-actions .dock-share-btn {
+        flex: 1 1 auto;
+        justify-content: center;
+    }
+
+    .dock-group-actions .dock-btn-close {
+        flex: 0 0 auto;
+    }
 
 /* ── CURSOR FLAGS ── */
 #cursors-layer {
@@ -8002,13 +8052,101 @@ body.mini-mode #backdrop {
         transform: translateX(-50%);
         width: calc(100vw - 16px);
         max-width: none;
+        height: auto;
+        max-height: none;
         border-radius: 16px;
     }
 
+    /* На мобильных возвращаем прежнюю горизонтальную раскладку —
+       вертикальная колонка (см. десктопные правила выше) здесь не нужна:
+       мало вертикального места, а прокрутка по X привычнее для тачскрина. */
     .stencil-dock-bar {
+        flex-direction: row;
+        align-items: center;
         flex-wrap: nowrap;
         padding: 8px 10px;
         gap: 10px;
+        height: auto;
+    }
+
+    .stencil-dock-scroll {
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+        .stencil-dock-scroll::-webkit-scrollbar {
+            width: auto;
+            height: 5px;
+        }
+
+    .dock-sep {
+        width: 1px;
+        height: auto;
+        align-self: stretch;
+    }
+
+    .dock-group {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .dock-gallery {
+        flex-direction: row;
+        align-items: center;
+    }
+
+    .dock-gallery-sep {
+        width: 1px;
+        height: auto;
+        align-self: stretch;
+    }
+
+    .dock-lock-badge {
+        width: auto;
+        max-width: 220px;
+    }
+
+    .dock-control {
+        width: auto;
+    }
+
+    .dock-control-opacity input[type="range"] {
+        flex: none;
+    }
+
+    .dock-scale-btns {
+        flex: none;
+    }
+
+    .dock-scale-btn {
+        flex: none;
+        width: 56px;
+    }
+
+    .dock-save-card {
+        width: auto;
+    }
+
+    .dock-group-actions {
+        margin-right: 4px;
+    }
+
+    .dock-thumb-row {
+        flex-direction: row;
+        align-items: center;
+        overflow-x: auto;
+        overflow-y: hidden;
+    }
+
+    .dock-thumb-card {
+        width: auto;
+        max-width: 190px;
+    }
+
+    .dock-thumb-name {
+        max-width: 100px;
     }
 
     .dock-title span,

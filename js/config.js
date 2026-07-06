@@ -59,17 +59,17 @@ const ICON_RADIATION = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.
 // 3×3 (type:'cooldown_boost'/'consumable'), которые раньше требовали VIP.
 // Турбо −90% и остальные "хаос"-расходники остаются эксклюзивом VIP-вкладки.
 const SHOP_ITEMS_USER = [
-  {id:'stencil_auto_1',title:'Авто-подбор цветов Ур.1',desc:'Автоматически выбирает ближайший цвет палитры при наведении на трафарет.',icon:ICON_PALETTE,cost:100,type:'upgrade'},
-  {id:'stencil_auto_2',title:'Авто-подбор цветов Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',icon:ICON_PALETTE_PLUS,cost:300,type:'upgrade',requires:'stencil_auto_1'},
-  {id:'cooldown_boost_25',title:'Ускоритель −25%',desc:'Снижает кулдаун установки пикселя на 25% на 15 минут.',icon:ICON_BOLT,cost:60,type:'cooldown_boost',pct:25,durationMin:15,count:1},
-  {id:'cooldown_boost_50',title:'Ускоритель −50%',desc:'Снижает кулдаун установки пикселя на 50% на 15 минут.',icon:ICON_BOLT_DOUBLE,cost:130,type:'cooldown_boost',pct:50,durationMin:15,count:1},
-  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:50,type:'consumable',count:1},
+  {id:'stencil_auto_1',title:'Авто-подбор цветов Ур.1',desc:'Автоматически выбирает ближайший цвет палитры при наведении на трафарет.',icon:ICON_PALETTE,cost:70,type:'upgrade'},
+  {id:'stencil_auto_2',title:'Авто-подбор цветов Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',icon:ICON_PALETTE_PLUS,cost:150,type:'upgrade',requires:'stencil_auto_1'},
+  {id:'cooldown_boost_25',title:'Ускоритель −25%',desc:'Снижает кулдаун установки пикселя на 25% на 15 минут.',icon:ICON_BOLT,cost:10,type:'cooldown_boost',pct:25,durationMin:15,count:1},
+  {id:'cooldown_boost_50',title:'Ускоритель −50%',desc:'Снижает кулдаун установки пикселя на 50% на 15 минут.',icon:ICON_BOLT_DOUBLE,cost:25,type:'cooldown_boost',pct:50,durationMin:15,count:1},
+  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:5,type:'consumable',count:1},
 ];
 
 const SHOP_ITEMS_VIP = [
-  {id:'rainbow_5x5',title:'Радужный взрыв 5×5',desc:'Заполняет квадрат 5×5 случайными цветами из палитры. Хаос гарантирован!',icon:ICON_RAINBOW,cost:80,type:'consumable',count:1},
-  {id:'eraser_10x10',title:'Большой Ластик 10×10',desc:'Стирает (заливает белым) квадрат 10×10. Идеален для расчистки места.',icon:ICON_ERASER,cost:120,type:'consumable',count:1},
-  {id:'mirror_stamp',title:'Зеркальный штамп',desc:'Копирует область 5×5 под курсором и вставляет с зеркальным отражением.',icon:ICON_MIRROR,cost:200,type:'consumable',count:1},
+  {id:'rainbow_5x5',title:'Радужный взрыв 5×5',desc:'Заполняет квадрат 5×5 случайными цветами из палитры. Хаос гарантирован!',icon:ICON_RAINBOW,cost:12,type:'consumable',count:1},
+  {id:'eraser_10x10',title:'Большой Ластик 10×10',desc:'Стирает (заливает белым) квадрат 10×10. Идеален для расчистки места.',icon:ICON_ERASER,cost:20,type:'consumable',count:1},
+  {id:'mirror_stamp',title:'Зеркальный штамп',desc:'Копирует область 5×5 под курсором и вставляет с зеркальным отражением.',icon:ICON_MIRROR,cost:35,type:'consumable',count:1},
 ];
 
 // ── УСКОРИТЕЛИ КУЛДАУНА (VIP-эксклюзив) ──
@@ -78,7 +78,7 @@ const SHOP_ITEMS_VIP = [
 // процентах (а не в фикс. секундах), чтобы работать предсказуемо при любом
 // базовом кулдауне, который задаёт админ через слайдер.
 const SHOP_ITEMS_COOLDOWN = [
-  {id:'cooldown_boost_90',title:'Турбо-режим −90%',desc:'Снижает кулдаун установки пикселя на 90% на 5 минут. Для настоящего спринта!',icon:ICON_ROCKET,cost:220,type:'cooldown_boost',pct:90,durationMin:5,count:1},
+  {id:'cooldown_boost_90',title:'Турбо-режим −90%',desc:'Снижает кулдаун установки пикселя на 90% на 5 минут. Для настоящего спринта!',icon:ICON_ROCKET,cost:55,type:'cooldown_boost',pct:90,durationMin:5,count:1},
 ];
 
 const SHOP_ITEMS_ADMIN = [
@@ -103,10 +103,10 @@ function isAnimatedBannerFile(file) {
 
 // Тиры расширения состава клана. Каждый тир покупается один раз и заменяет предыдущий лимит.
 const CLAN_MEMBER_LIMIT_TIERS = [
-  { limit:10,  cost:100,  id:'members_10'  },
-  { limit:25,  cost:300,  id:'members_25'  },
-  { limit:50,  cost:1000, id:'members_50'  },
-  { limit:100, cost:5000, id:'members_100' },
+  { limit:10,  cost:30,   id:'members_10'  },
+  { limit:25,  cost:90,   id:'members_25'  },
+  { limit:50,  cost:300,  id:'members_50'  },
+  { limit:100, cost:1500, id:'members_100' },
 ];
 
 // Разовые товары клана (не зависят от тиров лимита)
@@ -114,12 +114,12 @@ const CLAN_SHOP_ITEMS = [
   {
     id:'banner_static', title:'Статичный баннер клана', icon:'🖼️',
     desc:'Открывает возможность загрузить собственную картинку-баннер клана (JPG/PNG), которая отображается в шапке клана и в лидерборде.',
-    cost:200, type:'banner', requiresPerm:'manage_settings',
+    cost:60, type:'banner', requiresPerm:'manage_settings',
   },
   {
     id:'banner_animated', title:'Анимированный баннер клана', icon:'🎞️',
     desc:'Открывает загрузку анимированного баннера (GIF, WebP и т.д.) — выделит клан среди остальных в лидерборде и шапке.',
-    cost:500, type:'banner', requiresPerm:'manage_settings', requires:'banner_static',
+    cost:150, type:'banner', requiresPerm:'manage_settings', requires:'banner_static',
   },
 ];
 // ── АЧИВКИ ──

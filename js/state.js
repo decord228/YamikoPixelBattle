@@ -5,12 +5,12 @@ let ws = null;
 let canvasW = 256, canvasH = 256;
 let canvasData = new Uint8Array(canvasW * canvasH);
 let selectedColor = 0;
-let cooldown = 0, cooldownTime = 3.0, cooldownTimer = null;
+let cooldown = 0, cooldownTime = 10.0, cooldownTimer = null;
 // ── КУЛДАУН-УСКОРИТЕЛИ (магазин) ──
 // baseCooldownTime — базовый кулдаун от сервера (settings.cooldownMs).
 // cooldownBoostPct/Until — активный процентный буст поверх базового;
 // cooldownTime всегда пересчитывается через recomputeCooldownTime().
-let baseCooldownTime = 3.0, cooldownBoostPct = 0, cooldownBoostUntil = 0, cooldownBoostExpireTimer = null;
+let baseCooldownTime = 10.0, cooldownBoostPct = 0, cooldownBoostUntil = 0, cooldownBoostExpireTimer = null;
 function recomputeCooldownTime() {
   const active = cooldownBoostUntil > Date.now() && cooldownBoostPct > 0;
   cooldownTime = active ? +(baseCooldownTime * (1 - cooldownBoostPct / 100)).toFixed(2) : baseCooldownTime;

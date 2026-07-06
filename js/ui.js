@@ -2600,89 +2600,69 @@ function buildShopUI(){
     return;
   }
 
-  // ── ОБЫЧНЫЕ УЛУЧШЕНИЯ (единый стиль с .clan-shop-item — см. клан/профиль/админку) ──
-  const genHtml = SHOP_ITEMS_USER.map(item => {
-    const owned = purchasedItems.includes(item.id);
-    const reqMet = !item.requires || purchasedItems.includes(item.requires);
-    let actionHtml;
-    if (owned) actionHtml = `<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>`;
-    else if (!reqMet) actionHtml = `<span class="shop-lock-inline" title="Требуется: ${esc(item.requires)}">🔒</span>`;
-    else actionHtml = `<button class="btn btn-primary btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>`;
+  // ── КАРТОЧКА ТОВАРА (единый рендерер для всех типов: upgrade / cooldown_boost / consumable) ──
+  const boostActiveNow = cooldownBoostUntil > Date.now() && cooldownBoostPct > 0;
+  function shopCardHtml(item, buyBtnClass) {
+    const kindClass = item.type === 'cooldown_boost' ? 'kind-boost' : (item.type === 'consumable' ? 'kind-consumable' : 'kind-upgrade');
+    let actionHtml, ownedClass = '';
+    if (item.type === 'upgrade') {
+      const owned = purchasedItems.includes(item.id);
+      const reqMet = !item.requires || purchasedItems.includes(item.requires);
+      ownedClass = owned ? 'is-owned' : '';
+      if (owned) actionHtml = `<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>`;
+      else if (!reqMet) actionHtml = `<span class="shop-lock-inline" title="Требуется: ${esc(item.requires)}">🔒</span>`;
+      else actionHtml = `<button class="btn ${buyBtnClass} btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>`;
+    } else if (item.type === 'cooldown_boost') {
+      const count = getItemCount(item.id);
+      actionHtml = `
+        <div class="shop-item-action-col">
+          <button class="btn ${buyBtnClass} btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')" ${boostActiveNow?'disabled title="Уже активен другой ускоритель"':''}>Активировать (${count})</button>` : ''}
+        </div>`;
+    } else {
+      const count = getItemCount(item.id);
+      actionHtml = `
+        <div class="shop-item-action-col">
+          <button class="btn ${buyBtnClass} btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
+          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')">Использовать (${count})</button>` : ''}
+        </div>`;
+    }
     return `
-    <div class="clan-shop-item ${owned?'is-owned':''}">
-      <div class="clan-shop-item-icon">${item.icon}</div>
+    <div class="clan-shop-item shop-card ${kindClass} ${ownedClass}">
+      <div class="clan-shop-item-icon shop-card-icon">${item.icon}</div>
       <div class="clan-shop-item-body">
         <div class="clan-shop-item-title">${esc(item.title)}</div>
         <div class="clan-shop-item-desc">${esc(item.desc)}</div>
       </div>
       <div class="clan-shop-item-action">${actionHtml}</div>
     </div>`;
-  }).join('');
-  listGeneral.innerHTML = `<div class="clan-shop-items-list">${genHtml}</div>`;
-
-  // ── VIP: КУЛДАУН-УСКОРИТЕЛИ + РАСХОДНИКИ ──
-  let vipHtml = '';
-  if (isVip || isAdmin) {
-    const boostActive = cooldownBoostUntil > Date.now() && cooldownBoostPct > 0;
-    const boostBanner = boostActive
-      ? `<div class="clan-shop-balance-row" style="margin-bottom:10px;">
-           <div class="clan-shop-balance-label">⚡ Активный ускоритель: −${cooldownBoostPct}%</div>
-           <div class="clan-shop-balance-amount" id="shop-boost-timer">${Math.ceil((cooldownBoostUntil-Date.now())/1000)}с</div>
-         </div>`
-      : '';
-
-    const boostItems = SHOP_ITEMS_COOLDOWN.map(item => {
-      const count = getItemCount(item.id);
-      const actionHtml = `
-        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-          <button class="btn btn-vip btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')" ${boostActive?'disabled title="Уже активен другой ускоритель"':''}>Активировать (${count})</button>` : ''}
-        </div>`;
-      return `
-      <div class="clan-shop-item">
-        <div class="clan-shop-item-icon">${item.icon}</div>
-        <div class="clan-shop-item-body">
-          <div class="clan-shop-item-title">${esc(item.title)}</div>
-          <div class="clan-shop-item-desc">${esc(item.desc)}</div>
-        </div>
-        <div class="clan-shop-item-action">${actionHtml}</div>
-      </div>`;
-    }).join('');
-
-    const consumableItems = SHOP_ITEMS_VIP.map(item => {
-      const count = getItemCount(item.id);
-      const actionHtml = `
-        <div style="display:flex;flex-direction:column;gap:5px;align-items:flex-end;">
-          <button class="btn btn-vip btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')">Использовать (${count})</button>` : ''}
-        </div>`;
-      return `
-      <div class="clan-shop-item">
-        <div class="clan-shop-item-icon">${item.icon}</div>
-        <div class="clan-shop-item-body">
-          <div class="clan-shop-item-title">${esc(item.title)}</div>
-          <div class="clan-shop-item-desc">${esc(item.desc)}</div>
-        </div>
-        <div class="clan-shop-item-action">${actionHtml}</div>
-      </div>`;
-    }).join('');
-
-    vipHtml = `
-      ${boostBanner}
-      <div class="clan-shop-section-title">⚡ Кулдаун-ускорители</div>
-      <div class="clan-shop-items-list">${boostItems}</div>
-      <div class="clan-shop-section-title is-spaced">🎁 Расходники</div>
-      <div class="clan-shop-items-list">${consumableItems}</div>`;
-  } else {
-    vipHtml = `<div class="clan-shop-item" style="opacity:.55">
-        <div class="clan-shop-item-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
-        <div class="clan-shop-item-body">
-          <div class="clan-shop-item-title">Расходники для VIP</div>
-          <div class="clan-shop-item-desc">Получите VIP-статус, чтобы разблокировать ускорители кулдауна, взрывчатку, ластики и многое другое!</div>
-        </div>
-      </div>`;
   }
-  listVip.innerHTML = vipHtml;
+
+  // ── ОБЫЧНЫЕ УЛУЧШЕНИЯ ──
+  // Постоянные апгрейды + общедоступные кулдаун-ускорители −25%/−50% и
+  // бомбочка 3×3 (перенесены сюда из VIP — доступны всем без ограничений).
+  const upgrades = SHOP_ITEMS_USER.filter(i => i.type === 'upgrade');
+  const boosts25_50 = SHOP_ITEMS_USER.filter(i => i.type === 'cooldown_boost');
+  const others = SHOP_ITEMS_USER.filter(i => i.type === 'consumable');
+
+  const boostBannerGeneral = boostActiveNow
+    ? `<div class="clan-shop-balance-row shop-boost-banner">
+         <div class="clan-shop-balance-label">⚡ Активный ускоритель: −${cooldownBoostPct}%</div>
+         <div class="clan-shop-balance-amount" id="shop-boost-timer">${Math.ceil((cooldownBoostUntil-Date.now())/1000)}с</div>
+       </div>`
+    : '';
+
+  let genHtml = boostBannerGeneral;
+  if (upgrades.length) {
+    genHtml += `<div class="clan-shop-section-title">🛠️ Апгрейды</div><div class="clan-shop-items-list">${upgrades.map(i=>shopCardHtml(i,'btn-primary')).join('')}</div>`;
+  }
+  if (boosts25_50.length) {
+    genHtml += `<div class="clan-shop-section-title is-spaced">⚡ Ускорители кулдауна</div><div class="clan-shop-items-list">${boosts25_50.map(i=>shopCardHtml(i,'btn-primary')).join('')}</div>`;
+  }
+  if (others.length) {
+    genHtml += `<div class="clan-shop-section-title is-spaced">🎁 Расходники</div><div class="clan-shop-items-list">${others.map(i=>shopCardHtml(i,'btn-primary')).join('')}</div>`;
+  }
+  listGeneral.innerHTML = genHtml;
   if (boostCountdownTimer) clearInterval(boostCountdownTimer);
   if (cooldownBoostUntil > Date.now()) {
     boostCountdownTimer = setInterval(() => {
@@ -2692,6 +2672,28 @@ function buildShopUI(){
       el.textContent = left + 'с';
     }, 1000);
   }
+
+  // ── VIP: ТУРБО-УСКОРИТЕЛЬ + "ХАОС"-РАСХОДНИКИ ──
+  let vipHtml = '';
+  if (isVip || isAdmin) {
+    const boostItems = SHOP_ITEMS_COOLDOWN.map(i=>shopCardHtml(i,'btn-vip')).join('');
+    const consumableItems = SHOP_ITEMS_VIP.map(i=>shopCardHtml(i,'btn-vip')).join('');
+
+    vipHtml = `
+      <div class="clan-shop-section-title">🚀 Турбо-ускоритель</div>
+      <div class="clan-shop-items-list">${boostItems}</div>
+      <div class="clan-shop-section-title is-spaced">🎁 Хаос-расходники</div>
+      <div class="clan-shop-items-list">${consumableItems}</div>`;
+  } else {
+    vipHtml = `<div class="clan-shop-item shop-card shop-card-locked">
+        <div class="clan-shop-item-icon shop-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="1.5"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></div>
+        <div class="clan-shop-item-body">
+          <div class="clan-shop-item-title">Расходники для VIP</div>
+          <div class="clan-shop-item-desc">Получите VIP-статус, чтобы разблокировать турбо-ускоритель, радужный взрыв, ластики и многое другое!</div>
+        </div>
+      </div>`;
+  }
+  listVip.innerHTML = vipHtml;
 
   // ── АДМИН-ЧИТЫ ──
   if (adminTabBtn) adminTabBtn.style.display = isAdmin ? '' : 'none';

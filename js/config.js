@@ -53,26 +53,31 @@ const ICON_BOLT_DOUBLE = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://ww
 const ICON_ROCKET = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c3 2 5 6 5 10 0 2-.5 4-1.5 5.5L12 22l-3.5-4.5C7.5 16 7 14 7 12c0-4 2-8 5-10z"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M7 15c-2 0-3.5 1.5-4 4 2.5.5 4-1 4-1"/><path d="M17 15c2 0 3.5 1.5 4 4-2.5.5-4-1-4-1"/></svg>';
 const ICON_RADIATION = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="2.2"/><path d="M12 2.5v5"/><path d="M12 16.5v5"/><path d="M4.3 7l4.4 2.5"/><path d="M15.3 14.5l4.4 2.5"/><path d="M19.7 7l-4.4 2.5"/><path d="M8.7 14.5L4.3 17"/></svg>';
 
+// ── ОБЫЧНЫЕ УЛУЧШЕНИЯ ──
+// Постоянные апгрейды (type:'upgrade'), а также перенесённые сюда по
+// просьбе — общедоступные кулдаун-ускорители −25%/−50% и цветная бомбочка
+// 3×3 (type:'cooldown_boost'/'consumable'), которые раньше требовали VIP.
+// Турбо −90% и остальные "хаос"-расходники остаются эксклюзивом VIP-вкладки.
 const SHOP_ITEMS_USER = [
   {id:'stencil_auto_1',title:'Авто-подбор цветов Ур.1',desc:'Автоматически выбирает ближайший цвет палитры при наведении на трафарет.',icon:ICON_PALETTE,cost:100,type:'upgrade'},
   {id:'stencil_auto_2',title:'Авто-подбор цветов Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',icon:ICON_PALETTE_PLUS,cost:300,type:'upgrade',requires:'stencil_auto_1'},
+  {id:'cooldown_boost_25',title:'Ускоритель −25%',desc:'Снижает кулдаун установки пикселя на 25% на 15 минут.',icon:ICON_BOLT,cost:60,type:'cooldown_boost',pct:25,durationMin:15,count:1},
+  {id:'cooldown_boost_50',title:'Ускоритель −50%',desc:'Снижает кулдаун установки пикселя на 50% на 15 минут.',icon:ICON_BOLT_DOUBLE,cost:130,type:'cooldown_boost',pct:50,durationMin:15,count:1},
+  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:50,type:'consumable',count:1},
 ];
 
 const SHOP_ITEMS_VIP = [
-  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:50,type:'consumable',count:1},
   {id:'rainbow_5x5',title:'Радужный взрыв 5×5',desc:'Заполняет квадрат 5×5 случайными цветами из палитры. Хаос гарантирован!',icon:ICON_RAINBOW,cost:80,type:'consumable',count:1},
   {id:'eraser_10x10',title:'Большой Ластик 10×10',desc:'Стирает (заливает белым) квадрат 10×10. Идеален для расчистки места.',icon:ICON_ERASER,cost:120,type:'consumable',count:1},
   {id:'mirror_stamp',title:'Зеркальный штамп',desc:'Копирует область 5×5 под курсором и вставляет с зеркальным отражением.',icon:ICON_MIRROR,cost:200,type:'consumable',count:1},
 ];
 
-// ── УСКОРИТЕЛИ КУЛДАУНА ──
+// ── УСКОРИТЕЛИ КУЛДАУНА (VIP-эксклюзив) ──
 // type:'cooldown_boost' — при использовании временно снижает кулдаун
 // установки пикселя на pct% на durationMin минут. Действует именно в
 // процентах (а не в фикс. секундах), чтобы работать предсказуемо при любом
 // базовом кулдауне, который задаёт админ через слайдер.
 const SHOP_ITEMS_COOLDOWN = [
-  {id:'cooldown_boost_25',title:'Ускоритель −25%',desc:'Снижает кулдаун установки пикселя на 25% на 15 минут.',icon:ICON_BOLT,cost:60,type:'cooldown_boost',pct:25,durationMin:15,count:1},
-  {id:'cooldown_boost_50',title:'Ускоритель −50%',desc:'Снижает кулдаун установки пикселя на 50% на 15 минут.',icon:ICON_BOLT_DOUBLE,cost:130,type:'cooldown_boost',pct:50,durationMin:15,count:1},
   {id:'cooldown_boost_90',title:'Турбо-режим −90%',desc:'Снижает кулдаун установки пикселя на 90% на 5 минут. Для настоящего спринта!',icon:ICON_ROCKET,cost:220,type:'cooldown_boost',pct:90,durationMin:5,count:1},
 ];
 

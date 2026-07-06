@@ -1,5 +1,5 @@
 ﻿:root {
-    --bg: #09090b;
+    --bg: #0c0c0d;
     --bg2: #0f0f11;
     --surface: #141416;
     --surface2: #1c1c20;
@@ -105,11 +105,15 @@ html, body {
     z-index: 5;
 }
 
-/* ── GLASS PANEL ── */
+/* ── GLASS PANEL ──
+   Раньше был полупрозрачный фон + backdrop-filter (блюр холста сквозь
+   панель). Теперь везде сплошной непрозрачный тёмный фон без блюра — как у
+   попапа чата (#chat-popup-box/#chat-popup-panel, var(--bg)) — раньше
+   контраст между блюром и обычным UI был слишком разным. */
 .panel {
-    background: rgba(15,15,17,0.88);
-    backdrop-filter: blur(24px) saturate(180%);
-    -webkit-backdrop-filter: blur(24px) saturate(180%);
+    background: var(--bg2);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
     border: 1px solid var(--border2);
     border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0,0,0,.6),inset 0 1px 0 rgba(255,255,255,0.05);
@@ -623,7 +627,7 @@ html, body {
     cursor: pointer;
     font-size: 11px;
     color: var(--text2);
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
 }
 
@@ -672,7 +676,7 @@ html, body {
     flex: 1;
     padding: 6px 10px;
     border-radius: 8px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     color: var(--text);
     font-size: 11px;
@@ -850,7 +854,7 @@ html, body {
     }
 
         #chat-popup-panel .cp-row:hover {
-            background: var(--surface2);
+            background: var(--bg2);
         }
 
         #chat-popup-panel .cp-row.active {
@@ -952,7 +956,7 @@ html, body {
     width: 40px;
     height: 40px;
     border-radius: 12px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1.5px solid var(--border);
     display: flex;
     align-items: center;
@@ -1230,7 +1234,7 @@ html, body {
 }
 
     #chat-popup-panel .cp-mh-icon-btn:hover {
-        background: var(--surface2);
+        background: var(--bg2);
         color: var(--text);
     }
 
@@ -1374,7 +1378,7 @@ html, body {
     border-radius: 14px;
     overflow: hidden;
     border: 1px solid var(--border2);
-    background: var(--surface2);
+    background: var(--bg2);
 }
 
     #chat-popup-panel .cp-canvas-card .cc-grid {
@@ -1610,7 +1614,7 @@ html, body {
         font-size: 11.5px;
         font-weight: 700;
         color: var(--text2);
-        background: var(--surface2);
+        background: var(--bg2);
         border: 1px solid var(--border2);
         padding: 4px 10px;
         border-radius: 99px;
@@ -1680,7 +1684,7 @@ html, body {
 }
 
     #chat-popup-panel .cp-ip-btn:hover {
-        background: var(--surface2);
+        background: var(--bg2);
         color: var(--text);
     }
 
@@ -1718,7 +1722,7 @@ html, body {
 .cp-modal-card {
     width: 380px;
     max-width: 90vw;
-    background: var(--surface);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: var(--radius);
     padding: 20px;
@@ -1758,13 +1762,13 @@ html, body {
 }
 
     .cp-modal-x:hover {
-        background: var(--surface2);
+        background: var(--bg2);
         color: var(--text);
     }
 
 .cp-modal-search {
     height: 40px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: 11px;
     display: flex;
@@ -1798,7 +1802,7 @@ html, body {
 }
 
     .cp-suggest-row:hover {
-        background: var(--surface2);
+        background: var(--bg2);
     }
 
 .cp-suggest-add {
@@ -2226,7 +2230,7 @@ html, body {
     cursor: pointer;
     font-size: 18px;
     color: var(--text2);
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     transition: .2s;
 }
@@ -2574,7 +2578,7 @@ html, body {
     min-width: 0;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--bg2);
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -2616,7 +2620,7 @@ html, body {
 }
 
     .news-list-item:hover {
-        background: var(--surface2);
+        background: var(--bg2);
     }
 
     .news-list-item.active {
@@ -2629,7 +2633,7 @@ html, body {
     width: 38px;
     height: 38px;
     border-radius: 11px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     display: flex;
     align-items: center;
@@ -2663,7 +2667,7 @@ html, body {
     min-width: 0;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border);
-    background: var(--surface);
+    background: var(--bg2);
     padding: 18px;
     overflow-y: auto;
 }
@@ -2770,7 +2774,7 @@ html, body {
     width: 100%;
     padding: 10px 13px;
     border-radius: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     color: var(--text);
     font-size: 13px;
@@ -2814,7 +2818,7 @@ html, body {
     }
 
 .btn-secondary {
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text);
     border: 1px solid var(--border2);
 }
@@ -2987,7 +2991,7 @@ html, body {
 .sub-tabs {
     display: flex;
     gap: 3px;
-    background: var(--surface2);
+    background: var(--bg2);
     border-radius: 10px;
     padding: 3px;
     margin-bottom: 14px;
@@ -3068,7 +3072,7 @@ html, body {
     font-size: 12px;
     font-weight: 600;
     color: var(--text2);
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     transition: .2s;
 }
@@ -3088,7 +3092,7 @@ html, body {
 }
 
 .stat-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 13px;
@@ -3155,7 +3159,7 @@ html, body {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface2);
+    background: var(--bg2);
 }
 
     .av-opt:hover {
@@ -3173,7 +3177,7 @@ html, body {
     margin: 10px 0;
     padding: 12px 14px;
     border-radius: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     color: var(--text2);
     font-size: 13px;
@@ -3188,7 +3192,7 @@ html, body {
     gap: 11px;
     padding: 11px 13px;
     border-radius: 12px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     margin-bottom: 7px;
     transition: .2s;
@@ -3293,7 +3297,7 @@ html, body {
 }
 
     .has-profile-banner:hover {
-        background: var(--surface2);
+        background: var(--bg2);
     }
 
     /* Клановый баннер (загруженная картинка с кропом, см. clanBannerImgTag)
@@ -3389,7 +3393,7 @@ html, body {
     border: 2px solid rgba(255,255,255,.08);
     overflow: hidden;
     cursor: pointer;
-    background: var(--surface2);
+    background: var(--bg2);
     display: flex;
     align-items: flex-end;
     transition: border-color .15s, transform .15s;
@@ -3405,7 +3409,7 @@ html, body {
     }
 
     .profile-banner-card.none-banner {
-        background: var(--surface2);
+        background: var(--bg2);
     }
 
 .profile-banner-card-bg {
@@ -3473,7 +3477,7 @@ html, body {
     align-items: center;
     gap: 12px;
     padding: 12px 14px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     margin-bottom: 14px;
@@ -3511,7 +3515,7 @@ html, body {
     justify-content: space-between;
     gap: 10px;
     padding: 9px 14px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     margin-bottom: 14px;
@@ -3571,7 +3575,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 9px 11px;
@@ -3644,7 +3648,7 @@ html, body {
 }
 
 .clan-shop-tier {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 11px;
     padding: 9px 4px;
@@ -3701,7 +3705,7 @@ html, body {
 
 /* ── КЛАН: КАЗНА ── */
 .clan-treasury-balance-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius);
     padding: 20px;
@@ -3751,7 +3755,7 @@ html, body {
     align-items: center;
     gap: 10px;
     padding: 10px 12px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     margin-bottom: 6px;
@@ -3988,6 +3992,105 @@ html, body {
     font-weight: 600;
 }
 
+/* ── SHOP: уютный редизайн карточек товаров ──
+   Расширяем #shop-panel до размеров общей "клановой" оболочки (см. правило
+   #admin-panel, #shop-panel { width: 980px } выше) и делаем карточки товаров
+   заметно живее: больше воздуха, крупная цветная иконка, мягкое свечение по
+   типу товара (апгрейд / ускоритель / расходник), плавный hover-подъём. */
+#shop-panel .clan-shop-items-list {
+    gap: 10px;
+}
+
+#shop-panel .clan-shop-item.shop-card {
+    padding: 14px 16px;
+    border-radius: 16px;
+    gap: 14px;
+    background: linear-gradient(150deg, var(--surface2), var(--bg2) 70%);
+    border-color: var(--border);
+    box-shadow: 0 1px 0 rgba(255,255,255,.02) inset;
+    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+
+    #shop-panel .clan-shop-item.shop-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 24px -12px rgba(0,0,0,.5);
+    }
+
+    #shop-panel .clan-shop-item.shop-card.is-owned {
+        background: linear-gradient(150deg, rgba(34,197,94,.09), var(--bg2) 70%);
+    }
+
+#shop-panel .shop-card-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    font-size: 17px;
+}
+
+    #shop-panel .shop-card-icon .icon {
+        width: 19px;
+        height: 19px;
+    }
+
+/* Цветовые акценты по типу товара — тонкое кольцо + подсветка иконки,
+   чтобы визуально различать апгрейды / ускорители / расходники с одного взгляда. */
+#shop-panel .shop-card.kind-upgrade .shop-card-icon {
+    background: rgba(96,165,250,.12);
+    border-color: rgba(96,165,250,.35);
+    color: #93c5fd;
+}
+
+#shop-panel .shop-card.kind-boost {
+    border-color: rgba(250,204,21,.22);
+}
+
+    #shop-panel .shop-card.kind-boost .shop-card-icon {
+        background: rgba(250,204,21,.12);
+        border-color: rgba(250,204,21,.4);
+        color: #fde047;
+    }
+
+#shop-panel .shop-card.kind-consumable {
+    border-color: rgba(248,113,113,.18);
+}
+
+    #shop-panel .shop-card.kind-consumable .shop-card-icon {
+        background: rgba(248,113,113,.1);
+        border-color: rgba(248,113,113,.32);
+        color: #fca5a5;
+    }
+
+#shop-panel .clan-shop-item-title {
+    font-size: 12.5px;
+}
+
+#shop-panel .clan-shop-item-desc {
+    font-size: 11px;
+}
+
+#shop-panel .shop-item-action-col {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-end;
+}
+
+#shop-panel .shop-boost-banner {
+    margin-bottom: 4px;
+    background: linear-gradient(135deg, rgba(250,204,21,.14), var(--surface2));
+    border-color: rgba(250,204,21,.3);
+}
+
+#shop-panel .shop-card-locked {
+    padding: 20px 18px;
+    border-radius: 16px;
+    opacity: .8;
+}
+
+    #shop-panel .shop-card-locked .shop-card-icon {
+        opacity: .6;
+    }
+
 /* Player list — leaderboard-style rows reusing .member-row skeleton */
 .admin-players-list {
     display: flex;
@@ -4003,7 +4106,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 11px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 9px 12px;
@@ -4202,7 +4305,7 @@ html, body {
 }
 
 .aum-stat {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 11px 12px;
@@ -4297,7 +4400,7 @@ html, body {
     text-align: center;
     border-radius: 9px;
     border: 1px solid var(--border2);
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text2);
     font-size: 11px;
     font-weight: 700;
@@ -4340,7 +4443,7 @@ html, body {
     text-align: center;
     border-radius: 9px;
     border: 1px solid var(--border2);
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text);
     font-size: 11.5px;
     font-weight: 700;
@@ -4396,7 +4499,7 @@ html, body {
     display: flex;
     align-items: center;
     gap: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 10px 11px;
@@ -4486,7 +4589,7 @@ html, body {
 
 /* ── Admin: редизайн формы новости (карточки-секции) ── */
 .adm-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 14px;
     padding: 14px;
@@ -4701,7 +4804,7 @@ details.adm-card {
 }
 
 .user-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 13px;
@@ -4804,7 +4907,7 @@ details.adm-card {
 }
 
 .admin-stat {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 13px;
@@ -4830,7 +4933,7 @@ details.adm-card {
     width: 100%;
     padding: 9px 13px;
     border-radius: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     color: var(--text);
     font-size: 12px;
@@ -4855,7 +4958,7 @@ details.adm-card {
     padding: 5px 13px;
     border-radius: 8px;
     border: 1px solid var(--border2);
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text2);
     cursor: pointer;
     font-size: 11px;
@@ -4889,7 +4992,7 @@ details.adm-card {
     width: 100%;
     padding: 9px 13px;
     border-radius: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     color: var(--text);
     font-size: 12px;
@@ -4972,7 +5075,7 @@ details.adm-card {
     justify-content: space-between;
     padding: 7px 10px;
     border-radius: 8px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     transition: background .15s;
 }
@@ -5104,7 +5207,7 @@ details.adm-card {
     border-radius: 13px;
     overflow: hidden;
     border: 1px solid var(--border);
-    background: var(--surface2);
+    background: var(--bg2);
     transition: transform .15s ease, border-color .15s ease, box-shadow .15s ease;
 }
 
@@ -5383,7 +5486,7 @@ details.adm-card {
     flex-direction: column;
     gap: 2px;
     padding: 16px 12px;
-    background: var(--surface);
+    background: var(--bg2);
     border-right: 1px solid var(--border);
     overflow-y: auto;
 }
@@ -5417,7 +5520,7 @@ details.adm-card {
     }
 
     .csn-item:hover {
-        background: var(--surface2);
+        background: var(--bg2);
         color: var(--text);
     }
 
@@ -5494,6 +5597,7 @@ details.adm-card {
     min-width: 0;
     overflow-y: auto;
     padding: var(--clan-content-padding);
+    background: var(--bg);
 }
 
 /* ЕДИНЫЙ отступ снизу для ЛЮБОГО скролл-контейнера клановых панелей
@@ -5624,7 +5728,7 @@ details.adm-card {
 }
 
 .clan-settings-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 16px;
@@ -5748,7 +5852,7 @@ details.adm-card {
     align-items: center;
     justify-content: center;
     font-size: 30px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: 16px;
     box-shadow: 0 4px 16px rgba(0,0,0,.25);
@@ -5800,7 +5904,7 @@ details.adm-card {
     align-items: baseline;
     gap: 5px;
     padding: 5px 12px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-pill);
     white-space: nowrap;
@@ -5845,7 +5949,7 @@ details.adm-card {
 
 /* ── OVERVIEW: INFO CARDS ── */
 .clan-info-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     padding: 12px 14px;
@@ -5968,7 +6072,7 @@ details.adm-card {
     color: var(--text3);
     line-height: 1.5;
     padding: 9px 11px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     margin-bottom: 10px;
@@ -6181,7 +6285,7 @@ details.adm-card {
     align-items: center;
     gap: 12px;
     padding: 11px 12px 11px 14px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
     cursor: pointer;
@@ -6469,7 +6573,7 @@ details.adm-card {
     color: var(--text3);
     line-height: 1.5;
     padding: 10px 12px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: var(--radius-sm);
 }
@@ -6491,7 +6595,7 @@ details.adm-card {
     align-items: center;
     gap: 10px;
     padding: 9px 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border);
     border-radius: 10px;
     cursor: pointer;
@@ -6564,11 +6668,6 @@ details.adm-card {
     .rme-dialog {
         width: calc(100vw - 24px);
     }
-}
-
-/* ── SHOP PANEL (standalone) ── */
-#shop-panel {
-    width: 600px;
 }
 
 .shop-owned {
@@ -7457,7 +7556,7 @@ details.adm-card {
     padding: 10px 13px;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border2);
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text);
     font-size: 13px;
     font-family: inherit;
@@ -7486,7 +7585,7 @@ details.adm-card {
     padding: 10px 0;
     border-radius: var(--radius-sm);
     border: 1px solid var(--border2);
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text);
     font-size: 13px;
     font-weight: 600;
@@ -7752,7 +7851,7 @@ body.mini-mode #backdrop {
     width: 30px;
     height: 30px;
     border-radius: 50%;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     color: var(--accent2);
     display: flex;
@@ -8268,7 +8367,7 @@ body.mini-mode #backdrop {
     }
 
 #admin-tab-timelapse .tl-btn-ghost {
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text2);
     border: 1px solid var(--border2);
 }
@@ -8288,7 +8387,7 @@ body.mini-mode #backdrop {
     justify-content: center;
     border: 1px solid var(--border2);
     border-radius: 8px;
-    background: var(--surface2);
+    background: var(--bg2);
     color: var(--text2);
     font-size: 15px;
     cursor: pointer;
@@ -8302,7 +8401,7 @@ body.mini-mode #backdrop {
 
 /* ── Карточка статуса записи ── */
 #admin-tab-timelapse .tl-rec-card {
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: 12px;
     padding: 14px;
@@ -8440,12 +8539,12 @@ body.mini-mode #backdrop {
 }
 
     #admin-tab-timelapse .tl-session-item:hover {
-        background: var(--surface2);
+        background: var(--bg2);
         border-color: var(--accent);
     }
 
     #admin-tab-timelapse .tl-session-item.selected {
-        background: var(--surface2);
+        background: var(--bg2);
         border-color: var(--accent);
     }
 
@@ -8607,7 +8706,7 @@ body.mini-mode #backdrop {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: 8px;
     color: var(--text);
@@ -8652,7 +8751,7 @@ body.mini-mode #backdrop {
     flex-wrap: wrap;
     justify-content: center;
     gap: 3px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     border-radius: 8px;
     padding: 3px;
@@ -9028,7 +9127,7 @@ body.mini-mode #backdrop {
 }
 
     #tl-export-modal > div {
-        background: var(--surface2);
+        background: var(--bg2);
         border: 1px solid var(--border2);
         border-radius: 14px;
         padding: 28px 28px 24px;
@@ -9650,7 +9749,7 @@ body.mini-mode #backdrop {
     align-items: center;
     justify-content: center;
     margin-bottom: 8px;
-    background: var(--surface2);
+    background: var(--bg2);
 }
 
     .clan-banner-upload-zone:hover {
@@ -9845,7 +9944,7 @@ body.mini-mode #backdrop {
     flex: 1;
     padding: 8px 12px;
     border-radius: 10px;
-    background: var(--surface2);
+    background: var(--bg2);
     border: 1px solid var(--border2);
     color: var(--text);
     font-size: 11.5px;

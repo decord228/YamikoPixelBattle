@@ -18,6 +18,11 @@ const RANKS = [
   {name:'Архитектор',icon:'🏛️',min:5000},{name:'Бог Пикселей',icon:'👑',min:20000}
 ];
 
+// Награда монетами за получение звания — ТОЛЬКО для отображения бейджа
+// "+N🪙" в прогресс-баре звания в профиле. Реальную выдачу монет делает
+// сервер (см. RANK_REWARDS в server.js) — значения должны совпадать 1-в-1.
+const RANK_REWARDS = { 'Новичок':0, 'Художник':20, 'Маэстро':60, 'Легенда':200, 'Архитектор':500, 'Бог Пикселей':2000 };
+
 const EMOJI_AVATARS = ['👾','🦊','🐺','🐉','🦋','🌙','⚡','🔥','💎','🌸','🎭','🤖','🦅','🐙','🌈','🎸','🦄','🐸','🐱','🐻','🎃','🌊','❄️','🍄'];
 
 // ── КЛАН: ПРАВА ЗВАНИЙ ──
@@ -128,21 +133,27 @@ const CLAN_SHOP_ITEMS = [
 // sessionPixels) — никаких новых полей на сервере/в БД не требуется,
 // поэтому это не расходует ни байта дополнительного места в Redis.
 // stats передаётся из buildAchievementStats() в ui.js.
+// xp — награда опытом, показывается бейджем справа от карточки ачивки и
+// начисляется сервером в acc.xp в момент реальной разблокировки (см.
+// ACHIEVEMENTS_DEF/checkAchievements в server.js — значения xp должны
+// совпадать 1-в-1 с этим списком).
+// progress(s) — [текущее, нужное] значение для прогресс-бара. Для
+// булевых ачивок (клан/vip/покупка) это просто [0|1, 1].
 const ACHIEVEMENTS = [
-  { id:'first_pixel',   title:'Первый мазок',      desc:'Поставь свой первый пиксель',            icon:'🖌️', check: s => s.pixels >= 1 },
-  { id:'pixels_50',     title:'Начинающий',        desc:'Поставь 50 пикселей',                    icon:'🌱', check: s => s.pixels >= 50 },
-  { id:'pixels_200',    title:'Художник',          desc:'Поставь 200 пикселей',                   icon:'🎨', check: s => s.pixels >= 200 },
-  { id:'pixels_1000',   title:'Легенда',           desc:'Поставь 1000 пикселей',                  icon:'⭐', check: s => s.pixels >= 1000 },
-  { id:'pixels_5000',   title:'Архитектор',        desc:'Поставь 5000 пикселей',                  icon:'🏛️', check: s => s.pixels >= 5000 },
-  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Поставь 20 000 пикселей',                icon:'👑', check: s => s.pixels >= 20000 },
-  { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', check: s => s.coins >= 500 },
-  { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', check: s => s.coins >= 5000 },
-  { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', check: s => s.purchasedCount > 0 },
-  { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', check: s => !!s.clan },
-  { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', check: s => s.friendsCount >= 1 },
-  { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', check: s => s.friendsCount >= 5 },
-  { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🔥', check: s => s.sessionPixels >= 100 },
-  { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'💎', check: s => s.isVip || s.isAdmin },
+  { id:'first_pixel',   title:'Первый мазок',      desc:'Поставь свой первый пиксель',            icon:'🖌️', xp:10,  check: s => s.pixels >= 1,        progress: s => [s.pixels, 1] },
+  { id:'pixels_50',     title:'Начинающий',        desc:'Поставь 50 пикселей',                    icon:'🌱', xp:20,  check: s => s.pixels >= 50,       progress: s => [s.pixels, 50] },
+  { id:'pixels_200',    title:'Художник',          desc:'Поставь 200 пикселей',                   icon:'🎨', xp:40,  check: s => s.pixels >= 200,      progress: s => [s.pixels, 200] },
+  { id:'pixels_1000',   title:'Легенда',           desc:'Поставь 1000 пикселей',                  icon:'⭐', xp:80,  check: s => s.pixels >= 1000,     progress: s => [s.pixels, 1000] },
+  { id:'pixels_5000',   title:'Архитектор',        desc:'Поставь 5000 пикселей',                  icon:'🏛️', xp:150, check: s => s.pixels >= 5000,     progress: s => [s.pixels, 5000] },
+  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Поставь 20 000 пикселей',                icon:'👑', xp:300, check: s => s.pixels >= 20000,    progress: s => [s.pixels, 20000] },
+  { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', xp:30,  check: s => s.coins >= 500,       progress: s => [s.coins, 500] },
+  { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', xp:100, check: s => s.coins >= 5000,      progress: s => [s.coins, 5000] },
+  { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', xp:15,  check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
+  { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', xp:20,  check: s => !!s.clan,             progress: s => [s.clan ? 1 : 0, 1] },
+  { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,  check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
+  { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', xp:35,  check: s => s.friendsCount >= 5,  progress: s => [s.friendsCount, 5] },
+  { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🔥', xp:25,  check: s => s.sessionPixels >= 100, progress: s => [s.sessionPixels||0, 100] },
+  { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'💎', xp:50,  check: s => s.isVip || s.isAdmin, progress: s => [(s.isVip||s.isAdmin) ? 1 : 0, 1] },
 ];
 
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');

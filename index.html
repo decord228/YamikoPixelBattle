@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-3';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-5';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -587,6 +587,7 @@
                     <div class="clan-content">
                         <div id="prof-tab-overview">
                             <div class="rank-badge"><div class="rank-icon" id="prof-rank-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V11" /><path d="M12 12c0-4 -3-6-7-6 0 4.5 2.7 7 7 7z" /><path d="M12 9c0-3.5 2.5-5 6-5 0 3.7-2.3 6-6 6z" /></svg></div><div><div class="rank-title">Звание</div><div class="rank-name" id="prof-rank">Новичок</div></div></div>
+                            <div id="prof-rank-progress"></div>
                             <div class="stat-grid-3">
                                 <div class="stat-card"><div class="stat-val" id="prof-pixels">0</div><div class="stat-lbl">Пикселей</div></div>
                                 <div class="stat-card" id="prof-session-card"><div class="stat-val" id="prof-session">0</div><div class="stat-lbl">Сессия</div></div>

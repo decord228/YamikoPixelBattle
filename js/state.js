@@ -34,6 +34,12 @@ let isLoggedIn = false, isAdmin = false, isVip = false;
 let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾', currentAvatar = null;
 let currentCoins = 0, purchasedItems = [];
+// ── АЧИВКИ / ОПЫТ (Этап 4) ──
+// currentXp — суммарный опыт, начисленный сервером за разблокированные
+// ачивки (acc.xp). unlockedAchievements — id ачивок, которые сервер уже
+// один раз засчитал (acc.unlocked_achievements) — источник правды для
+// отображения "Есть"/прогресса как у себя, так и в чужом профиле.
+let currentXp = 0, unlockedAchievements = [];
 // ── БАННЕР ПРОФИЛЯ (Этап 2) ──
 let currentBannerId = null;       // текущий выбранный баннер (id из каталога, или null)
 let ownedBanners = [];            // купленные платные баннеры (id-шники)

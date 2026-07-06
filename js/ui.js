@@ -94,6 +94,36 @@ function updateProfileStats(pixels,rank) {
   const r=RANKS.slice().reverse().find(r=>pixels>=r.min)||RANKS[0];
   document.getElementById('prof-rank').textContent=r.name;
   document.getElementById('prof-rank-icon').textContent=r.icon;
+  renderRankProgress(pixels);
+}
+
+// renderRankProgress — прогресс-бар "сколько пикселей осталось до
+// следующего звания" + бейдж награды монетами за него. Работает и для
+// своего, и для чужого профиля (принимает просто число пикселей).
+function renderRankProgress(pixels) {
+  const box = document.getElementById('prof-rank-progress');
+  if (!box) return;
+  const sorted = RANKS.slice().sort((a,b)=>a.min-b.min);
+  const cur = sorted.slice().reverse().find(r=>pixels>=r.min) || sorted[0];
+  const next = sorted.find(r=>r.min>pixels);
+
+  if (!next) {
+    box.innerHTML = `<div class="ach-progress"><div class="ach-progress-bar" style="width:100%"></div></div>
+      <div class="ach-progress-label">👑 Максимальное звание достигнуто</div>`;
+    return;
+  }
+
+  const span = next.min - cur.min;
+  const done = pixels - cur.min;
+  const pct = Math.max(0, Math.min(100, span ? (done/span)*100 : 100));
+  const reward = (typeof RANK_REWARDS !== 'undefined' ? RANK_REWARDS[next.name] : 0) || 0;
+
+  box.innerHTML = `
+    <div class="ach-progress"><div class="ach-progress-bar" style="width:${pct}%"></div></div>
+    <div class="ach-progress-label">
+      ${next.icon} До «${esc(next.name)}»: ещё ${(next.min - pixels).toLocaleString()} пикс.
+      ${reward ? `<span class="ach-xp-badge" style="margin-left:6px;" title="Награда за звание">🪙 +${reward}</span>` : ''}
+    </div>`;
 }
 
 function changePassword() {
@@ -135,48 +165,94 @@ function switchProfileTab(tab) {
     else renderReadOnlyBannerTab(viewingProfileData);
   }
   if (tab === 'friends' && isSelf) renderProfileFriendsTab();
-  if (tab === 'achievements' && isSelf) renderProfileAchievementsTab();
+  if (tab === 'achievements') renderProfileAchievementsTab();
   if (tab === 'overview') renderProfileClanCard(isSelf ? null : viewingProfileData);
 }
 
 // ── АЧИВКИ ──
-// Полностью считаются на клиенте из уже загруженных глобалок — никаких
-// дополнительных запросов к серверу и полей в БД не требуется.
-function buildAchievementStats() {
+// Источник правды теперь сервер (acc.unlocked_achievements/acc.xp), но
+// прогресс-бары считаем локально из тех же публичных полей — так работает
+// и для своего, и для чужого профиля (у чужого просто своя копия stats,
+// пришедшая в profile_data). sessionPixels — единственное поле, которого
+// нет у чужого профиля (сессия не персистится), поэтому у чужих профилей
+// оно всегда 0 — прогресс "Продуктивной сессии" виден только у себя.
+function buildAchievementStats(p) {
+  if (!p) {
+    return {
+      pixels: currentPixels || 0,
+      coins: currentCoins || 0,
+      clan: currentClan || '',
+      purchasedCount: Array.isArray(purchasedItems) ? purchasedItems.length : 0,
+      friendsCount: Array.isArray(cpFriends) ? cpFriends.length : 0,
+      sessionPixels: sessionPixels || 0,
+      isVip: !!isVip,
+      isAdmin: !!isAdmin,
+    };
+  }
   return {
-    pixels: currentPixels || 0,
-    coins: currentCoins || 0,
-    clan: currentClan || '',
-    purchasedCount: Array.isArray(purchasedItems) ? purchasedItems.length : 0,
-    friendsCount: Array.isArray(cpFriends) ? cpFriends.length : 0,
-    sessionPixels: sessionPixels || 0,
-    isVip: !!isVip,
-    isAdmin: !!isAdmin,
+    pixels: p.pixels || 0,
+    coins: 0, // приватное поле чужого аккаунта — недоступно, см. userCard()
+    clan: p.clan || '',
+    purchasedCount: p.purchased_count || 0,
+    friendsCount: p.friends_count || 0,
+    sessionPixels: 0,
+    isVip: p.role === 'vip',
+    isAdmin: p.role === 'admin',
   };
 }
 
 function renderProfileAchievementsTab() {
   const box = document.getElementById('profile-achievements-list');
   if (!box) return;
-  if (!cpFriends.length) sendJSON({ action:'friends_get' });
-  const stats = buildAchievementStats();
-  const unlocked = ACHIEVEMENTS.filter(a => { try { return a.check(stats); } catch(_) { return false; } });
-  const locked = ACHIEVEMENTS.filter(a => !unlocked.includes(a));
+  const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
+  if (isSelf && !cpFriends.length) sendJSON({ action:'friends_get' });
+
+  const stats = buildAchievementStats(isSelf ? null : viewingProfileData);
+  // Разблокировка — источник правды: серверный список unlocked_achievements
+  // (persists навсегда, даже если монеты потом потратили). Локальный
+  // check(stats) используется только как fallback для мгновенного отклика
+  // на своём профиле, пока сервер ещё не прислал achievement_unlocked, и
+  // для ачивки session_100, которую сервер вообще не считает.
+  const unlockedIds = new Set(isSelf ? (unlockedAchievements || []) : (viewingProfileData?.unlocked_achievements || []));
+  const isUnlocked = a => unlockedIds.has(a.id) || (isSelf && (() => { try { return a.check(stats); } catch(_) { return false; } })());
+
+  const unlocked = ACHIEVEMENTS.filter(isUnlocked);
+  const locked = ACHIEVEMENTS.filter(a => !isUnlocked(a));
+  const totalXp = isSelf ? (currentXp || 0) : (viewingProfileData?.xp || 0);
 
   const summary = `<div class="clan-shop-balance-row" style="margin-bottom:12px;">
     <div class="clan-shop-balance-label">🏆 Получено ачивок</div>
     <div class="clan-shop-balance-amount">${unlocked.length} / ${ACHIEVEMENTS.length}</div>
+  </div>
+  <div class="clan-shop-balance-row" style="margin-bottom:12px;">
+    <div class="clan-shop-balance-label">✨ Всего опыта</div>
+    <div class="clan-shop-balance-amount">${totalXp.toLocaleString()} XP</div>
   </div>`;
 
-  const card = a => `
-    <div class="clan-shop-item ${unlocked.includes(a) ? 'is-owned' : ''}" style="${unlocked.includes(a)?'':'opacity:.55'}">
+  const card = a => {
+    const done = isUnlocked(a);
+    let barHtml = '';
+    if (!done && typeof a.progress === 'function') {
+      let cur = 0, target = 1;
+      try { [cur, target] = a.progress(stats); } catch(_) {}
+      const pct = Math.max(0, Math.min(100, target ? (cur / target) * 100 : 0));
+      barHtml = `<div class="ach-progress"><div class="ach-progress-bar" style="width:${pct}%"></div></div>
+        <div class="ach-progress-label">${Math.min(cur,target).toLocaleString()} / ${target.toLocaleString()}</div>`;
+    }
+    return `
+    <div class="clan-shop-item ${done ? 'is-owned' : ''}" style="${done?'':'opacity:.7'}">
       <div class="clan-shop-item-icon">${a.icon}</div>
       <div class="clan-shop-item-body">
         <div class="clan-shop-item-title">${esc(a.title)}</div>
         <div class="clan-shop-item-desc">${esc(a.desc)}</div>
+        ${barHtml}
       </div>
-      <div class="clan-shop-item-action">${unlocked.includes(a) ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Есть</span>' : '<span class="shop-lock-inline" title="Ещё не выполнено">🔒</span>'}</div>
+      <div class="clan-shop-item-action ach-action-col">
+        <div class="ach-xp-badge" title="Награда за ачивку">✨ +${a.xp||0}</div>
+        ${done ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Есть</span>' : '<span class="shop-lock-inline" title="Ещё не выполнено">🔒</span>'}
+      </div>
     </div>`;
+  };
 
   box.innerHTML = summary + `<div class="clan-shop-items-list">${unlocked.map(card).join('')}${locked.map(card).join('')}</div>`;
 }
@@ -3396,6 +3472,39 @@ function showToast(msg,type='info'){
   wrap.appendChild(t);
   setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),300);},3000);
 }
+
+// showAchievementToast/showRankUpToast — расширенные тосты с иконкой и
+// наградой (опыт/монеты). Используют тот же #toast-wrap и анимации
+// toast-in/toast-out, что и showToast, но с собственной раскладкой.
+function showAchievementToast(d) {
+  const wrap=document.getElementById('toast-wrap');
+  if (!wrap) return;
+  const t=document.createElement('div');
+  t.className='toast toast-achievement';
+  t.innerHTML = `<div class="toast-ach-icon">${esc(d.icon||'🏆')}</div>
+    <div class="toast-ach-body">
+      <div class="toast-ach-title">Ачивка получена!</div>
+      <div class="toast-ach-name">${esc(d.title||'')}</div>
+    </div>
+    <div class="toast-ach-reward">✨ +${d.xp||0}</div>`;
+  wrap.appendChild(t);
+  setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),300);},4200);
+}
+
+function showRankUpToast(d) {
+  const wrap=document.getElementById('toast-wrap');
+  if (!wrap) return;
+  const t=document.createElement('div');
+  t.className='toast toast-rankup';
+  t.innerHTML = `<div class="toast-ach-icon">${esc(d.icon||'⭐')}</div>
+    <div class="toast-ach-body">
+      <div class="toast-ach-title">Новое звание!</div>
+      <div class="toast-ach-name">${esc(d.rank||'')}</div>
+    </div>
+    ${d.coins ? `<div class="toast-ach-reward">🪙 +${d.coins}</div>` : ''}`;
+  wrap.appendChild(t);
+  setTimeout(()=>{t.classList.add('hide');setTimeout(()=>t.remove(),300);},4200);
+}
 function esc(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
 function updateCoordsBar(x,y){document.getElementById('coords-badge').textContent=(x<0)?'— , —':`${x} , ${y}`;}
 function updateInspector(mx, my, px, py, fromCache) {
@@ -4617,7 +4726,7 @@ function renderProfileData(d) {
   document.getElementById('profile-nav-settings').style.display = isSelf ? '' : 'none';
   document.getElementById('profile-nav-settings-sep').style.display = isSelf ? '' : 'none';
   document.getElementById('profile-nav-friends').style.display = isSelf ? '' : 'none';
-  document.getElementById('profile-nav-achievements').style.display = isSelf ? '' : 'none';
+  // Ачивки теперь публичная витрина — видна и в чужом профиле (Этап 4).
 
   if (isSelf) {
     updateProfileStats(currentPixels, currentRank);
@@ -4630,6 +4739,7 @@ function renderProfileData(d) {
     document.getElementById('prof-rank').textContent = p.rank || 'Новичок';
     const r = RANKS.find(r => r.name === p.rank) || RANKS[0];
     document.getElementById('prof-rank-icon').textContent = r.icon;
+    renderRankProgress(p.pixels || 0);
     // Сессия/монеты — приватные поля чужого аккаунта, не отдаются сервером
     // (см. userCard на сервере) — прячем карточки, а не показываем 0.
     document.getElementById('prof-session-card').style.display = 'none';

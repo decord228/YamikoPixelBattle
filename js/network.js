@@ -76,6 +76,8 @@ function handleJSON(d) {
     currentCoins=d.coins||0;
     purchasedItems=d.purchased_items||d.purchased_levels||[];
     currentClan=d.clan||'';
+    currentXp=d.xp||0;
+    unlockedAchievements=d.unlocked_achievements||[];
     selectedEmoji=currentEmoji;
     savedStencils = d.saved_stencils || [];
     if (typeof renderSavedStencils === 'function') renderSavedStencils();
@@ -131,6 +133,22 @@ function handleJSON(d) {
     currentCoins=d.coins||0;
     updateCoinsUI(currentCoins);
     if (d.pixels) currentPixels=d.pixels;
+  }
+  else if (a==='achievement_unlocked') {
+    unlockedAchievements = Array.from(new Set([...(unlockedAchievements||[]), d.id]));
+    currentXp = (currentXp||0) + (d.xp||0);
+    if (typeof showAchievementToast === 'function') showAchievementToast(d);
+    // Если вкладка ачивок в профиле сейчас открыта — сразу перерисуем,
+    // чтобы прогресс-бар/бейдж "Есть" обновились без перезахода в профиль.
+    if (typeof renderProfileAchievementsTab === 'function' &&
+        document.getElementById('prof-tab-achievements')?.style.display !== 'none') {
+      renderProfileAchievementsTab();
+    }
+  }
+  else if (a==='rank_up') {
+    currentRank = d.rank || currentRank;
+    if (typeof updateProfileStats === 'function') updateProfileStats(currentPixels, currentRank);
+    if (typeof showRankUpToast === 'function') showRankUpToast(d);
   }
   else if (a==='banner_update') {
     currentBannerId=d.banner||null;

@@ -3640,6 +3640,57 @@ html, body {
     cursor: help;
 }
 
+/* ── АЧИВКИ / ЗВАНИЯ: прогресс-бар + бейдж награды (Этап 4) ── */
+.ach-progress {
+    width: 100%;
+    height: 6px;
+    border-radius: var(--radius-pill);
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    overflow: hidden;
+    margin-top: 6px;
+}
+
+.ach-progress-bar {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    transition: width .4s ease;
+}
+
+.ach-progress-label {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 4px;
+    font-family: 'Space Mono',monospace;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ach-xp-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-family: 'Space Mono',monospace;
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--accent2);
+    background: rgba(54,144,234,.12);
+    border: 1px solid rgba(54,144,234,.25);
+    border-radius: var(--radius-pill);
+    padding: 2px 7px;
+    margin-bottom: 5px;
+    white-space: nowrap;
+}
+
+.ach-action-col {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+}
+
 .clan-shop-tiers-row {
     display: grid;
     grid-template-columns: repeat(5, 1fr);
@@ -7354,6 +7405,59 @@ details.adm-card {
     .toast.hide {
         animation: toast-out .3s ease forwards;
     }
+
+/* ── Тосты ачивок / повышения звания (Этап 4) ── */
+.toast-achievement,
+.toast-rankup {
+    padding: 10px 16px;
+    gap: 10px;
+    white-space: normal;
+    max-width: 320px;
+}
+
+.toast-achievement {
+    background: linear-gradient(135deg, rgba(234,179,8,.16), rgba(18,18,20,.96));
+    border-color: rgba(234,179,8,.35);
+}
+
+.toast-rankup {
+    background: linear-gradient(135deg, rgba(54,144,234,.18), rgba(18,18,20,.96));
+    border-color: rgba(54,144,234,.35);
+}
+
+.toast-ach-icon {
+    font-size: 22px;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+.toast-ach-body {
+    flex: 1;
+    min-width: 0;
+}
+
+.toast-ach-title {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: var(--text2);
+}
+
+.toast-ach-name {
+    font-size: 12.5px;
+    font-weight: 700;
+    margin-top: 1px;
+}
+
+.toast-ach-reward {
+    font-family: 'Space Mono',monospace;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--accent2);
+    flex-shrink: 0;
+}
 
 @keyframes toast-in {
     from {

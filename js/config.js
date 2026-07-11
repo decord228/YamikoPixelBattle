@@ -12,16 +12,89 @@ const PALETTE = [
   {c:'#811e9f',n:'Пурпурный'},{c:'#b44ac0',n:'Сиреневый'},{c:'#2b1e3e',n:'Тёмно-пурпурный'},{c:'#1a1a1a',n:'Почти чёрный'}
 ];
 
+// ── ЗВАНИЯ (Этап 4: переход на опыт) ──
+// 1 поставленный пиксель = 1 xp. Список должен 1-в-1 совпадать (имена/иконки/
+// пороги) с RANK_THRESHOLDS в server.js — сервер является источником правды
+// для реальной проверки, здесь только для отображения на клиенте.
 const RANKS = [
-  {name:'Новичок',icon:'🌱',min:0},{name:'Художник',icon:'🎨',min:50},
-  {name:'Маэстро',icon:'🖌️',min:200},{name:'Легенда',icon:'⭐',min:1000},
-  {name:'Архитектор',icon:'🏛️',min:5000},{name:'Бог Пикселей',icon:'👑',min:20000}
+  {name:'Новичок',            icon:'🌱', min:0},
+  {name:'Ученик',             icon:'🖍️', min:50},
+  {name:'Художник',           icon:'🎨', min:150},
+  {name:'Подмастерье',        icon:'🧵', min:350},
+  {name:'Маэстро',            icon:'🖌️', min:700},
+  {name:'Виртуоз',            icon:'🎭', min:1200},
+  {name:'Вдохновлённый',      icon:'💫', min:1600},
+  {name:'Легенда',            icon:'⭐', min:2000},
+  {name:'Чемпион',            icon:'🏆', min:3000},
+  {name:'Мастер Цвета',       icon:'🌈', min:4200},
+  {name:'Хранитель Холста',   icon:'🛡️', min:5800},
+  {name:'Архитектор',         icon:'🏛️', min:7800},
+  {name:'Зодчий',             icon:'🏗️', min:9000},
+  {name:'Творец Миров',       icon:'🌍', min:10200},
+  {name:'Провидец',           icon:'🔮', min:13000},
+  {name:'Император Пикселей', icon:'👁️', min:16200},
+  {name:'Небожитель',         icon:'🌠', min:18500},
+  {name:'Бог Пикселей',       icon:'👑', min:20000},
 ];
 
-// Награда монетами за получение звания — ТОЛЬКО для отображения бейджа
-// "+N🪙" в прогресс-баре звания в профиле. Реальную выдачу монет делает
-// сервер (см. RANK_REWARDS в server.js) — значения должны совпадать 1-в-1.
-const RANK_REWARDS = { 'Новичок':0, 'Художник':20, 'Маэстро':60, 'Легенда':200, 'Архитектор':500, 'Бог Пикселей':2000 };
+// Награда за звание — ТОЛЬКО для отображения в UI (иконка/подпись награды в
+// карточке ранга). Реальную выдачу делает сервер по кнопке "Забрать"
+// (action:'claim_rank_reward') — см. RANK_REWARDS в server.js, значения
+// должны совпадать 1-в-1. Три типа: coins / banner (tier) / shop_item (itemId).
+const RANK_REWARDS = {
+  'Новичок':            { type:'coins',     amount:10 },
+  'Ученик':             { type:'coins',     amount:15 },
+  'Художник':           { type:'coins',     amount:20 },
+  'Подмастерье':        { type:'banner',    tier:'free' },
+  'Маэстро':            { type:'coins',     amount:60 },
+  'Виртуоз':            { type:'banner',    tier:'free' },
+  'Вдохновлённый':      { type:'vip_temp',  hours:1 },
+  'Легенда':            { type:'banner',    tier:'gradient' },
+  'Чемпион':            { type:'coins',     amount:150 },
+  'Мастер Цвета':       { type:'banner',    tier:'gradient' },
+  'Хранитель Холста':   { type:'shop_item', itemId:'cooldown_boost_25' },
+  'Архитектор':         { type:'coins',     amount:500 },
+  'Зодчий':             { type:'vip_temp',  hours:24 },
+  'Творец Миров':       { type:'banner',    tier:'animated' },
+  'Провидец':           { type:'shop_item', itemId:'cooldown_boost_50' },
+  'Император Пикселей': { type:'banner',    tier:'animated' },
+  'Небожитель':         { type:'coins',     amount:1000 },
+  'Бог Пикселей':       { type:'coins',     amount:2000 },
+};
+
+// ── МОНЕТНЫЙ БОНУС ПОД КАЖДОЙ КАРТОЧКОЙ ЗВАНИЯ ──
+// Отдельно от RANK_REWARDS (жетон-"сюрприз" МЕЖДУ карточками, может быть
+// баннером/предметом) — это фиксированные монеты, которые показываются
+// прямо ПОД карточкой самого звания (иконка монеты слева, "N монет"
+// справа), чтобы у любого звания, даже без coin-награды в RANK_REWARDS,
+// был на виду простой монетный бонус. Пока это ЧИСТО отображение на
+// клиенте (плейсхолдер-баланс, растёт вместе с порогом XP звания) —
+// если нужна реальная выдача этих монет по кнопке "Забрать", это нужно
+// завести на сервере отдельным полем и присылать сюда с бэкенда.
+const RANK_COIN_BONUS = Object.fromEntries(
+  RANKS.map(r => [r.name, Math.max(5, Math.round(r.min / 10))])
+);
+
+
+// Человекочитаемое описание награды за звание — используется и в карусели
+// "Все звания", и в мини-бейдже прогресса. itemId ищется в ALL_SHOP_ITEMS
+// (объявлен ниже, после каталогов магазина).
+function rankRewardInfo(reward) {
+  if (!reward) return null;
+  if (reward.type === 'coins')  return { icon:'🪙', label:`+${reward.amount} монет` };
+  if (reward.type === 'banner') {
+    const tierLabel = { free:'Простой баннер', gradient:'Градиентный баннер', animated:'Анимированный баннер' }[reward.tier] || 'Баннер';
+    return { icon:'🖼️', label: tierLabel };
+  }
+  if (reward.type === 'shop_item') {
+    const item = typeof getShopItemById === 'function' ? getShopItemById(reward.itemId) : null;
+    return { icon:'🎁', label: item ? item.title : 'Предмет магазина' };
+  }
+  if (reward.type === 'vip_temp') {
+    return { icon:'💎', label: `VIP на ${reward.hours} ${reward.hours === 1 ? 'час' : (reward.hours < 5 ? 'часа' : 'часов')}` };
+  }
+  return null;
+}
 
 const EMOJI_AVATARS = ['👾','🦊','🐺','🐉','🦋','🌙','⚡','🔥','💎','🌸','🎭','🤖','🦅','🐙','🌈','🎸','🦄','🐸','🐱','🐻','🎃','🌊','❄️','🍄'];
 
@@ -91,6 +164,12 @@ const SHOP_ITEMS_ADMIN = [
   {id:'admin_rainbow',title:'Радужный шторм',desc:'Заливает весь холст случайными цветами.',icon:ICON_RAINBOW,cost:0,type:'admin_tool'},
 ];
 
+// Единый список всех товаров (без admin-инструментов) — нужен, чтобы
+// найти title/icon предмета по itemId, когда он приходит наградой за
+// звание (RANK_REWARDS: {type:'shop_item', itemId}), см. rankRewardInfo() выше.
+const ALL_SHOP_ITEMS = [...SHOP_ITEMS_USER, ...SHOP_ITEMS_VIP, ...SHOP_ITEMS_COOLDOWN];
+function getShopItemById(id) { return ALL_SHOP_ITEMS.find(i => i.id === id) || null; }
+
 // ── КЛАН: МАГАЗИН ──
 // Изначальный лимит участников клана (без покупок) — должен совпадать с сервером.
 const CLAN_BASE_MEMBER_LIMIT = 5;
@@ -140,18 +219,25 @@ const CLAN_SHOP_ITEMS = [
 // progress(s) — [текущее, нужное] значение для прогресс-бара. Для
 // булевых ачивок (клан/vip/покупка) это просто [0|1, 1].
 const ACHIEVEMENTS = [
-  { id:'first_pixel',   title:'Первый мазок',      desc:'Поставь свой первый пиксель',            icon:'🖌️', xp:10,  check: s => s.pixels >= 1,        progress: s => [s.pixels, 1] },
-  { id:'pixels_50',     title:'Начинающий',        desc:'Поставь 50 пикселей',                    icon:'🌱', xp:20,  check: s => s.pixels >= 50,       progress: s => [s.pixels, 50] },
-  { id:'pixels_200',    title:'Художник',          desc:'Поставь 200 пикселей',                   icon:'🎨', xp:40,  check: s => s.pixels >= 200,      progress: s => [s.pixels, 200] },
-  { id:'pixels_1000',   title:'Легенда',           desc:'Поставь 1000 пикселей',                  icon:'⭐', xp:80,  check: s => s.pixels >= 1000,     progress: s => [s.pixels, 1000] },
-  { id:'pixels_5000',   title:'Архитектор',        desc:'Поставь 5000 пикселей',                  icon:'🏛️', xp:150, check: s => s.pixels >= 5000,     progress: s => [s.pixels, 5000] },
-  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Поставь 20 000 пикселей',                icon:'👑', xp:300, check: s => s.pixels >= 20000,    progress: s => [s.pixels, 20000] },
+  { id:'first_pixel',   title:'Первый мазок',      desc:'Наберите 1 очко опыта',                  icon:'🖌️', xp:10,  check: s => s.xp >= 1,        progress: s => [s.xp, 1] },
+  { id:'pixels_50',     title:'Начинающий',        desc:'Наберите 50 очков опыта',                icon:'🌱', xp:20,  check: s => s.xp >= 50,       progress: s => [s.xp, 50] },
+  { id:'pixels_200',    title:'Художник',          desc:'Наберите 200 очков опыта',               icon:'🎨', xp:40,  check: s => s.xp >= 200,      progress: s => [s.xp, 200] },
+  { id:'pixels_1000',   title:'Легенда',           desc:'Наберите 1000 очков опыта',               icon:'⭐', xp:80,  check: s => s.xp >= 1000,     progress: s => [s.xp, 1000] },
+  { id:'pixels_5000',   title:'Архитектор',        desc:'Наберите 5000 очков опыта',               icon:'🏛️', xp:150, check: s => s.xp >= 5000,     progress: s => [s.xp, 5000] },
+  { id:'pixels_10000',  title:'Мастер оттенков',   desc:'Наберите 10 000 очков опыта',             icon:'🌀', xp:200, check: s => s.xp >= 10000,    progress: s => [s.xp, 10000] },
+  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Наберите 20 000 очков опыта',             icon:'👑', xp:300, check: s => s.xp >= 20000,    progress: s => [s.xp, 20000] },
+  { id:'coins_100',     title:'Первая заначка',    desc:'Накопи 100 монет одновременно',          icon:'👛', xp:15,  check: s => s.coins >= 100,       progress: s => [s.coins, 100] },
   { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', xp:30,  check: s => s.coins >= 500,       progress: s => [s.coins, 500] },
+  { id:'coins_1000',    title:'Богач',             desc:'Накопи 1000 монет одновременно',         icon:'💵', xp:60,  check: s => s.coins >= 1000,      progress: s => [s.coins, 1000] },
   { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', xp:100, check: s => s.coins >= 5000,      progress: s => [s.coins, 5000] },
   { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', xp:15,  check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
+  { id:'purchase_5',    title:'Постоянный клиент', desc:'Соверши 5 покупок в магазине',           icon:'🛍️', xp:25,  check: s => s.purchasedCount >= 5,  progress: s => [s.purchasedCount, 5] },
+  { id:'purchase_20',   title:'Шопоголик',         desc:'Соверши 20 покупок в магазине',          icon:'🧾', xp:70,  check: s => s.purchasedCount >= 20, progress: s => [s.purchasedCount, 20] },
   { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', xp:20,  check: s => !!s.clan,             progress: s => [s.clan ? 1 : 0, 1] },
   { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,  check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
   { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', xp:35,  check: s => s.friendsCount >= 5,  progress: s => [s.friendsCount, 5] },
+  { id:'friend_10',     title:'Душа общества',     desc:'Добавь 10 друзей',                       icon:'🎊', xp:60,  check: s => s.friendsCount >= 10, progress: s => [s.friendsCount, 10] },
+  { id:'banners_3',     title:'Коллекционер баннеров', desc:'Владей 3 баннерами профиля',         icon:'🖼️', xp:40,  check: s => (s.ownedBannersCount||0) >= 3, progress: s => [s.ownedBannersCount||0, 3] },
   { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🔥', xp:25,  check: s => s.sessionPixels >= 100, progress: s => [s.sessionPixels||0, 100] },
   { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'💎', xp:50,  check: s => s.isVip || s.isAdmin, progress: s => [(s.isVip||s.isAdmin) ? 1 : 0, 1] },
 ];

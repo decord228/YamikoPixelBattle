@@ -31,6 +31,11 @@ function applyCooldownBoost(pct, until) {
   if (typeof buildShopUI === 'function') buildShopUI();
 }
 let isLoggedIn = false, isAdmin = false, isVip = false;
+// vipTempUntil — таймстамп (мс) истечения ВРЕМЕННОГО VIP-статуса, выданного
+// наградой за промежуточное звание ('Вдохновлённый'/'Зодчий', см. config.js
+// RANK_REWARDS type:'vip_temp'). 0 = нет активного временного VIP. Пока он
+// не истёк, isVip=true так же, как и при постоянном VIP.
+let vipTempUntil = 0;
 let currentUser = '', currentPixels = 0, sessionPixels = 0;
 let currentRank = 'Новичок', currentEmoji = '👾', currentAvatar = null;
 let currentCoins = 0, purchasedItems = [];
@@ -40,6 +45,11 @@ let currentCoins = 0, purchasedItems = [];
 // один раз засчитал (acc.unlocked_achievements) — источник правды для
 // отображения "Есть"/прогресса как у себя, так и в чужом профиле.
 let currentXp = 0, unlockedAchievements = [];
+// claimedRanks/claimedAchievements — какие из достигнутых наград за звания/
+// ачивки уже реально забраны кнопкой (acc.claimed_ranks/claimed_achievements
+// на сервере). Используются, чтобы не показывать "Забрать" повторно и чтобы
+// посчитать, сколько наград сейчас доступно к получению (бейдж на rank-badge).
+let claimedRanks = [], claimedAchievements = [];
 // ── БАННЕР ПРОФИЛЯ (Этап 2) ──
 let currentBannerId = null;       // текущий выбранный баннер (id из каталога, или null)
 let ownedBanners = [];            // купленные платные баннеры (id-шники)

@@ -66,6 +66,8 @@ function handleJSON(d) {
     currentUser=d.username||'?';
     isAdmin=(d.role==='admin');
     isVip=(d.role==='vip');
+    vipTempUntil = d.vip_temp_until || 0;
+    if (vipTempUntil > Date.now()) isVip = true;
     currentPixels=d.pixels||0;
     currentRank=d.rank||'Новичок';
     currentEmoji=d.emoji||'👾';
@@ -78,6 +80,8 @@ function handleJSON(d) {
     currentClan=d.clan||'';
     currentXp=d.xp||0;
     unlockedAchievements=d.unlocked_achievements||[];
+    claimedRanks=d.claimed_ranks||[];
+    claimedAchievements=d.claimed_achievements||[];
     selectedEmoji=currentEmoji;
     savedStencils = d.saved_stencils || [];
     if (typeof renderSavedStencils === 'function') renderSavedStencils();
@@ -135,11 +139,13 @@ function handleJSON(d) {
     if (d.pixels) currentPixels=d.pixels;
   }
   else if (a==='achievement_unlocked') {
+    // Опыт (d.xp) больше НЕ начисляется тут автоматически — это просто
+    // уведомление "условие выполнено, награду можно забрать" (см.
+    // action:'claim_achievement' / achievement_claimed ниже).
     unlockedAchievements = Array.from(new Set([...(unlockedAchievements||[]), d.id]));
-    currentXp = (currentXp||0) + (d.xp||0);
     if (typeof showAchievementToast === 'function') showAchievementToast(d);
     // Если вкладка ачивок в профиле сейчас открыта — сразу перерисуем,
-    // чтобы прогресс-бар/бейдж "Есть" обновились без перезахода в профиль.
+    // чтобы прогресс-бар/кнопка "Забрать" обновились без перезахода в профиль.
     if (typeof renderProfileAchievementsTab === 'function' &&
         document.getElementById('prof-tab-achievements')?.style.display !== 'none') {
       renderProfileAchievementsTab();
@@ -147,8 +153,44 @@ function handleJSON(d) {
   }
   else if (a==='rank_up') {
     currentRank = d.rank || currentRank;
-    if (typeof updateProfileStats === 'function') updateProfileStats(currentPixels, currentRank);
+    if (d.xp != null) currentXp = d.xp;
+    if (typeof updateProfileStats === 'function') updateProfileStats(currentPixels, currentXp);
     if (typeof showRankUpToast === 'function') showRankUpToast(d);
+  }
+  else if (a==='rank_reward_claimed') {
+    claimedRanks = d.claimed_ranks || claimedRanks;
+    if (d.coins != null) { currentCoins = d.coins; updateCoinsUI(currentCoins); }
+    if (d.owned_banners) ownedBanners = d.owned_banners;
+    if (d.purchased_items) purchasedItems = d.purchased_items;
+    if (d.reward && d.reward.type === 'vip_temp') {
+      // Награда — временный VIP: обновляем роль/флаг сразу, не дожидаясь
+      // переподключения, чтобы VIP-предметы магазина сразу открылись.
+      isAdmin = (d.role === 'admin');
+      isVip = (d.role === 'vip') || (d.vip_temp_until || 0) > Date.now();
+      vipTempUntil = d.vip_temp_until || 0;
+    }
+    if (d.message) showToast(d.message, 'success');
+    if (typeof renderRankProgress === 'function') renderRankProgress(currentXp);
+    if (typeof buildBannerPicker === 'function') buildBannerPicker();
+    if (typeof buildShopUI === 'function') buildShopUI();
+  }
+  else if (a==='vip_status') {
+    // Сервер снял истёкший временный VIP (см. периодическую проверку в
+    // server.js) — синхронизируем локальное состояние, чтобы VIP-предметы
+    // магазина сразу исчезли из доступных, без необходимости релогиниться.
+    isAdmin = (d.role === 'admin');
+    isVip = (d.role === 'vip');
+    vipTempUntil = d.vip_temp_until || 0;
+    if (d.message) showToast(d.message, 'info');
+    if (typeof buildShopUI === 'function') buildShopUI();
+  }
+  else if (a==='achievement_claimed') {
+    claimedAchievements = d.claimed_achievements || claimedAchievements;
+    if (d.newXp != null) currentXp = d.newXp;
+    if (d.rank) currentRank = d.rank;
+    if (d.message) showToast(d.message, 'success');
+    if (typeof updateProfileStats === 'function') updateProfileStats(currentPixels, currentXp);
+    if (typeof renderProfileAchievementsTab === 'function') renderProfileAchievementsTab();
   }
   else if (a==='banner_update') {
     currentBannerId=d.banner||null;

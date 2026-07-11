@@ -3119,18 +3119,113 @@ html, body {
 }
 
 .rank-badge {
+    position: relative;
     background: linear-gradient(135deg,rgba(99,102,241,.18),rgba(129,140,248,.08));
     border: 1px solid rgba(99,102,241,.25);
-    border-radius: 12px;
-    padding: 11px 14px;
+    border-radius: 14px;
+    padding: 13px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    margin-bottom: 13px;
+    overflow: hidden;
+    transition: border-color .2s, background .2s, transform .15s;
+}
+
+/* ── Разделитель между "Званием" и дорогой наград внутри той же
+   фиолетовой панели .rank-badge — раньше дорога была отдельным блоком
+   ниже панели, теперь встроена внутрь, поэтому нужна собственная линия,
+   а не общий .profile-section-divider между секциями. */
+.rank-badge-divider {
+    height: 1px;
+    background: rgba(255,255,255,.08);
+    margin: 2px -16px 0;
+    flex-shrink: 0;
+}
+
+/* Дорога наград теперь живёт внутри .rank-badge — компенсируем padding
+   панели отрицательными полями, чтобы карточки могли использовать всю
+   ширину панели вплоть до её краёв, как остальной контент. */
+.rank-badge .profile-ranks-road-list {
+    margin: 0 -16px;
+    width: auto;
+}
+
+.rank-badge::before {
+    /* Тонкий диагональный блик, едущий по карточке при наведении —
+           делает бейдж заметнее и "премиальнее" на вид (просьба заказчика
+           "цепляло глаз"), без лишней постоянной анимации, которая бы
+           отвлекала/раздражала при обычном просмотре профиля. */
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -60%;
+    width: 40%;
+    height: 100%;
+    background: linear-gradient(115deg, transparent, rgba(255,255,255,.12), transparent);
+    transform: skewX(-20deg);
+    transition: left .5s ease;
+    pointer-events: none;
+}
+
+.rank-badge:hover::before {
+    left: 130%;
+}
+
+.rank-badge:hover {
+    border-color: rgba(99,102,241,.55);
+    background: linear-gradient(135deg,rgba(99,102,241,.26),rgba(129,140,248,.11));
+    transform: translateY(-1px);
+}
+
+.rank-badge-top {
     display: flex;
     align-items: center;
-    gap: 10px;
-    margin-bottom: 13px;
+    gap: 11px;
+}
+
+    .rank-badge-top > div:nth-child(2) {
+        flex: 1;
+        min-width: 0;
+    }
+
+.rank-badge-arrow {
+    flex-shrink: 0;
+    width: 18px;
+    height: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    opacity: .7;
+}
+
+.rank-badge:hover .rank-badge-arrow {
+    opacity: 1;
+    color: var(--accent2);
+    transform: translateX(2px);
+}
+
+/* Кольцо-свечение вокруг иконки звания — крупнее и заметнее старого
+   плоского .rank-icon, чтобы звание реально "цепляло глаз" в профиле. */
+.rank-icon-ring {
+    flex-shrink: 0;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle,rgba(99,102,241,.35),rgba(99,102,241,.05) 70%);
+    border: 1px solid rgba(99,102,241,.4);
+    box-shadow: 0 0 14px rgba(99,102,241,.35), 0 0 0 1px rgba(255,255,255,.03) inset;
 }
 
 .rank-icon {
     font-size: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .rank-title {
@@ -3142,9 +3237,49 @@ html, body {
 
 .rank-name {
     font-family: 'Unbounded',sans-serif;
-    font-size: 13px;
+    font-size: 14px;
     color: var(--accent2);
-    margin-top: 1px;
+    margin-top: 2px;
+}
+
+.rank-xp-remaining {
+    font-size: 10px;
+    color: var(--text3);
+    margin-top: 3px;
+    font-family: 'Space Mono',monospace;
+}
+
+/* Бейдж-точка "есть награда(ы) к получению" — пульсирует, чтобы привлечь
+   внимание к тому, что нужно зайти и нажать "Забрать" (Этап 4). */
+.rank-badge-claim-dot {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg,#fbbf24,#f97316);
+    color: #1a1005;
+    font-size: 10.5px;
+    font-weight: 800;
+    font-family: 'Space Mono',monospace;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 0 3px rgba(18,18,20,.9), 0 0 10px rgba(251,191,36,.6);
+    animation: rankClaimPulse 1.8s ease-in-out infinite;
+    z-index: 1;
+}
+
+@keyframes rankClaimPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.12);
+    }
 }
 
 /* ── EMOJI AVATARS ── */
@@ -3590,6 +3725,19 @@ html, body {
         border-color: rgba(34,197,94,.2);
         background: rgba(34,197,94,.04);
     }
+
+    /* Ачивка выполнена, но награда ещё не забрана — подсвечиваем янтарным,
+       чтобы глаз сразу цеплялся за карточки, которые "ждут" клика. */
+    .clan-shop-item.ach-can-claim {
+        border-color: rgba(251,191,36,.35);
+        background: rgba(251,191,36,.05);
+    }
+
+.ach-claim-btn {
+    padding: 5px 14px;
+    font-size: 10.5px;
+    white-space: nowrap;
+}
 
 .clan-shop-item-icon {
     width: 28px;
@@ -7530,6 +7678,448 @@ details.adm-card {
         transform: translate(-50%, -50%) scale(1);
     }
 
+/* ── "ДОРОГА НАГРАД" в профиле (Trophy Road из Brawl Stars) — единая
+   длинная горизонтальная лента, встроенная прямо в панель профиля под
+   бейджем звания (раньше открывалась отдельной модалкой). Листается
+   перетаскиванием мышкой/свайпом/колёсиком, без разбивки на страницы.
+   Карточки званий и наградные жетоны между ними нанизаны на общую
+   линию-прогрессбар, который закрашивается до текущего звания. ── */
+
+/* Тонкий разделитель между бейджем звания и дорогой наград */
+.profile-section-divider {
+    height: 1px;
+    background: var(--border);
+    margin: 14px 0;
+    flex-shrink: 0;
+}
+
+/* Обёртка дороги: сюда вешается drag-to-scroll (см. ui.js). Затемнение по
+   краям намекает, что список тянется дальше в обе стороны (цвет фейда
+   подобран под фон самой панели профиля, var(--bg2)). */
+.profile-ranks-road-wrap {
+    position: relative;
+    margin: 0 -20px;
+}
+
+    .profile-ranks-road-wrap::before,
+    .profile-ranks-road-wrap::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        width: 28px;
+        z-index: 3;
+        pointer-events: none;
+    }
+
+    .profile-ranks-road-wrap::before {
+        left: 0;
+        background: linear-gradient(90deg, var(--bg2), transparent);
+    }
+
+    .profile-ranks-road-wrap::after {
+        right: 0;
+        background: linear-gradient(270deg, var(--bg2), transparent);
+    }
+
+/* Сама лента — один длинный горизонтальный ряд без переносов и без
+   scroll-snap (свободная прокрутка, не постранично). cursor:grab указывает,
+   что список можно тащить мышкой; во время активного перетаскивания
+   ui.js переключает его на .is-dragging (grabbing + без transition). */
+.profile-ranks-road-list {
+    /* ── Размеры карточек — 2 набора переменных, редактируемых прямо в
+       DevTools (клик на .profile-ranks-road-list → Styles → меняешь
+       значения тут, всё остальное само пересчитывается через var()).
+       rank = карточки званий (все одного статичного размера, крупнее).
+       reward = карточки наград (монеты/баннеры, статично меньше). */
+    --rank-card-w: 156px;
+    --rank-card-h: 184px;
+    --reward-card-w: 108px;
+    --reward-card-h: 122px;
+    /* Шаг сетки узлов (= расстояние между соседними чекпоинтами минус gap
+       ленты) — ОДИН И ТОТ ЖЕ для узла звания и узла награды. Именно
+       поэтому кружки-чекпоинты снизу всегда на равном расстоянии друг от
+       друга, а видимый зазор между самими карточками получается разным
+       "бесплатно": узкая карточка награды просто центрируется в том же
+       по ширине узле, что и широкая карточка звания, оставляя вокруг себя
+       больше свободного места. По умолчанию равен ширине карточки звания
+       (самой широкой), поэтому у неё зазора вокруг почти нет. */
+    --road-node-w: var(--rank-card-w);
+    /* Высота всего узла (карточка + gap + чекпоинт) — общая для рядов,
+       чтобы чекпоинты обоих типов узлов оставались на одной линии.
+       Должна быть >= --rank-card-h + 14px (gap) + 28px (чекпоинт). */
+    --road-node-h: 240px;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    overflow-x: auto;
+    overflow-y: hidden;
+    width: 100%;
+    padding: 26px 20px 8px;
+    gap: 22px;
+    scrollbar-width: none;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+}
+
+    .profile-ranks-road-list::-webkit-scrollbar {
+        display: none;
+    }
+
+    .profile-ranks-road-list.is-dragging {
+        cursor: grabbing;
+        scroll-behavior: auto;
+    }
+
+/* ── Узел дороги: сверху — карточка-панель (звание/награда, разного
+   размера), снизу — чекпоинт фиксированного размера (28px), к которому и
+   привязана линия-прогрессбар. justify-content:flex-end прижимает и
+   карточку, и чекпоинт к низу узла фиксированной высоты — благодаря этому
+   чекпоинты разных узлов всегда на одной горизонтали, а более компактные
+   карточки наград "висят" внизу (а не прилипают к верху), с пустым
+   пространством над собой, как в референсе. gap — фиксированный зазор
+   между низом карточки и чекпоинтом, одинаковый для любой высоты карточки.
+   ВАЖНО: ширина узла (.road-node) фиксированная и ОДИНАКОВАЯ для всех —
+   и для звания, и для награды — именно поэтому расстояние между
+   чекпоинтами всегда одинаковое (они всегда строго по центру своего
+   узла фиксированной ширины). А расстояние между самими карточками
+   получается разным "бесплатно": узкая карточка награды (92px) просто
+   центрируется в том же по ширине узле, что и широкая карточка звания
+   (122px), оставляя вокруг себя больше свободного места. */
+.road-node {
+    position: relative;
+    z-index: 1;
+    height: var(--road-node-h);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    text-align: center;
+}
+
+/* Ширина узла — общая для звания и награды (--road-node-w), поэтому шаг
+   между чекпоинтами всегда одинаковый. Карточка внутри может быть уже
+   узла (напр. награда) — тогда она просто центрируется, оставляя вокруг
+   себя видимый зазор; сама ширина карточки на шаг сетки не влияет. */
+.road-node-rank {
+    flex: 0 0 var(--road-node-w);
+    width: var(--road-node-w);
+}
+
+.road-node-reward {
+    flex: 0 0 var(--road-node-w);
+    width: var(--road-node-w);
+}
+
+/* ── Карточка-панель (общая база для звания и награды) ──
+   Фон — тёмный (48% альфа), с лёгким фиолетовым свечением снизу
+   (градиент "0deg" — от низа к верху, поэтому цвет гуще у нижнего края
+   и гаснет к верху), как в референсе Figma. Обводка — 2px. */
+.road-card {
+    border-radius: 16px;
+    background: linear-gradient(0deg, rgba(156,145,255,.12) 0%, rgba(183,175,255,0) 65%), rgba(0,0,0,.3);
+    border: 2px solid var(--border2);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: .2s;
+}
+
+/* ── Карточка звания: статичный размер, крупная эмодзи-иконка.
+   width/height — берутся из --rank-card-w/--rank-card-h на
+   .profile-ranks-road-list (см. выше), можно менять прямо в DevTools. ── */
+.road-card-rank {
+    width: var(--rank-card-w);
+    height: var(--rank-card-h);
+    padding: 16px 8px 12px;
+    position: relative;
+}
+
+.road-card-icon-rank {
+    font-size: 34px;
+    line-height: 1;
+    margin-bottom: 10px;
+    filter: drop-shadow(0 0 2px rgba(255,255,255,.15));
+}
+
+.road-card-title {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.25;
+    color: var(--text);
+}
+
+.road-card-title-sm {
+    font-size: 10px;
+}
+
+.road-card-sub {
+    margin-top: 4px;
+    font-size: 9px;
+    color: var(--text2);
+    font-family: 'Space Mono',monospace;
+}
+
+.road-card-current-tag {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7.5px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    color: #0f0f12;
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+    white-space: nowrap;
+    box-shadow: 0 2px 8px rgba(129,140,248,.5);
+}
+
+/* ── Бейдж "сколько XP нужно" — висит над карточкой (звания ИЛИ награды),
+   на том же месте, где у текущего звания сидит тег "Сейчас" (они никогда
+   не показываются одновременно на одном узле — см. rankNodeHtml в ui.js).
+   Приглушённее тега "Сейчас": просто справочная цифра, а не акцент. */
+.road-card-xp-tag {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: .3px;
+    color: var(--text2);
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: var(--radius-pill);
+    padding: 2px 8px;
+    white-space: nowrap;
+}
+
+/* ── Монетная плашка под названием звания ВНУТРИ самой карточки: иконка
+   монеты слева, текст "N монет" справа. Отдельный элемент от жетона-
+   награды между карточками — есть у КАЖДОГО звания (см. RANK_COIN_BONUS
+   в config.js). margin-top вместо gap контейнера — .road-card-rank сам не
+   flex-gap-контейнер с равными зазорами (там ещё иконка+тайтл разного
+   размера сверху). */
+.road-card-coin-chip {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    margin-top: 8px;
+    padding: 3px 9px;
+    border-radius: var(--radius-pill);
+    background: rgba(251,191,36,.1);
+    border: 1px solid rgba(251,191,36,.25);
+    font-family: 'Space Mono',monospace;
+    font-size: 9.5px;
+    font-weight: 700;
+    color: #fbbf24;
+    white-space: nowrap;
+}
+
+.road-card-coin-chip-icon {
+    font-size: 11px;
+    line-height: 1;
+}
+
+/* is-done: пройденное звание — обычный тёмный градиент-фон (базовый) */
+.road-node-rank.is-done .road-card-rank {
+    border-color: var(--border2);
+}
+
+/* is-current: текущее звание — фон чуть сильнее выделен (более яркий/
+   насыщенный фиолетовый градиент + чуть светлее рамка), карточка при этом
+   остаётся плоской, без внешнего box-shadow свечения вокруг неё. */
+.road-node-rank.is-current .road-card-rank {
+    background: linear-gradient(0deg, rgba(156,145,255,.5) 0%, rgba(183,175,255,.02) 85%), rgba(0,0,0,.2);
+    border-color: rgba(129,140,248,.45);
+}
+
+/* is-locked: приглушённая карточка — темнее и без цвета, БЕЗ opacity на
+   всём блоке (иначе снова начнёт просвечивать линия трека под ним) —
+   тусклость только через цвет фона/фильтр текста. */
+.road-node-rank.is-locked .road-card-rank {
+    background: var(--surface2);
+    border-color: var(--border);
+}
+
+.road-node-rank.is-locked .road-card-icon-rank {
+    filter: grayscale(1) brightness(.5);
+}
+
+.road-node-rank.is-locked .road-card-title,
+.road-node-rank.is-locked .road-card-sub {
+    color: var(--text3);
+}
+
+/* ── Карточка награды: статичный размер (меньше, чем у звания), с круглым
+   жетоном сверху. width/height — из --reward-card-w/--reward-card-h. ── */
+.road-card-reward {
+    width: var(--reward-card-w);
+    height: var(--reward-card-h);
+    padding: 14px 6px 10px;
+    position: relative;
+    cursor: default;
+}
+
+.road-card-icon-badge {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 9px;
+    background: #B7AFFF;
+    flex-shrink: 0;
+}
+
+    .road-card-icon-badge svg {
+        width: 18px;
+        height: 18px;
+        fill: #FFFFFF;
+    }
+
+.road-card-icon-badge-coin {
+    background: transparent;
+    font-size: 24px;
+    line-height: 1;
+}
+
+/* Жетон для наград, чей вид заранее не показываем (баннер, предмет
+   магазина) — плоский тёмный блок с "?", сюрприз до получения звания. */
+.road-card-icon-unknown {
+    width: 60px;
+    height: 34px;
+    border-radius: 8px;
+    margin-bottom: 9px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'Unbounded',sans-serif;
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--text2);
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    flex-shrink: 0;
+}
+
+.road-node-reward.is-current .road-card-reward {
+    cursor: pointer;
+    /* активная (доступная к получению) награда — фон выделен сильнее,
+       такой же приём, как у is-current звания */
+    background: linear-gradient(0deg, rgba(156,145,255,.4) 0%, rgba(183,175,255,0) 65%), rgba(0,0,0,.6);
+    border-color: rgba(129,140,248,.45);
+}
+
+    .road-node-reward.is-current .road-card-reward:hover {
+        border-color: var(--accent2);
+        transform: translateY(-2px);
+    }
+
+.road-node-reward.is-current .road-card-title-sm {
+    color: var(--accent2);
+    animation: rankClaimPulse 1.8s ease-in-out infinite;
+}
+
+.road-node-reward.is-locked .road-card-reward {
+    background: var(--surface2);
+    border-color: var(--border);
+}
+
+.road-node-reward.is-locked .road-card-icon-badge {
+    background: var(--surface3);
+    filter: grayscale(1) brightness(.6);
+}
+
+.road-node-reward.is-locked .road-card-title,
+.road-node-reward.is-locked .road-card-sub {
+    color: var(--text3);
+}
+
+/* ── Ряд чекпоинтов и линия-прогрессбар ──
+   Все чекпоинты одного размера (28px) и всегда прижаты к низу узла — их
+   центр всегда на одной и той же высоте независимо от высоты карточки
+   сверху, поэтому линия .road-track рисуется по фиксированному top и
+   больше никогда не "гуляет" между карточками разных размеров. */
+.road-checkpoint {
+    position: relative;
+    z-index: 2;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    flex-shrink: 0;
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    color: var(--text3);
+}
+
+.road-checkpoint-done {
+    background: linear-gradient(135deg, rgba(129,140,248,.35), rgba(129,140,248,.15));
+    border-color: rgba(129,140,248,.5);
+    color: var(--accent2);
+}
+
+.road-checkpoint-current {
+    background: linear-gradient(135deg, var(--accent2), var(--accent));
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 0 0 4px rgba(129,140,248,.18), 0 0 16px rgba(129,140,248,.6);
+    font-weight: 800;
+}
+
+.road-checkpoint-locked {
+    color: var(--text3);
+}
+
+/* Линия-путь позади карточек — общий прогрессбар для всей дороги. Серая
+   подложка на всю длину + закрашенная часть до текущего звания (её ширина
+   выставляется через JS после рендера, см. layoutRanksRoadFill() в ui.js).
+   top — фиксированный пиксель от верха .ranks-modal-list: padding-top
+   списка + высота узла (.road-node) минус половина чекпоинта, см. расчёт
+   в комментарии там же. Совпадает с центром чекпоинтов, не иконок карточек
+   — поэтому не зависит от разной высоты контента карточек. */
+.road-track {
+    position: absolute;
+    left: 20px;
+    right: 20px;
+    /* 26px = padding-top ленты, 14px = половина чекпоинта (28px) —
+       см. .road-node-h выше; при ручном ресайзе карточек в DevTools
+       линия трека сама пересчитается вместе с высотой узла. */
+    top: calc(var(--road-node-h) + 12px);
+    height: 4px;
+    transform: translateY(-50%);
+    background: var(--surface3);
+    border: 1px solid var(--border2);
+    border-radius: 999px;
+    z-index: 0;
+}
+
+.road-track-fill {
+    position: absolute;
+    left: 0;
+    top: -1px;
+    bottom: -1px;
+    width: 0;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 999px;
+    box-shadow: 0 0 10px rgba(129,140,248,.5);
+    transition: width .5s cubic-bezier(.34,1.56,.64,1);
+}
+
 /* ── NEWS BG CROP EDITOR MODAL ── */
 .ncm-dialog {
     position: fixed;
@@ -9636,6 +10226,19 @@ body.mini-mode #backdrop {
         gap: 16px;
         margin-bottom: 18px;
         border-radius: 14px;
+    }
+
+    #profile-panel .rank-badge-divider {
+        margin: 2px -22px 0;
+    }
+
+    #profile-panel .rank-badge .profile-ranks-road-list {
+        margin: 0 -22px;
+    }
+
+    #profile-panel .rank-icon-ring {
+        width: 54px;
+        height: 54px;
     }
 
     #profile-panel .rank-icon {

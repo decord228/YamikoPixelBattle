@@ -11,6 +11,12 @@ let bcmDragStart = { x: 0, y: 0 };
 let bcmBoxStart = { x: 0, y: 0, w: 0, h: 0, imgBox: null };
 const CLAN_BANNER_MAX_MB = 5;
 
+// ── ИКОНКА-ЗВЕЗДА ДЛЯ ЗВАНИЙ/НАГРАД (вместо эмодзи, как в референсе Figma) ──
+// Один и тот же "sparkle"-контур используется и для большой иконки звания
+// (road-card-icon-rank), и для маленькой внутри кружка-жетона награды
+// (road-card-icon-badge) — размер и цвет задаются через CSS у родителя.
+const RANK_STAR_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C12 6.2 13 9.7 14.6 11.3 16.2 12.9 19.6 14 24 14 19.6 14 16.2 15.1 14.6 16.7 13 18.3 12 21.8 12 24 12 21.8 11 18.3 9.4 16.7 7.8 15.1 4.4 14 0 14 4.4 14 7.8 12.9 9.4 11.3 11 9.7 12 6.2 12 0Z"/></svg>`;
+
 // ── UI & LOGIC ──
 function switchAuthTab(tab) {
   document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1)));
@@ -36,7 +42,7 @@ function onAuthSuccess(d) {
   // с Этапа 3 шапка (баннер+аватар+имя) строится динамически в
   // renderProfileBannerHeader() при каждом openProfile(), поэтому здесь
   // напрямую их не трогаем (см. openProfile ниже).
-  updateProfileStats(currentPixels,currentRank);
+  updateProfileStats(currentPixels,currentXp);
   updateCoinsUI(currentCoins);
   if (typeof updateProfileBannerDisplay === 'function') updateProfileBannerDisplay();
   if (typeof buildBannerPicker === 'function') buildBannerPicker();
@@ -87,43 +93,289 @@ function doLogout() {
   showToast('Вы вышли из аккаунта','info');
 }
 
-function updateProfileStats(pixels,rank) {
+// updateProfileStats(pixels, xp) — pixels остаётся отдельной витринной
+// статистикой ("Пикселей" в карточке профиля), а звание теперь считается
+// ИСКЛЮЧИТЕЛЬНО от xp (Этап 4: 1 пиксель = 1xp, но xp также растёт от
+// забранных наград за ачивки — поэтому это не всегда одно и то же число).
+function updateProfileStats(pixels,xp) {
   currentPixels=pixels;
+  currentXp=xp;
   document.getElementById('prof-pixels').textContent=pixels.toLocaleString();
   document.getElementById('prof-session').textContent=sessionPixels.toLocaleString();
-  const r=RANKS.slice().reverse().find(r=>pixels>=r.min)||RANKS[0];
+  const r=RANKS.slice().reverse().find(r=>xp>=r.min)||RANKS[0];
+  currentRank=r.name;
   document.getElementById('prof-rank').textContent=r.name;
   document.getElementById('prof-rank-icon').textContent=r.icon;
-  renderRankProgress(pixels);
+  renderRankProgress(xp);
 }
 
-// renderRankProgress — прогресс-бар "сколько пикселей осталось до
-// следующего звания" + бейдж награды монетами за него. Работает и для
-// своего, и для чужого профиля (принимает просто число пикселей).
-function renderRankProgress(pixels) {
-  const box = document.getElementById('prof-rank-progress');
-  if (!box) return;
-  const sorted = RANKS.slice().sort((a,b)=>a.min-b.min);
-  const cur = sorted.slice().reverse().find(r=>pixels>=r.min) || sorted[0];
-  const next = sorted.find(r=>r.min>pixels);
+// renderRankProgress — мини прогресс-бар "сколько xp осталось до следующего
+// звания" + бейдж награды за него, и отдельный "живой" индикатор — сколько
+// уже ДОСТИГНУТЫХ наград ещё не забрано (считается по всем RANKS <= текущего,
+// не только по следующему) — это и есть тот самый "крючок", чтобы люди
+// реально открывали модалку и жали "Забрать", а не просто смотрели на цифры.
+// Работает и для своего, и для чужого профиля (принимает просто число xp).
+// Запоминаем xp в _ranksModalXp, чтобы модалка "Все звания", открываемая
+// кликом по .rank-badge, знала, какое звание подсвечивать текущим и куда
+// проскроллить карусель — без повторного похода за данными.
+let _ranksModalXp = 0;
 
-  if (!next) {
-    box.innerHTML = `<div class="ach-progress"><div class="ach-progress-bar" style="width:100%"></div></div>
-      <div class="ach-progress-label">👑 Максимальное звание достигнуто</div>`;
-    return;
+function claimableRankCount(xp) {
+  return RANKS.filter(r => xp >= r.min && RANK_REWARDS[r.name] && !(claimedRanks||[]).includes(r.name)).length;
+}
+
+function renderRankProgress(xp) {
+  _ranksModalXp = xp;
+  const claimBadge = document.getElementById('prof-rank-claim-badge');
+
+  if (claimBadge) {
+    // Бейдж наличия наград показываем только на СВОЁМ профиле (viewingProfileUsername
+    // пуст/равен себе) — у чужого претензии на claim нет смысла показывать.
+    const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
+    const n = isSelf ? claimableRankCount(xp) : 0;
+    if (n > 0) { claimBadge.textContent = n; claimBadge.style.display = ''; }
+    else claimBadge.style.display = 'none';
   }
 
-  const span = next.min - cur.min;
-  const done = pixels - cur.min;
-  const pct = Math.max(0, Math.min(100, span ? (done/span)*100 : 100));
-  const reward = (typeof RANK_REWARDS !== 'undefined' ? RANK_REWARDS[next.name] : 0) || 0;
+  // Текст "осталось N XP до <следующее звание>" рядом с названием текущего
+  // звания — та самая наглядная привязка прогресса к реальному опыту,
+  // которой раньше не было (прогресс был виден только по самой дороге).
+  const remainEl = document.getElementById('prof-rank-xp-remaining');
+  if (remainEl) {
+    const curIdx = RANKS.reduce((acc,r,i)=> xp>=r.min ? i : acc, 0);
+    const next = RANKS[curIdx+1];
+    remainEl.textContent = next ? `Осталось ${(next.min-xp).toLocaleString()} XP до «${next.name}»` : 'Максимальное звание достигнуто';
+  }
 
-  box.innerHTML = `
-    <div class="ach-progress"><div class="ach-progress-bar" style="width:${pct}%"></div></div>
-    <div class="ach-progress-label">
-      ${next.icon} До «${esc(next.name)}»: ещё ${(next.min - pixels).toLocaleString()} пикс.
-      ${reward ? `<span class="ach-xp-badge" style="margin-left:6px;" title="Награда за звание">🪙 +${reward}</span>` : ''}
+  // Вместо мини-прогресс-бара под бейджем звания — сразу рендерим полную
+  // "дорогу" званий/наград прямо в профиле (см. renderRanksList ниже).
+  renderRanksList('profile-ranks-road-list', xp);
+  setupRanksRoadDrag('profile-ranks-road-list');
+}
+
+// ── "ДОРОГА НАГРАД" (Этап 5→6: теперь встроена прямо в профиль, а не в
+// отдельной модалке) ── Один длинный горизонтальный ряд — карточки
+// званий и жетоны наград между ними, нанизанные на общую линию-
+// прогрессбар. Листается перетаскиванием мышкой (зажать и тащить),
+// тачскроллом и колёсиком — свободная прокрутка, БЕЗ разбивки на
+// страницы/слайды. containerId — id элемента-ленты (.road-node список),
+// чтобы одну и ту же функцию можно было использовать для разных мест
+// (сейчас — только профиль, id='profile-ranks-road-list').
+
+// Награда, которая логически стоит МЕЖДУ званием prevRank и nextRank —
+// это и есть reward у prevRank (RANK_REWARDS[prevRank.name]): по смыслу
+// "получаешь при достижении следующего звания", а на дороге рисуется
+// жетоном на отрезке пути ПЕРЕД карточкой этого следующего звания —
+// ровно как просил пользователь: Ученик -> [+15 монет] -> Художник -> ...
+function renderRanksList(containerId, xp) {
+  const list = document.getElementById(containerId);
+  if (!list) return;
+  const sorted = RANKS;
+  const curIdx = sorted.reduce((acc,r,i)=> xp>=r.min ? i : acc, 0);
+  const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
+
+  // Чекпоинт под карточкой — маленький кружок с замком (locked) / галочкой
+  // (done, current). Все чекпоинты одного размера независимо от карточки
+  // над ними (звание/награда разного размера) — именно на них, а не на
+  // иконках карточек, нанизана линия-прогрессбар, поэтому линия больше не
+  // "плавает" из-за разной высоты контента.
+  const checkpointHtml = (state) => {
+    const icon = state === 'locked' ? '🔒' : '✓';
+    return `<div class="road-checkpoint road-checkpoint-${state}">${icon}</div>`;
+  };
+
+  // Бейдж "сколько XP нужно для этой карточки" — висит НАД карточкой (и у
+  // званий, и у промежуточных наград), чтобы сразу было видно порог, не
+  // читая мелкий текст внутри. minXp — порог звания-владельца награды.
+  const xpTagHtml = (minXp) => `<div class="road-card-xp-tag">${minXp === 0 ? 'Старт' : `${minXp.toLocaleString()} XP`}</div>`;
+
+  // Монетная плашка под карточкой ЛЮБОГО звания (отдельно от жетона-
+  // сюрприза между карточками) — иконка монеты слева, "N монет" справа.
+  const coinChipHtml = (rankName) => {
+    const amount = RANK_COIN_BONUS[rankName];
+    if (!amount) return '';
+    return `<div class="road-card-coin-chip"><span class="road-card-coin-chip-icon">🪙</span><span class="road-card-coin-chip-text">${amount} монет</span></div>`;
+  };
+
+  const rankNodeHtml = (r, i) => {
+    const isCurrent = i === curIdx;
+    const isLocked  = i > curIdx;
+    const isDone    = i < curIdx;
+    const state = isCurrent ? 'current' : isDone ? 'done' : 'locked';
+
+    return `
+    <div class="road-node road-node-rank is-${state}" data-rank-idx="${i}">
+      <div class="road-card road-card-rank">
+        ${isCurrent ? '<div class="road-card-current-tag">Сейчас</div>' : xpTagHtml(r.min)}
+        <div class="road-card-icon road-card-icon-rank">${r.icon}</div>
+        <div class="road-card-title">${esc(r.name)}</div>
+        ${coinChipHtml(r.name)}
+      </div>
+      ${checkpointHtml(state)}
     </div>`;
+  };
+
+  // Жетон награды, стоящий на отрезке дороги ПЕРЕД званием r (i) — это
+  // награда предыдущего звания sorted[i-1].
+  const rewardNodeHtml = (i) => {
+    const owner = sorted[i-1];
+    const reward = RANK_REWARDS[owner.name];
+    if (!reward) return '';
+    const info = rankRewardInfo(reward);
+    if (!info) return '';
+    const claimed  = (claimedRanks||[]).includes(owner.name);
+    const isLocked = (i-1) > curIdx; // владелец награды ещё не достигнут
+    const isDone   = claimed;
+    const canClaim = isSelf && !isLocked && !claimed;
+    const state = isLocked ? 'locked' : (isDone ? 'done' : 'current');
+
+    // Для наград чекпоинт снизу отражает не прогресс по XP, а собрана ли
+    // награда: замок пока звание-владелец не достигнуто, галочка — когда
+    // награда уже забрана, "!" на кнопке — когда доступна к получению.
+    const cpState = isLocked ? 'locked' : (isDone ? 'done' : 'current');
+    const cpIcon = isLocked ? '🔒' : (isDone ? '✓' : '!');
+
+    // Визуал жетона зависит от типа награды: монеты — кружок с иконкой
+    // монеты; всё остальное (баннер, предмет магазина) — плоский блок с
+    // "?", т.к. сам предмет заранее не показываем (сюрприз).
+    const badgeInner = reward.type === 'coins'
+      ? `<div class="road-card-icon-badge road-card-icon-badge-coin">🪙</div>`
+      : `<div class="road-card-icon-unknown">?</div>`;
+
+    return `
+    <div class="road-node road-node-reward is-${state}" data-reward-of="${esc(owner.name)}">
+      <div class="road-card road-card-reward" ${canClaim?`data-onclick="claimRankReward('${esc(owner.name)}')" title="Забрать"`:`title="${esc(info.label)}"`}>
+        ${xpTagHtml(owner.min)}
+        ${badgeInner}
+        <div class="road-card-title road-card-title-sm">${canClaim ? 'Забрать!' : esc(info.label)}</div>
+        <div class="road-card-sub">${isLocked ? esc(owner.name) : (isDone ? 'Получено' : 'Награда')}</div>
+      </div>
+      <div class="road-checkpoint road-checkpoint-${cpState}">${cpIcon}</div>
+    </div>`;
+  };
+
+  let html = `<div id="${containerId}-track" class="road-track"><div id="${containerId}-track-fill" class="road-track-fill"></div></div>`;
+  sorted.forEach((r,i) => {
+    if (i > 0) html += rewardNodeHtml(i);
+    html += rankNodeHtml(r,i);
+  });
+  list.innerHTML = html;
+
+  requestAnimationFrame(() => layoutRanksRoadFill(containerId));
+}
+
+// Красит линию-прогрессбар НЕПРЕРЫВНО, пропорционально реальному XP игрока
+// между текущим и следующим званием (а не "прыжком" сразу на чекпоинт
+// текущего звания, как было раньше) — поэтому сразу видно, сколько
+// осталось до следующей карточки/награды, а не только "достигнуто/нет".
+// Точки расчёта — фактические offsetLeft карточек ЗВАНИЙ (не наград):
+// сама награда не имеет отдельного XP-порога, она открывается ровно в
+// момент получения звания-владельца, поэтому линия интерполируется между
+// соседними .road-node-rank, попутно "проезжая" под жетоном награды между
+// ними — что и даёт визуальный эффект "прогресс к награде".
+//
+// ВАЖНО: .road-track — position:absolute с left/right внутри ленты,
+// которая является overflow-x:auto контейнером. CSS-проценты/right для
+// абсолютных потомков считаются от padding-box САМОГО контейнера (его
+// заданной ширины, т.е. видимой области), а НЕ от его прокручиваемой
+// scrollWidth — поэтому одним CSS left:40px;right:40px нельзя дотянуть
+// линию до последнего звания, если лента шире экрана и скроллится. Чтобы
+// серая линия-путь реально доходила до последнего узла дороги, её ширину
+// выставляем явно в px по фактической scrollWidth ленты.
+function layoutRanksRoadFill(containerId) {
+  const list = document.getElementById(containerId);
+  const track = document.getElementById(`${containerId}-track`);
+  const fill = document.getElementById(`${containerId}-track-fill`);
+  if (!list || !track || !fill) return;
+
+  const trackWidth = Math.max(0, list.scrollWidth - 40); // 40 = 20px отступ слева + 20px справа
+  track.style.width = trackWidth + 'px';
+
+  const rankNodes = list.querySelectorAll('.road-node-rank');
+  if (!rankNodes.length) { fill.style.width = '0px'; return; }
+
+  const xp = _ranksModalXp;
+  const sorted = RANKS;
+  const curIdx = sorted.reduce((acc,r,i)=> xp>=r.min ? i : acc, 0);
+  const centerOf = (node) => node.offsetLeft + node.offsetWidth / 2 - 20; // -20 = отступ .road-track от краёв ленты
+
+  let targetPx = centerOf(rankNodes[curIdx]);
+  if (curIdx < sorted.length - 1 && rankNodes[curIdx + 1]) {
+    const span = sorted[curIdx + 1].min - sorted[curIdx].min;
+    const frac = span > 0 ? Math.min(1, Math.max(0, (xp - sorted[curIdx].min) / span)) : 0;
+    const nextPx = centerOf(rankNodes[curIdx + 1]);
+    targetPx = targetPx + (nextPx - targetPx) * frac;
+  }
+
+  fill.style.width = Math.max(0, Math.min(trackWidth, targetPx)) + 'px';
+}
+
+
+function scrollRanksCarouselTo(idx, smooth = true, containerId = 'profile-ranks-road-list') {
+  const list = document.getElementById(containerId);
+  const node = list?.querySelector(`.road-node-rank[data-rank-idx="${idx}"]`);
+  if (node) node.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto', inline: 'center', block: 'nearest' });
+}
+
+function scrollRanksCarouselToCurrent(smooth = true, containerId = 'profile-ranks-road-list') {
+  const sorted = RANKS;
+  const curIdx = sorted.reduce((acc,r,i)=> _ranksModalXp>=r.min ? i : acc, 0);
+  scrollRanksCarouselTo(curIdx, smooth, containerId);
+}
+
+// ── Перетаскивание дороги мышкой (зажал и тащишь влево/вправо) ──
+// Плюс колёсико: обычная вертикальная прокрутка мышью конвертируется в
+// горизонтальную, чтобы не нужно было держать Shift. Вешаем слушатели
+// один раз (флаг на самом элементе), т.к. функция может вызываться при
+// каждом обновлении профиля.
+let _ranksRoadDragState = null;
+
+function setupRanksRoadDrag(containerId = 'profile-ranks-road-list') {
+  const list = document.getElementById(containerId);
+  if (!list || list._dragBound) return;
+  list._dragBound = true;
+
+  list.addEventListener('mousedown', (e) => {
+    _ranksRoadDragState = { startX: e.clientX, startScroll: list.scrollLeft, moved: false };
+    list.classList.add('is-dragging');
+  });
+
+  window.addEventListener('mousemove', (e) => {
+    if (!_ranksRoadDragState) return;
+    const dx = e.clientX - _ranksRoadDragState.startX;
+    if (Math.abs(dx) > 3) _ranksRoadDragState.moved = true;
+    list.scrollLeft = _ranksRoadDragState.startScroll - dx;
+  });
+
+  window.addEventListener('mouseup', () => {
+    if (!_ranksRoadDragState) return;
+    list.classList.remove('is-dragging');
+    _ranksRoadDragState = null;
+  });
+
+  // Если это было перетаскивание (а не клик по кнопке/жетону) — гасим
+  // последующий click, чтобы случайно не сработал data-onclick под курсором.
+  list.addEventListener('click', (e) => {
+    if (_ranksRoadDragState && _ranksRoadDragState.moved) { e.stopPropagation(); e.preventDefault(); }
+  }, true);
+
+  list.addEventListener('wheel', (e) => {
+    if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+      list.scrollLeft += e.deltaY;
+      e.preventDefault();
+    }
+  }, { passive: false });
+}
+
+// Забрать награду за звание/ачивку — сервер сам проверит порог/повтор
+// (см. action:'claim_rank_reward'/'claim_achievement' в server.js) и
+// пришлёт rank_reward_claimed/achievement_claimed, которые обновят UI.
+function claimRankReward(rankName) {
+  sendJSON({ action: 'claim_rank_reward', rank: rankName });
+}
+
+function claimAchievementReward(id) {
+  sendJSON({ action: 'claim_achievement', id });
 }
 
 function changePassword() {
@@ -180,10 +432,12 @@ function buildAchievementStats(p) {
   if (!p) {
     return {
       pixels: currentPixels || 0,
+      xp: currentXp || 0,
       coins: currentCoins || 0,
       clan: currentClan || '',
       purchasedCount: Array.isArray(purchasedItems) ? purchasedItems.length : 0,
       friendsCount: Array.isArray(cpFriends) ? cpFriends.length : 0,
+      ownedBannersCount: Array.isArray(ownedBanners) ? ownedBanners.length : 0,
       sessionPixels: sessionPixels || 0,
       isVip: !!isVip,
       isAdmin: !!isAdmin,
@@ -191,10 +445,12 @@ function buildAchievementStats(p) {
   }
   return {
     pixels: p.pixels || 0,
+    xp: p.xp || 0,
     coins: 0, // приватное поле чужого аккаунта — недоступно, см. userCard()
     clan: p.clan || '',
     purchasedCount: p.purchased_count || 0,
     friendsCount: p.friends_count || 0,
+    ownedBannersCount: Array.isArray(p.owned_banners) ? p.owned_banners.length : 0,
     sessionPixels: 0,
     isVip: p.role === 'vip',
     isAdmin: p.role === 'admin',
@@ -219,6 +475,8 @@ function renderProfileAchievementsTab() {
   const unlocked = ACHIEVEMENTS.filter(isUnlocked);
   const locked = ACHIEVEMENTS.filter(a => !isUnlocked(a));
   const totalXp = isSelf ? (currentXp || 0) : (viewingProfileData?.xp || 0);
+  const claimedIds = new Set(isSelf ? (claimedAchievements || []) : []);
+  const claimableCount = isSelf ? unlocked.filter(a => !claimedIds.has(a.id)).length : 0;
 
   const summary = `<div class="clan-shop-balance-row" style="margin-bottom:12px;">
     <div class="clan-shop-balance-label">🏆 Получено ачивок</div>
@@ -227,10 +485,21 @@ function renderProfileAchievementsTab() {
   <div class="clan-shop-balance-row" style="margin-bottom:12px;">
     <div class="clan-shop-balance-label">✨ Всего опыта</div>
     <div class="clan-shop-balance-amount">${totalXp.toLocaleString()} XP</div>
-  </div>`;
+  </div>${claimableCount > 0 ? `<div class="clan-shop-balance-row" style="margin-bottom:12px;border-color:rgba(251,191,36,.35);">
+    <div class="clan-shop-balance-label">🎁 Готово к получению</div>
+    <div class="clan-shop-balance-amount" style="color:#fbbf24;">${claimableCount}</div>
+  </div>` : ''}`;
+
+  // Сортируем так, чтобы карточки, готовые к claim'у, всегда были сверху —
+  // это и есть тот самый "крючок", чтобы награду реально забирали, а не
+  // забывали про неё где-то в середине длинного списка.
+  const claimableFirst = unlocked.filter(a => !claimedIds.has(a.id));
+  const claimedList = unlocked.filter(a => claimedIds.has(a.id));
 
   const card = a => {
     const done = isUnlocked(a);
+    const claimed = done && claimedIds.has(a.id);
+    const canClaim = isSelf && done && !claimed;
     let barHtml = '';
     if (!done && typeof a.progress === 'function') {
       let cur = 0, target = 1;
@@ -239,8 +508,16 @@ function renderProfileAchievementsTab() {
       barHtml = `<div class="ach-progress"><div class="ach-progress-bar" style="width:${pct}%"></div></div>
         <div class="ach-progress-label">${Math.min(cur,target).toLocaleString()} / ${target.toLocaleString()}</div>`;
     }
+    let actionHtml;
+    if (!done) {
+      actionHtml = '<span class="shop-lock-inline" title="Ещё не выполнено">🔒</span>';
+    } else if (canClaim) {
+      actionHtml = `<button class="btn btn-primary btn-sm ach-claim-btn" data-onclick="claimAchievementReward('${a.id}')">Забрать</button>`;
+    } else {
+      actionHtml = '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Получено</span>';
+    }
     return `
-    <div class="clan-shop-item ${done ? 'is-owned' : ''}" style="${done?'':'opacity:.7'}">
+    <div class="clan-shop-item ${claimed ? 'is-owned' : ''} ${canClaim ? 'ach-can-claim' : ''}" style="${done?'':'opacity:.7'}">
       <div class="clan-shop-item-icon">${a.icon}</div>
       <div class="clan-shop-item-body">
         <div class="clan-shop-item-title">${esc(a.title)}</div>
@@ -248,13 +525,13 @@ function renderProfileAchievementsTab() {
         ${barHtml}
       </div>
       <div class="clan-shop-item-action ach-action-col">
-        <div class="ach-xp-badge" title="Награда за ачивку">✨ +${a.xp||0}</div>
-        ${done ? '<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Есть</span>' : '<span class="shop-lock-inline" title="Ещё не выполнено">🔒</span>'}
+        <div class="ach-xp-badge" title="Награда опытом">✨ +${a.xp||0}</div>
+        ${actionHtml}
       </div>
     </div>`;
   };
 
-  box.innerHTML = summary + `<div class="clan-shop-items-list">${unlocked.map(card).join('')}${locked.map(card).join('')}</div>`;
+  box.innerHTML = summary + `<div class="clan-shop-items-list">${claimableFirst.map(card).join('')}${claimedList.map(card).join('')}${locked.map(card).join('')}</div>`;
 }
 
 // ── АВАТАР ПРОФИЛЯ: только Discord ──
@@ -380,7 +657,7 @@ function placePixel() {
   pixelOwnerCache.set(`${x},${y}`, { username: currentUser, emoji: currentEmoji, avatar: currentAvatar });
   renderPixel(x,y,colorToPlace);
   sessionPixels++;
-  updateProfileStats(currentPixels+1,currentRank);
+  updateProfileStats(currentPixels+1,currentXp+1);
   spawnPixelFlash(x,y);
   startCooldown();
   if (soundEnabled) playClick();
@@ -4729,7 +5006,7 @@ function renderProfileData(d) {
   // Ачивки теперь публичная витрина — видна и в чужом профиле (Этап 4).
 
   if (isSelf) {
-    updateProfileStats(currentPixels, currentRank);
+    updateProfileStats(currentPixels, currentXp);
     updateCoinsUI(currentCoins);
     document.getElementById('prof-session-card').style.display = '';
     document.getElementById('prof-coins-card').style.display = '';
@@ -4739,7 +5016,7 @@ function renderProfileData(d) {
     document.getElementById('prof-rank').textContent = p.rank || 'Новичок';
     const r = RANKS.find(r => r.name === p.rank) || RANKS[0];
     document.getElementById('prof-rank-icon').textContent = r.icon;
-    renderRankProgress(p.pixels || 0);
+    renderRankProgress(p.xp || 0);
     // Сессия/монеты — приватные поля чужого аккаунта, не отдаются сервером
     // (см. userCard на сервере) — прячем карточки, а не показываем 0.
     document.getElementById('prof-session-card').style.display = 'none';

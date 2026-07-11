@@ -37,30 +37,66 @@ const RANKS = [
   {name:'Бог Пикселей',       icon:'👑', min:20000},
 ];
 
-// Награда за звание — ТОЛЬКО для отображения в UI (иконка/подпись награды в
-// карточке ранга). Реальную выдачу делает сервер по кнопке "Забрать"
-// (action:'claim_rank_reward') — см. RANK_REWARDS в server.js, значения
-// должны совпадать 1-в-1. Три типа: coins / banner (tier) / shop_item (itemId).
+// Награда(-ы) за звание — ТОЛЬКО для отображения в UI (иконка/подпись
+// награды в карточке ранга). Реальную выдачу делает сервер по кнопке
+// "Забрать" (action:'claim_rank_reward') — см. RANK_REWARDS в server.js,
+// значения должны совпадать 1-в-1. Три типа: coins / banner (tier) /
+// shop_item (itemId) / vip_temp (hours).
+//
+// ВАЖНО: каждое звание теперь хранит МАССИВ наград (может отсутствовать),
+// а не одну награду. Награда НЕ открывается сразу по достижению звания-
+// владельца — вместо этого её порог XP вычисляется как точка МЕЖДУ min
+// текущего звания и min следующего (см. getRankCheckpoints ниже): при
+// ровно одной награде в массиве это середина отрезка, при нескольких —
+// отрезок делится на равные части по числу наград (награда i из N
+// открывается на xp = min + (nextMin-min) * (i+1)/(N+1)).
 const RANK_REWARDS = {
-  'Новичок':            { type:'coins',     amount:10 },
-  'Ученик':             { type:'coins',     amount:15 },
-  'Художник':           { type:'coins',     amount:20 },
-  'Подмастерье':        { type:'banner',    tier:'free' },
-  'Маэстро':            { type:'coins',     amount:60 },
-  'Виртуоз':            { type:'banner',    tier:'free' },
-  'Вдохновлённый':      { type:'vip_temp',  hours:1 },
-  'Легенда':            { type:'banner',    tier:'gradient' },
-  'Чемпион':            { type:'coins',     amount:150 },
-  'Мастер Цвета':       { type:'banner',    tier:'gradient' },
-  'Хранитель Холста':   { type:'shop_item', itemId:'cooldown_boost_25' },
-  'Архитектор':         { type:'coins',     amount:500 },
-  'Зодчий':             { type:'vip_temp',  hours:24 },
-  'Творец Миров':       { type:'banner',    tier:'animated' },
-  'Провидец':           { type:'shop_item', itemId:'cooldown_boost_50' },
-  'Император Пикселей': { type:'banner',    tier:'animated' },
-  'Небожитель':         { type:'coins',     amount:1000 },
-  'Бог Пикселей':       { type:'coins',     amount:2000 },
+  'Новичок':            [{ type:'coins',     amount:10 }],
+  'Ученик':             [{ type:'coins',     amount:15 }],
+  'Художник':           [{ type:'coins',     amount:20 }],
+  'Подмастерье':        [{ type:'banner',    tier:'free' }],
+  'Маэстро':            [{ type:'coins',     amount:60 }],
+  'Виртуоз':            [{ type:'banner',    tier:'free' }],
+  // Между "Вдохновлённый" и "Легенда" — две промежуточные награды.
+  'Вдохновлённый':      [{ type:'coins',     amount:50 }, { type:'vip_temp', hours:1 }],
+  'Легенда':            [{ type:'banner',    tier:'gradient' }],
+  'Чемпион':            [{ type:'coins',     amount:150 }],
+  'Мастер Цвета':       [{ type:'banner',    tier:'gradient' }],
+  'Хранитель Холста':   [{ type:'shop_item', itemId:'cooldown_boost_25' }],
+  'Архитектор':         [{ type:'coins',     amount:500 }],
+  // Между "Зодчий" и "Творец Миров" — две промежуточные награды.
+  'Зодчий':             [{ type:'coins',     amount:400 }, { type:'vip_temp', hours:24 }],
+  'Творец Миров':       [{ type:'banner',    tier:'animated' }],
+  'Провидец':           [{ type:'shop_item', itemId:'cooldown_boost_50' }],
+  'Император Пикселей': [{ type:'banner',    tier:'animated' }],
+  'Небожитель':         [{ type:'coins',     amount:1000 }],
+  'Бог Пикселей':       [{ type:'coins',     amount:2000 }],
 };
+
+// Возвращает список "чекпоинтов" (промежуточных наград) для звания rankName:
+// [{ id, reward, xpRequired, index, count }]. id — стабильный идентификатор
+// вида "RankName#i", используется и в acc.claimed_ranks (чтобы отдельно
+// отмечать забранной каждую награду), и при отправке claim_rank_reward.
+// xpRequired — порог XP, на котором награда становится доступной: точка
+// МЕЖДУ min этого звания и min следующего. Если звание последнее в списке
+// (следующего нет) — используем min самого звания.
+function getRankCheckpoints(rankName) {
+  const rewards = RANK_REWARDS[rankName];
+  if (!rewards || !rewards.length) return [];
+  const idx = RANKS.findIndex(r => r.name === rankName);
+  if (idx === -1) return [];
+  const rank = RANKS[idx];
+  const next = RANKS[idx + 1];
+  const span = next ? (next.min - rank.min) : 0;
+  const count = rewards.length;
+  return rewards.map((reward, i) => ({
+    id: `${rankName}#${i}`,
+    reward,
+    index: i,
+    count,
+    xpRequired: next ? Math.round(rank.min + span * (i + 1) / (count + 1)) : rank.min,
+  }));
+}
 
 // ── МОНЕТНЫЙ БОНУС ПОД КАЖДОЙ КАРТОЧКОЙ ЗВАНИЯ ──
 // Отдельно от RANK_REWARDS (жетон-"сюрприз" МЕЖДУ карточками, может быть

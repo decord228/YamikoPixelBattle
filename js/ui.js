@@ -121,7 +121,16 @@ function updateProfileStats(pixels,xp) {
 let _ranksModalXp = 0;
 
 function claimableRankCount(xp) {
-  return RANKS.filter(r => xp >= r.min && RANK_REWARDS[r.name] && !(claimedRanks||[]).includes(r.name)).length;
+  // Считаем ПО ЧЕКПОИНТАМ (не по званиям): у звания может быть несколько
+  // наград с разными порогами xpRequired (см. getRankCheckpoints), и
+  // порог — это НЕ момент достижения звания, а точка между ним и следующим.
+  let n = 0;
+  for (const r of RANKS) {
+    for (const cp of getRankCheckpoints(r.name)) {
+      if (xp >= cp.xpRequired && !(claimedRanks||[]).includes(cp.id)) n++;
+    }
+  }
+  return n;
 }
 
 function renderRankProgress(xp) {
@@ -215,43 +224,50 @@ function renderRanksList(containerId, xp) {
     </div>`;
   };
 
-  // Жетон награды, стоящий на отрезке дороги ПЕРЕД званием r (i) — это
-  // награда предыдущего звания sorted[i-1].
+  // Жетоны наград, стоящие на отрезке дороги ПЕРЕД званием r (i) — это
+  // награда(-ы) предыдущего звания sorted[i-1]. Их может быть несколько
+  // (getRankCheckpoints), каждая со своим порогом xpRequired где-то МЕЖДУ
+  // min владельца и min следующего звания, а не сразу по факту достижения
+  // звания-владельца.
   const rewardNodeHtml = (i) => {
     const owner = sorted[i-1];
-    const reward = RANK_REWARDS[owner.name];
-    if (!reward) return '';
-    const info = rankRewardInfo(reward);
-    if (!info) return '';
-    const claimed  = (claimedRanks||[]).includes(owner.name);
-    const isLocked = (i-1) > curIdx; // владелец награды ещё не достигнут
-    const isDone   = claimed;
-    const canClaim = isSelf && !isLocked && !claimed;
-    const state = isLocked ? 'locked' : (isDone ? 'done' : 'current');
+    const checkpoints = getRankCheckpoints(owner.name);
+    if (!checkpoints.length) return '';
 
-    // Для наград чекпоинт снизу отражает не прогресс по XP, а собрана ли
-    // награда: замок пока звание-владелец не достигнуто, галочка — когда
-    // награда уже забрана, "!" на кнопке — когда доступна к получению.
-    const cpState = isLocked ? 'locked' : (isDone ? 'done' : 'current');
-    const cpIcon = isLocked ? '🔒' : (isDone ? '✓' : '!');
+    return checkpoints.map(cp => {
+      const reward = cp.reward;
+      const info = rankRewardInfo(reward);
+      if (!info) return '';
+      const claimed  = (claimedRanks||[]).includes(cp.id);
+      const isLocked = xp < cp.xpRequired; // порог этого конкретного чекпоинта ещё не набран
+      const isDone   = claimed;
+      const canClaim = isSelf && !isLocked && !claimed;
+      const state = isLocked ? 'locked' : (isDone ? 'done' : 'current');
 
-    // Визуал жетона зависит от типа награды: монеты — кружок с иконкой
-    // монеты; всё остальное (баннер, предмет магазина) — плоский блок с
-    // "?", т.к. сам предмет заранее не показываем (сюрприз).
-    const badgeInner = reward.type === 'coins'
-      ? `<div class="road-card-icon-badge road-card-icon-badge-coin">🪙</div>`
-      : `<div class="road-card-icon-unknown">?</div>`;
+      // Для наград чекпоинт снизу отражает не прогресс по XP, а собрана ли
+      // награда: замок пока порог не набран, галочка — когда награда уже
+      // забрана, "!" на кнопке — когда доступна к получению.
+      const cpState = isLocked ? 'locked' : (isDone ? 'done' : 'current');
+      const cpIcon = isLocked ? '🔒' : (isDone ? '✓' : '!');
 
-    return `
-    <div class="road-node road-node-reward is-${state}" data-reward-of="${esc(owner.name)}">
-      <div class="road-card road-card-reward" ${canClaim?`data-onclick="claimRankReward('${esc(owner.name)}')" title="Забрать"`:`title="${esc(info.label)}"`}>
-        ${xpTagHtml(owner.min)}
-        ${badgeInner}
-        <div class="road-card-title road-card-title-sm">${canClaim ? 'Забрать!' : esc(info.label)}</div>
-        <div class="road-card-sub">${isLocked ? esc(owner.name) : (isDone ? 'Получено' : 'Награда')}</div>
-      </div>
-      <div class="road-checkpoint road-checkpoint-${cpState}">${cpIcon}</div>
-    </div>`;
+      // Визуал жетона зависит от типа награды: монеты — кружок с иконкой
+      // монеты; всё остальное (баннер, предмет магазина, vip) — плоский
+      // блок с "?", т.к. сам предмет заранее не показываем (сюрприз).
+      const badgeInner = reward.type === 'coins'
+        ? `<div class="road-card-icon-badge road-card-icon-badge-coin">🪙</div>`
+        : `<div class="road-card-icon-unknown">?</div>`;
+
+      return `
+      <div class="road-node road-node-reward is-${state}" data-reward-of="${esc(cp.id)}">
+        <div class="road-card road-card-reward" ${canClaim?`data-onclick="claimRankReward('${esc(owner.name)}',${cp.index})" title="Забрать"`:`title="${esc(info.label)}"`}>
+          ${xpTagHtml(cp.xpRequired)}
+          ${badgeInner}
+          <div class="road-card-title road-card-title-sm">${canClaim ? 'Забрать!' : esc(info.label)}</div>
+          <div class="road-card-sub">${isLocked ? esc(owner.name) : (isDone ? 'Получено' : 'Награда')}</div>
+        </div>
+        <div class="road-checkpoint road-checkpoint-${cpState}">${cpIcon}</div>
+      </div>`;
+    }).join('');
   };
 
   let html = `<div id="${containerId}-track" class="road-track"><div id="${containerId}-track-fill" class="road-track-fill"></div></div>`;
@@ -370,8 +386,11 @@ function setupRanksRoadDrag(containerId = 'profile-ranks-road-list') {
 // Забрать награду за звание/ачивку — сервер сам проверит порог/повтор
 // (см. action:'claim_rank_reward'/'claim_achievement' в server.js) и
 // пришлёт rank_reward_claimed/achievement_claimed, которые обновят UI.
-function claimRankReward(rankName) {
-  sendJSON({ action: 'claim_rank_reward', rank: rankName });
+// idx — индекс конкретной промежуточной награды внутри звания (0, если
+// не передан — у большинства званий она единственная). См.
+// getRankCheckpoints в config.js и обработчик 'claim_rank_reward' в server.js.
+function claimRankReward(rankName, idx) {
+  sendJSON({ action: 'claim_rank_reward', rank: rankName, idx: idx || 0 });
 }
 
 function claimAchievementReward(id) {
@@ -461,7 +480,13 @@ function renderProfileAchievementsTab() {
   const box = document.getElementById('profile-achievements-list');
   if (!box) return;
   const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
-  if (isSelf && !cpFriends.length) sendJSON({ action:'friends_get' });
+  // ВАЖНО: проверяем именно cpFriendsFetchedOnce, а не cpFriends.length.
+  // Если у игрока 0 друзей, .length===0 было бы true ПОСТОЯННО — каждый
+  // вызов этой функции слал бы новый friends_get, а его ответ
+  // (friends_update, см. network.js) снова вызывал бы эту же функцию,
+  // если вкладка ачивок открыта — бесконечный цикл перерисовки innerHTML
+  // (то самое "моргание"/пропадание элемента в инспекторе).
+  if (isSelf && !cpFriendsFetchedOnce) { cpFriendsFetchedOnce = true; sendJSON({ action:'friends_get' }); }
 
   const stats = buildAchievementStats(isSelf ? null : viewingProfileData);
   // Разблокировка — источник правды: серверный список unlocked_achievements

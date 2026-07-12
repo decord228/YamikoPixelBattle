@@ -45,6 +45,10 @@ let currentCoins = 0, purchasedItems = [];
 // один раз засчитал (acc.unlocked_achievements) — источник правды для
 // отображения "Есть"/прогресса как у себя, так и в чужом профиле.
 let currentXp = 0, unlockedAchievements = [];
+// currentFriendsCount — счётчик друзей своего аккаунта для карточки
+// статистики в профиле (обновляется из auth_success и friends_update,
+// не требует отдельного friends_get, если список ещё не запрашивался).
+let currentFriendsCount = 0;
 // claimedRanks/claimedAchievements — какие из достигнутых наград за звания/
 // ачивки уже реально забраны кнопкой (acc.claimed_ranks/claimed_achievements
 // на сервере). Используются, чтобы не показывать "Забрать" повторно и чтобы

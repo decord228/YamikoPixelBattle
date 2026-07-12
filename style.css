@@ -3091,6 +3091,121 @@ html, body {
     margin-bottom: 14px;
 }
 
+.stat-grid-6 {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 9px;
+    margin-top: 12px;
+    margin-bottom: 14px;
+}
+
+/* ── Мини-дашборд статистики профиля: донат-прогресс по всем ачивкам
+   + горизонтальные бары по категориям. Чистый SVG/CSS, без сторонних
+   библиотек графиков. ── */
+.profile-stats-charts {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 14px;
+}
+
+.profile-stats-charts-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text2);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 14px;
+}
+
+.profile-stats-charts-body {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+}
+
+.profile-donut-wrap {
+    flex-shrink: 0;
+    width: 96px;
+    height: 96px;
+}
+
+.profile-donut {
+    width: 100%;
+    height: 100%;
+    overflow: visible;
+}
+
+.profile-donut-pct {
+    font-family: 'Unbounded',sans-serif;
+    font-size: 17px;
+    font-weight: 700;
+    fill: #a78bfa;
+}
+
+.profile-donut-sub {
+    font-family: 'Space Mono',monospace;
+    font-size: 8px;
+    fill: var(--text3);
+}
+
+.stats-bars {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+}
+
+.stats-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.stats-bar-label {
+    width: 62px;
+    flex-shrink: 0;
+    font-size: 11px;
+    color: var(--text2);
+}
+
+.stats-bar-track {
+    flex: 1;
+    min-width: 0;
+    height: 7px;
+    border-radius: var(--radius-pill);
+    background: var(--surface3);
+    overflow: hidden;
+}
+
+.stats-bar-fill {
+    height: 100%;
+    border-radius: var(--radius-pill);
+    transition: width .4s ease;
+}
+
+.stats-bar-val {
+    width: 44px;
+    flex-shrink: 0;
+    text-align: right;
+    font-size: 10.5px;
+    font-family: 'Space Mono',monospace;
+    color: var(--text3);
+}
+
+@media (max-width: 480px) {
+    .profile-stats-charts-body {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .profile-donut-wrap {
+        align-self: center;
+    }
+}
+
 .stat-card {
     background: var(--bg2);
     border: 1px solid var(--border);
@@ -3149,27 +3264,6 @@ html, body {
 .rank-badge .profile-ranks-road-list {
     margin: 0 -16px;
     width: auto;
-}
-
-.rank-badge::before {
-    /* Тонкий диагональный блик, едущий по карточке при наведении —
-           делает бейдж заметнее и "премиальнее" на вид (просьба заказчика
-           "цепляло глаз"), без лишней постоянной анимации, которая бы
-           отвлекала/раздражала при обычном просмотре профиля. */
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -60%;
-    width: 40%;
-    height: 100%;
-    background: linear-gradient(115deg, transparent, rgba(255,255,255,.12), transparent);
-    transform: skewX(-20deg);
-    transition: left .5s ease;
-    pointer-events: none;
-}
-
-.rank-badge:hover::before {
-    left: 130%;
 }
 
 .rank-badge:hover {
@@ -3249,6 +3343,25 @@ html, body {
     font-family: 'Space Mono',monospace;
 }
 
+/* Пилюля текущего опыта — показывает суммарный XP игрока в правом верхнем
+   углу карточки звания, рядом с точкой-бейджем незабранных наград. */
+.rank-xp-pill {
+    flex-shrink: 0;
+    align-self: flex-start;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border-radius: var(--radius-pill);
+    background: linear-gradient(135deg,rgba(99,102,241,.28),rgba(129,140,248,.14));
+    border: 1px solid rgba(99,102,241,.45);
+    color: var(--accent2);
+    font-size: 11px;
+    font-weight: 700;
+    font-family: 'Space Mono',monospace;
+    white-space: nowrap;
+}
+
 /* Бейдж-точка "есть награда(ы) к получению" — пульсирует, чтобы привлечь
    внимание к тому, что нужно зайти и нажать "Забрать" (Этап 4). */
 .rank-badge-claim-dot {
@@ -3320,6 +3433,26 @@ html, body {
 }
 
 /* ── LEADERBOARD ── */
+/* ── Карточка клана в профиле пользователя (#profile-overview-clan) —
+   выше на 50% относительно базового .lb-row (60px → 90px), просьба была
+   про вертикальный размер этой карточки, а не про ширину модалки клана. */
+#profile-overview-clan .lb-row {
+    min-height: 90px;
+    padding: 16px;
+}
+
+/* То же самое для состояния "не состоит в клане" (.clan-info-card) —
+   держим ту же увеличенную высоту, чтобы карточка не "прыгала" в размере
+   при входе/выходе из клана. */
+#profile-overview-clan .clan-info-card {
+    min-height: 90px;
+    padding: 18px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
 .lb-row {
     min-height: 60px;
     display: flex;
@@ -3496,6 +3629,79 @@ html, body {
 .has-profile-banner .member-rank-select {
     background: rgba(10,10,14,.45) !important;
     border-color: rgba(255,255,255,.18) !important;
+}
+
+/* ── СПИСОК ПОИСКА ДРУЗЕЙ (модалка "Добавить друга") ──
+   Переиспользует .lb-row/.has-profile-banner (тот же паттерн, что и
+   лидерборд/клан-меню), добавляя только свои классы для имени/звания/
+   кнопки действия — .fr-info/.fr-name/.fr-rank/.fr-action-btn. */
+.fr-row {
+    cursor: default;
+}
+
+.fr-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    cursor: pointer;
+}
+
+.fr-name {
+    font-weight: 600;
+    font-size: 13px;
+    color: var(--text1);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fr-rank {
+    font-size: 11px;
+    color: var(--text3);
+}
+
+.fr-action-btn {
+    flex-shrink: 0;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 800;
+    color: #fff;
+    background: var(--accent);
+    padding: 7px 14px;
+    border: none;
+    border-radius: 9px;
+    cursor: pointer;
+    transition: .15s;
+}
+
+    .fr-action-btn:hover {
+        background: var(--accent2);
+    }
+
+    .fr-action-btn.added,
+    .fr-action-btn:disabled {
+        background: var(--surface3);
+        color: var(--text3);
+        cursor: default;
+    }
+
+.has-profile-banner .fr-name {
+    color: #fff;
+    text-shadow: 0 1px 4px rgba(0,0,0,.5);
+}
+
+.has-profile-banner .fr-rank {
+    color: rgba(255,255,255,.75);
+    text-shadow: 0 1px 3px rgba(0,0,0,.5);
+}
+
+.has-profile-banner .fr-action-btn.added,
+.has-profile-banner .fr-action-btn:disabled {
+    background: rgba(10,10,14,.45);
+    border: 1px solid rgba(255,255,255,.16);
+    color: #fff;
 }
 
 /* ── БАННЕР ПРОФИЛЯ: пикер в панели профиля ──
@@ -7484,7 +7690,14 @@ details.adm-card {
 #stencil-label {
     position: absolute;
     pointer-events: none;
-    z-index: 19;
+    /* Раньше было 19 — это ВЫШЕ #ui (z-index:10), а #ui — свой стекинг-
+       контекст (position:fixed + z-index), поэтому ЛЮБОЕ значение больше 10
+       у прямого сиблинга #ui (а #stencil-label лежит в body РЯДОМ с #ui, не
+       внутри него) рисуется поверх ВСЕХ панелей внутри #ui, включая
+       .stencil-dock (z-index:30 там работает только ВНУТРИ #ui). Ставим
+       значение между слоем курсоров (6) и #ui (10), чтобы лейбл был над
+       холстом, но под всем интерфейсом — как и задумано. */
+    z-index: 8;
     transform: translate(-50%, -100%);
     display: flex;
     align-items: center;
@@ -7527,7 +7740,10 @@ details.adm-card {
     bottom: 76px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 200;
+    /* Максимум среди всех z-index в проекте — 10000 (модалки/попапы),
+       поэтому берём с большим запасом, чтобы тосты гарантированно были
+       поверх абсолютно всего и никогда не перекрывались. */
+    z-index: 999999;
     display: flex;
     flex-direction: column;
     gap: 7px;
@@ -7689,7 +7905,7 @@ details.adm-card {
 .profile-section-divider {
     height: 1px;
     background: var(--border);
-    margin: 14px 0;
+    margin: 8px 0;
     flex-shrink: 0;
 }
 
@@ -7755,8 +7971,8 @@ details.adm-card {
     overflow-x: auto;
     overflow-y: hidden;
     width: 100%;
-    padding: 26px 20px 8px;
-    gap: 22px;
+    padding: 0px 20px 4px;
+    gap: 16px;
     scrollbar-width: none;
     cursor: grab;
     user-select: none;
@@ -7837,7 +8053,23 @@ details.adm-card {
     height: var(--rank-card-h);
     padding: 16px 8px 12px;
     position: relative;
+    /* Тоньше базовой обводки .road-card (2px) — просьба сделать её 1px
+       именно у карточек званий (награды-жетоны обводку не трогаем). */
+    border-width: 1px;
 }
+
+    /* Клик по всей карточке звания, когда доступна к получению её монетная
+       награда — та же логика, что и у .road-node-reward.is-current
+       .road-card-reward:hover (см. ниже), а не отдельный клик по пилюле
+       внутри. */
+    .road-card-rank.claimable {
+        cursor: pointer;
+    }
+
+        .road-card-rank.claimable:hover {
+            border-color: var(--accent2);
+            transform: translateY(-2px);
+        }
 
 .road-card-icon-rank {
     font-size: 34px;
@@ -7902,18 +8134,26 @@ details.adm-card {
     white-space: nowrap;
 }
 
-/* ── Монетная плашка под названием звания ВНУТРИ самой карточки: иконка
+/* ── Монетная плашка ВНУТРИ карточки звания, пришпилена к низу: иконка
    монеты слева, текст "N монет" справа. Отдельный элемент от жетона-
    награды между карточками — есть у КАЖДОГО звания (см. RANK_COIN_BONUS
-   в config.js). margin-top вместо gap контейнера — .road-card-rank сам не
-   flex-gap-контейнер с равными зазорами (там ещё иконка+тайтл разного
-   размера сверху). */
+   в config.js). */
 .road-card-coin-chip {
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 5px;
-    margin-top: 8px;
+    /* position:absolute вместо margin-top:auto — раньше auto-отступ
+       "съедал" всё свободное место НАД плашкой, из-за чего иконка+тайтл
+       звания прилипали к верху карточки вместо центра. Теперь плашка не
+       участвует в flex-раскладке вовсе: она пришпилена к низу карточки
+       напрямую, а иконка+тайтл остаются единственными flex-элементами и
+       снова центрируются как группа через justify-content:center
+       родителя (.road-card). */
+    position: absolute;
+    left: 50%;
+    bottom: 12px;
+    transform: translateX(-50%);
     padding: 3px 9px;
     border-radius: var(--radius-pill);
     background: rgba(251,191,36,.1);
@@ -7928,6 +8168,26 @@ details.adm-card {
 .road-card-coin-chip-icon {
     font-size: 11px;
     line-height: 1;
+}
+
+/* Плашка — теперь ЧИСТО индикатор состояния (жёлтая "зовущая" рамка,
+   когда награда доступна; приглушённая — locked; зелёная — done). Клик
+   обрабатывается всей карточкой .road-card-rank.claimable (см. выше), а не
+   этой пилюлей — поэтому здесь больше нет cursor:pointer/hover-подъёма. */
+.road-card-coin-chip-claimable {
+    background: rgba(251,191,36,.18);
+    border-color: rgba(251,191,36,.55);
+    box-shadow: 0 0 0 1px rgba(251,191,36,.15);
+}
+
+.road-card-coin-chip-done {
+    color: #22c55e;
+    background: rgba(34,197,94,.1);
+    border-color: rgba(34,197,94,.25);
+}
+
+.road-card-coin-chip-locked {
+    opacity: .55;
 }
 
 /* is-done: пройденное звание — обычный тёмный градиент-фон (базовый) */
@@ -7968,6 +8228,9 @@ details.adm-card {
     padding: 14px 6px 10px;
     position: relative;
     cursor: default;
+    /* Просьба сделать обводку тоньше — 1px вместо базовых 2px у .road-card,
+       как уже сделано у карточек званий (.road-card-rank). */
+    border-width: 1px;
 }
 
 .road-card-icon-badge {
@@ -8063,26 +8326,32 @@ details.adm-card {
     font-size: 12px;
     flex-shrink: 0;
     background: var(--surface3);
-    border: 1px solid var(--border2);
+    border: 2px solid var(--border2);
     color: var(--text3);
 }
 
 .road-checkpoint-done {
-    background: linear-gradient(135deg, rgba(129,140,248,.35), rgba(129,140,248,.15));
-    border-color: rgba(129,140,248,.5);
-    color: var(--accent2);
+    background: #3F3C66;
+    border-color: #191922;
+    color: #9292CF;
 }
 
 .road-checkpoint-current {
-    background: linear-gradient(135deg, var(--accent2), var(--accent));
-    border-color: transparent;
-    color: #fff;
-    box-shadow: 0 0 0 4px rgba(129,140,248,.18), 0 0 16px rgba(129,140,248,.6);
+    background: #B7AFFF;
+    border-width: 2px;
+    border-color: #191922;
+    color: #191922;
     font-weight: 800;
 }
 
 .road-checkpoint-locked {
-    color: var(--text3);
+    background: #191922;
+    border-color: #191922;
+    color: #494965;
+}
+
+.road-checkpoint svg {
+    display: block;
 }
 
 /* Линия-путь позади карточек — общий прогрессбар для всей дороги. Серая
@@ -8096,10 +8365,11 @@ details.adm-card {
     position: absolute;
     left: 20px;
     right: 20px;
-    /* 26px = padding-top ленты, 14px = половина чекпоинта (28px) —
-       см. .road-node-h выше; при ручном ресайзе карточек в DevTools
-       линия трека сама пересчитается вместе с высотой узла. */
-    top: calc(var(--road-node-h) + 12px);
+    /* 0px = padding-top ленты (.profile-ranks-road-list), 14px = половина
+       чекпоинта (28px) — см. .road-node-h выше; при ручном ресайзе карточек
+       в DevTools линия трека сама пересчитается вместе с высотой узла.
+       Если поменяешь padding-top ленты — не забудь поправить и тут. */
+    top: calc(var(--road-node-h) - 14px);
     height: 4px;
     transform: translateY(-50%);
     background: var(--surface3);
@@ -10258,7 +10528,8 @@ body.mini-mode #backdrop {
         font-size: 17px;
     }
 
-    #profile-panel .stat-grid-3 {
+    #profile-panel .stat-grid-3,
+    #profile-panel .stat-grid-6 {
         gap: 14px;
         margin-bottom: 18px;
     }

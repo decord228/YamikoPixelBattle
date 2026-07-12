@@ -167,6 +167,14 @@ const ICON_BOLT_DOUBLE = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://ww
 const ICON_ROCKET = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2c3 2 5 6 5 10 0 2-.5 4-1.5 5.5L12 22l-3.5-4.5C7.5 16 7 14 7 12c0-4 2-8 5-10z"/><circle cx="12" cy="10" r="1.6" fill="currentColor" stroke="none"/><path d="M7 15c-2 0-3.5 1.5-4 4 2.5.5 4-1 4-1"/><path d="M17 15c2 0 3.5 1.5 4 4-2.5.5-4-1-4-1"/></svg>';
 const ICON_RADIATION = '<svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="2.2"/><path d="M12 2.5v5"/><path d="M12 16.5v5"/><path d="M4.3 7l4.4 2.5"/><path d="M15.3 14.5l4.4 2.5"/><path d="M19.7 7l-4.4 2.5"/><path d="M8.7 14.5L4.3 17"/></svg>';
 
+// ── ИКОНКИ ЧЕКПОИНТОВ "ДОРОГИ НАГРАД" (открытый/закрытый замок, галочка) ──
+// fill="currentColor", поэтому цвет задаётся через CSS (color) на самом
+// круге-чекпоинте (.road-checkpoint-done/-current/-locked) — один и тот же
+// SVG переиспользуется для любого состояния/цветовой темы.
+const ICON_ROAD_LOCK_OPEN = '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M0 6.66699C0 6.13656 0.210714 5.62785 0.585787 5.25278C0.960859 4.87771 1.46957 4.66699 2 4.66699H10C10.5304 4.66699 11.0391 4.87771 11.4142 5.25278C11.7893 5.62785 12 6.13656 12 6.66699V11.3337C12 11.8641 11.7893 12.3728 11.4142 12.7479C11.0391 13.1229 10.5304 13.3337 10 13.3337H2C1.46957 13.3337 0.960859 13.1229 0.585787 12.7479C0.210714 12.3728 0 11.8641 0 11.3337V6.66699ZM6.66667 8.00033C6.66667 7.82352 6.59643 7.65395 6.4714 7.52892C6.34638 7.4039 6.17681 7.33366 6 7.33366C5.82319 7.33366 5.65362 7.4039 5.5286 7.52892C5.40357 7.65395 5.33333 7.82352 5.33333 8.00033V10.0003C5.33333 10.1771 5.40357 10.3467 5.5286 10.4717C5.65362 10.5968 5.82319 10.667 6 10.667C6.17681 10.667 6.34638 10.5968 6.4714 10.4717C6.59643 10.3467 6.66667 10.1771 6.66667 10.0003V8.00033Z" fill="currentColor"/><path d="M8.00098 5.33398V3.33398C8.00098 2.80366 7.78997 2.29497 7.41504 1.91992C7.04 1.54488 6.53136 1.33402 6.00098 1.33398C5.47054 1.33398 4.96199 1.54485 4.58691 1.91992C4.32659 2.18014 3.90388 2.18014 3.64355 1.91992C3.38324 1.65961 3.38331 1.23692 3.64355 0.976562C4.26868 0.351441 5.11692 0 6.00098 0C6.88486 3.28554e-05 7.73236 0.351635 8.35742 0.976562C8.98254 1.60168 9.33398 2.44993 9.33398 3.33398V5.33398C9.33381 5.70187 9.03584 5.99976 8.66797 6C8.29989 6 8.00115 5.70202 8.00098 5.33398Z" fill="currentColor"/></svg>';
+const ICON_ROAD_LOCK_CLOSED = '<svg width="12" height="14" viewBox="0 0 12 14" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" clip-rule="evenodd" d="M0 6.66699C0 6.13656 0.210714 5.62785 0.585787 5.25278C0.960859 4.87771 1.46957 4.66699 2 4.66699H10C10.5304 4.66699 11.0391 4.87771 11.4142 5.25278C11.7893 5.62785 12 6.13656 12 6.66699V11.3337C12 11.8641 11.7893 12.3728 11.4142 12.7479C11.0391 13.1229 10.5304 13.3337 10 13.3337H2C1.46957 13.3337 0.960859 13.1229 0.585787 12.7479C0.210714 12.3728 0 11.8641 0 11.3337V6.66699ZM6.66667 8.00033C6.66667 7.82351 6.59643 7.65395 6.4714 7.52892C6.34638 7.4039 6.17681 7.33366 6 7.33366C5.82319 7.33366 5.65362 7.4039 5.5286 7.52892C5.40357 7.65395 5.33333 7.82351 5.33333 8.00033V10.0003C5.33333 10.1771 5.40357 10.3467 5.5286 10.4717C5.65362 10.5968 5.82319 10.667 6 10.667C6.17681 10.667 6.34638 10.5968 6.4714 10.4717C6.59643 10.3467 6.66667 10.1771 6.66667 10.0003V8.00033Z" fill="currentColor"/><path d="M8.00033 5.33398V3.33398C8.00033 2.8037 7.78926 2.29496 7.41439 1.91992C7.03939 1.54493 6.53064 1.33407 6.00033 1.33398C5.46989 1.33398 4.96134 1.54485 4.58626 1.91992C4.21119 2.29499 4.00033 2.80355 4.00033 3.33398V5.33398C4.00015 5.70202 3.70141 6 3.33333 6C2.96525 6 2.66652 5.70202 2.66634 5.33398V3.33398C2.66634 2.44993 3.01778 1.60168 3.6429 0.976562C4.26802 0.351441 5.11627 0 6.00033 0C6.88419 8.61602e-05 7.73174 0.35162 8.35677 0.976562C8.98189 1.60168 9.33333 2.44993 9.33333 3.33398V5.33398C9.33316 5.70202 9.03442 6 8.66634 6C8.29841 5.99982 8.0005 5.70192 8.00033 5.33398Z" fill="currentColor"/></svg>';
+const ICON_ROAD_CHECK = '<svg width="10" height="7" viewBox="0 0 10 7" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M7.79289 0.292893C8.18342 -0.0976311 8.81643 -0.0976311 9.20696 0.292893C9.59748 0.683417 9.59748 1.31643 9.20696 1.70696L4.20696 6.70696C3.81643 7.09748 3.18342 7.09748 2.79289 6.70696L0.292893 4.20696C-0.0976311 3.81643 -0.0976311 3.18342 0.292893 2.79289C0.683417 2.40237 1.31643 2.40237 1.70696 2.79289L3.49992 4.58586L7.79289 0.292893Z" fill="currentColor"/></svg>';
+
 // ── ОБЫЧНЫЕ УЛУЧШЕНИЯ ──
 // Постоянные апгрейды (type:'upgrade'), а также перенесённые сюда по
 // просьбе — общедоступные кулдаун-ускорители −25%/−50% и цветная бомбочка
@@ -255,27 +263,60 @@ const CLAN_SHOP_ITEMS = [
 // progress(s) — [текущее, нужное] значение для прогресс-бара. Для
 // булевых ачивок (клан/vip/покупка) это просто [0|1, 1].
 const ACHIEVEMENTS = [
-  { id:'first_pixel',   title:'Первый мазок',      desc:'Наберите 1 очко опыта',                  icon:'🖌️', xp:10,  check: s => s.xp >= 1,        progress: s => [s.xp, 1] },
-  { id:'pixels_50',     title:'Начинающий',        desc:'Наберите 50 очков опыта',                icon:'🌱', xp:20,  check: s => s.xp >= 50,       progress: s => [s.xp, 50] },
-  { id:'pixels_200',    title:'Художник',          desc:'Наберите 200 очков опыта',               icon:'🎨', xp:40,  check: s => s.xp >= 200,      progress: s => [s.xp, 200] },
-  { id:'pixels_1000',   title:'Легенда',           desc:'Наберите 1000 очков опыта',               icon:'⭐', xp:80,  check: s => s.xp >= 1000,     progress: s => [s.xp, 1000] },
-  { id:'pixels_5000',   title:'Архитектор',        desc:'Наберите 5000 очков опыта',               icon:'🏛️', xp:150, check: s => s.xp >= 5000,     progress: s => [s.xp, 5000] },
-  { id:'pixels_10000',  title:'Мастер оттенков',   desc:'Наберите 10 000 очков опыта',             icon:'🌀', xp:200, check: s => s.xp >= 10000,    progress: s => [s.xp, 10000] },
-  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Наберите 20 000 очков опыта',             icon:'👑', xp:300, check: s => s.xp >= 20000,    progress: s => [s.xp, 20000] },
-  { id:'coins_100',     title:'Первая заначка',    desc:'Накопи 100 монет одновременно',          icon:'👛', xp:15,  check: s => s.coins >= 100,       progress: s => [s.coins, 100] },
-  { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', xp:30,  check: s => s.coins >= 500,       progress: s => [s.coins, 500] },
-  { id:'coins_1000',    title:'Богач',             desc:'Накопи 1000 монет одновременно',         icon:'💵', xp:60,  check: s => s.coins >= 1000,      progress: s => [s.coins, 1000] },
-  { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', xp:100, check: s => s.coins >= 5000,      progress: s => [s.coins, 5000] },
-  { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', xp:15,  check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
-  { id:'purchase_5',    title:'Постоянный клиент', desc:'Соверши 5 покупок в магазине',           icon:'🛍️', xp:25,  check: s => s.purchasedCount >= 5,  progress: s => [s.purchasedCount, 5] },
-  { id:'purchase_20',   title:'Шопоголик',         desc:'Соверши 20 покупок в магазине',          icon:'🧾', xp:70,  check: s => s.purchasedCount >= 20, progress: s => [s.purchasedCount, 20] },
-  { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', xp:20,  check: s => !!s.clan,             progress: s => [s.clan ? 1 : 0, 1] },
-  { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,  check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
-  { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', xp:35,  check: s => s.friendsCount >= 5,  progress: s => [s.friendsCount, 5] },
-  { id:'friend_10',     title:'Душа общества',     desc:'Добавь 10 друзей',                       icon:'🎊', xp:60,  check: s => s.friendsCount >= 10, progress: s => [s.friendsCount, 10] },
-  { id:'banners_3',     title:'Коллекционер баннеров', desc:'Владей 3 баннерами профиля',         icon:'🖼️', xp:40,  check: s => (s.ownedBannersCount||0) >= 3, progress: s => [s.ownedBannersCount||0, 3] },
-  { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🔥', xp:25,  check: s => s.sessionPixels >= 100, progress: s => [s.sessionPixels||0, 100] },
-  { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'💎', xp:50,  check: s => s.isVip || s.isAdmin, progress: s => [(s.isVip||s.isAdmin) ? 1 : 0, 1] },
+  // ── Опыт/пиксели ──
+  { id:'first_pixel',   title:'Первый мазок',      desc:'Наберите 1 очко опыта',                  icon:'🖌️', xp:10,   check: s => s.xp >= 1,        progress: s => [s.xp, 1] },
+  { id:'pixels_50',     title:'Начинающий',        desc:'Наберите 50 очков опыта',                icon:'🌱', xp:20,   check: s => s.xp >= 50,       progress: s => [s.xp, 50] },
+  { id:'pixels_200',    title:'Художник',          desc:'Наберите 200 очков опыта',               icon:'🎨', xp:40,   check: s => s.xp >= 200,      progress: s => [s.xp, 200] },
+  { id:'pixels_1000',   title:'Легенда',           desc:'Наберите 1000 очков опыта',              icon:'⭐', xp:80,   check: s => s.xp >= 1000,     progress: s => [s.xp, 1000] },
+  { id:'pixels_3000',   title:'Виртуоз',            desc:'Наберите 3000 очков опыта',              icon:'🌈', xp:130,  check: s => s.xp >= 3000,     progress: s => [s.xp, 3000] },
+  { id:'pixels_5000',   title:'Архитектор',        desc:'Наберите 5000 очков опыта',              icon:'🏛️', xp:180,  check: s => s.xp >= 5000,     progress: s => [s.xp, 5000] },
+  { id:'pixels_10000',  title:'Мастер оттенков',   desc:'Наберите 10 000 очков опыта',            icon:'🌀', xp:260,  check: s => s.xp >= 10000,    progress: s => [s.xp, 10000] },
+  { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Наберите 20 000 очков опыта',            icon:'👑', xp:380,  check: s => s.xp >= 20000,    progress: s => [s.xp, 20000] },
+  { id:'pixels_50000',  title:'Пиксельный титан',  desc:'Наберите 50 000 очков опыта',            icon:'🔥', xp:600,  check: s => s.xp >= 50000,    progress: s => [s.xp, 50000] },
+  { id:'pixels_100000', title:'Повелитель холста', desc:'Наберите 100 000 очков опыта',           icon:'🌌', xp:1000, check: s => s.xp >= 100000,   progress: s => [s.xp, 100000] },
+  { id:'pixels_250000', title:'Мифический творец', desc:'Наберите 250 000 очков опыта',           icon:'🐉', xp:2000, check: s => s.xp >= 250000,   progress: s => [s.xp, 250000] },
+  // ── Монеты ──
+  { id:'coins_100',     title:'Первая заначка',    desc:'Накопи 100 монет одновременно',          icon:'👛', xp:15,   check: s => s.coins >= 100,       progress: s => [s.coins, 100] },
+  { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', xp:30,   check: s => s.coins >= 500,       progress: s => [s.coins, 500] },
+  { id:'coins_1000',    title:'Богач',             desc:'Накопи 1000 монет одновременно',         icon:'💵', xp:55,   check: s => s.coins >= 1000,      progress: s => [s.coins, 1000] },
+  { id:'coins_2500',    title:'Инвестор',           desc:'Накопи 2500 монет одновременно',         icon:'💴', xp:90,   check: s => s.coins >= 2500,      progress: s => [s.coins, 2500] },
+  { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', xp:130,  check: s => s.coins >= 5000,      progress: s => [s.coins, 5000] },
+  { id:'coins_10000',   title:'Олигарх',            desc:'Накопи 10 000 монет одновременно',       icon:'🏦', xp:200,  check: s => s.coins >= 10000,     progress: s => [s.coins, 10000] },
+  { id:'coins_25000',   title:'Финансовый гений',   desc:'Накопи 25 000 монет одновременно',       icon:'💎', xp:350,  check: s => s.coins >= 25000,     progress: s => [s.coins, 25000] },
+  { id:'coins_50000',   title:'Хранитель сокровищ', desc:'Накопи 50 000 монет одновременно',       icon:'🏆', xp:600,  check: s => s.coins >= 50000,     progress: s => [s.coins, 50000] },
+  { id:'coins_100000',  title:'Пиксельный миллионер', desc:'Накопи 100 000 монет одновременно',    icon:'🤑', xp:1100, check: s => s.coins >= 100000,    progress: s => [s.coins, 100000] },
+  // ── Покупки ──
+  { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', xp:15,   check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
+  { id:'purchase_5',    title:'Постоянный клиент', desc:'Соверши 5 покупок в магазине',           icon:'🛍️', xp:25,   check: s => s.purchasedCount >= 5,  progress: s => [s.purchasedCount, 5] },
+  { id:'purchase_10',   title:'Завсегдатай магазина', desc:'Соверши 10 покупок в магазине',       icon:'🧺', xp:45,   check: s => s.purchasedCount >= 10, progress: s => [s.purchasedCount, 10] },
+  { id:'purchase_20',   title:'Шопоголик',         desc:'Соверши 20 покупок в магазине',          icon:'🧾', xp:75,   check: s => s.purchasedCount >= 20, progress: s => [s.purchasedCount, 20] },
+  { id:'purchase_50',   title:'Скупщик товаров',   desc:'Соверши 50 покупок в магазине',          icon:'📦', xp:150,  check: s => s.purchasedCount >= 50, progress: s => [s.purchasedCount, 50] },
+  { id:'purchase_100',  title:'Владелец лавки',     desc:'Соверши 100 покупок в магазине',         icon:'🏪', xp:280,  check: s => s.purchasedCount >= 100, progress: s => [s.purchasedCount, 100] },
+  // ── Друзья ──
+  { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,   check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
+  { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', xp:35,   check: s => s.friendsCount >= 5,  progress: s => [s.friendsCount, 5] },
+  { id:'friend_10',     title:'Душа общества',     desc:'Добавь 10 друзей',                       icon:'🎊', xp:60,   check: s => s.friendsCount >= 10, progress: s => [s.friendsCount, 10] },
+  { id:'friend_25',     title:'Центр тусовки',      desc:'Добавь 25 друзей',                       icon:'🥳', xp:120,  check: s => s.friendsCount >= 25, progress: s => [s.friendsCount, 25] },
+  { id:'friend_50',     title:'Мэр сообщества',     desc:'Добавь 50 друзей',                       icon:'🌐', xp:220,  check: s => s.friendsCount >= 50, progress: s => [s.friendsCount, 50] },
+  { id:'friend_100',    title:'Легенда социума',    desc:'Добавь 100 друзей',                      icon:'🫂', xp:400,  check: s => s.friendsCount >= 100, progress: s => [s.friendsCount, 100] },
+  // ── Баннеры ──
+  { id:'banners_3',     title:'Коллекционер баннеров', desc:'Владей 3 баннерами профиля',         icon:'🖼️', xp:40,   check: s => (s.ownedBannersCount||0) >= 3,  progress: s => [s.ownedBannersCount||0, 3] },
+  { id:'banners_6',     title:'Ценитель стиля',     desc:'Владей 6 баннерами профиля',             icon:'🎏', xp:70,   check: s => (s.ownedBannersCount||0) >= 6,  progress: s => [s.ownedBannersCount||0, 6] },
+  { id:'banners_10',    title:'Модный игрок',       desc:'Владей 10 баннерами профиля',            icon:'🏳️', xp:120,  check: s => (s.ownedBannersCount||0) >= 10, progress: s => [s.ownedBannersCount||0, 10] },
+  { id:'banners_15',    title:'Витрина достижений', desc:'Владей 15 баннерами профиля',            icon:'🪧', xp:200,  check: s => (s.ownedBannersCount||0) >= 15, progress: s => [s.ownedBannersCount||0, 15] },
+  { id:'banners_20',    title:'Галерея баннеров',   desc:'Владей 20 баннерами профиля',            icon:'🏵️', xp:320,  check: s => (s.ownedBannersCount||0) >= 20, progress: s => [s.ownedBannersCount||0, 20] },
+  // ── Сессия (только клиент, не персистится на сервере) ──
+  { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🕐', xp:25,  check: s => s.sessionPixels >= 100, progress: s => [s.sessionPixels||0, 100] },
+  // ── Клан / статус ──
+  { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', xp:20,   check: s => !!s.clan,             progress: s => [s.clan ? 1 : 0, 1] },
+  { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'✨', xp:50,   check: s => s.isVip || s.isAdmin, progress: s => [(s.isVip||s.isAdmin) ? 1 : 0, 1] },
+  // ── Комбо-ачивки ──
+  { id:'combo_starter',          title:'Крепкий старт',          desc:'Наберите 50 опыта и накопите 100 монет',                                        icon:'🚀', xp:30,   check: s => s.xp >= 50 && s.coins >= 100, progress: s => [(s.xp>=50&&s.coins>=100)?1:0, 1] },
+  { id:'combo_social_clan',      title:'Душа клана',             desc:'Вступи в клан и заведи 5 друзей',                                               icon:'🏰', xp:90,   check: s => !!s.clan && s.friendsCount >= 5, progress: s => [(!!s.clan&&s.friendsCount>=5)?1:0, 1] },
+  { id:'combo_shopaholic',       title:'Транжира',               desc:'20 покупок и 5000 монет в кошельке одновременно',                               icon:'💸', xp:200,  check: s => s.purchasedCount >= 20 && s.coins >= 5000, progress: s => [(s.purchasedCount>=20&&s.coins>=5000)?1:0, 1] },
+  { id:'combo_collector_deluxe', title:'Коллекционер де люкс',   desc:'10 баннеров и 20 покупок в магазине',                                           icon:'🎭', xp:220,  check: s => (s.ownedBannersCount||0) >= 10 && s.purchasedCount >= 20, progress: s => [((s.ownedBannersCount||0)>=10&&s.purchasedCount>=20)?1:0, 1] },
+  { id:'combo_ultimate',         title:'Идеальный игрок',        desc:'100 000 опыта, 50 000 монет, 25 друзей, 15 баннеров, клан и VIP — всё сразу',   icon:'🌠', xp:1500, check: s => s.xp >= 100000 && s.coins >= 50000 && s.friendsCount >= 25 && (s.ownedBannersCount||0) >= 15 && !!s.clan && (s.isVip||s.isAdmin), progress: s => [[s.xp>=100000,s.coins>=50000,s.friendsCount>=25,(s.ownedBannersCount||0)>=15,!!s.clan,(s.isVip||s.isAdmin)].filter(Boolean).length, 6] },
+  { id:'combo_grandmaster',      title:'Гроссмейстер пикселей',  desc:'250 000 опыта, 100 000 монет и 100 покупок — вершина мастерства',               icon:'🏅', xp:2500, check: s => s.xp >= 250000 && s.coins >= 100000 && s.purchasedCount >= 100, progress: s => [[s.xp>=250000,s.coins>=100000,s.purchasedCount>=100].filter(Boolean).length, 3] },
 ];
 
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');

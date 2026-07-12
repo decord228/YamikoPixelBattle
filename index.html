@@ -492,7 +492,6 @@
         </div>
 
         <div id="inspector"><span id="inspector-color"></span><span id="inspector-text"></span></div>
-        <div id="toast-wrap"></div>
     </div>
 
     <!-- ── МОДАЛКА "ДОБАВИТЬ ДРУГА" ──
@@ -591,16 +590,20 @@
                                 <div class="rank-badge-top">
                                     <div class="rank-icon-ring"><div class="rank-icon" id="prof-rank-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 21V11" /><path d="M12 12c0-4 -3-6-7-6 0 4.5 2.7 7 7 7z" /><path d="M12 9c0-3.5 2.5-5 6-5 0 3.7-2.3 6-6 6z" /></svg></div></div>
                                     <div><div class="rank-title">Звание</div><div class="rank-name" id="prof-rank">Новичок</div><div class="rank-xp-remaining" id="prof-rank-xp-remaining"></div></div>
+                                    <div class="rank-xp-pill" id="prof-rank-xp-pill" title="Текущий опыт">0 XP</div>
                                 </div>
                                 <div class="rank-badge-divider"></div>
                                 <div id="profile-ranks-road-list" class="profile-ranks-road-list"></div>
                             </div>
-                            <div class="stat-grid-3">
+                            <div id="profile-overview-clan"></div>
+                            <div class="stat-grid-6">
                                 <div class="stat-card"><div class="stat-val" id="prof-pixels">0</div><div class="stat-lbl">Пикселей</div></div>
                                 <div class="stat-card" id="prof-session-card"><div class="stat-val" id="prof-session">0</div><div class="stat-lbl">Сессия</div></div>
                                 <div class="stat-card" id="prof-coins-card"><div class="stat-val coins-val" id="prof-coins">0</div><div class="stat-lbl">🪙 Монет</div></div>
+                                <div class="stat-card"><div class="stat-val" id="prof-achievements">0</div><div class="stat-lbl">🏆 Ачивок</div></div>
+                                <div class="stat-card"><div class="stat-val" id="prof-purchases">0</div><div class="stat-lbl">🛍️ Покупок</div></div>
+                                <div class="stat-card"><div class="stat-val" id="prof-friends">0</div><div class="stat-lbl">🤝 Друзей</div></div>
                             </div>
-                            <div id="profile-overview-clan" style="margin-top:12px;"></div>
                             <div id="profile-overview-actions" style="margin-top:12px;display:flex;flex-direction:column;gap:8px;"></div>
                         </div>
                         <div id="prof-tab-banner" style="display:none">
@@ -611,6 +614,7 @@
                             <div id="profile-friends-list"></div>
                         </div>
                         <div id="prof-tab-achievements" style="display:none">
+                            <div id="profile-stats-charts" class="profile-stats-charts"></div>
                             <div id="profile-achievements-list"></div>
                         </div>
                         <div id="prof-tab-settings" style="display:none">
@@ -1479,6 +1483,20 @@
         }
     </script>
     <div id="sidebar-tooltip"></div>
+
+    <!-- ── ТОСТЫ ──
+         Вынесено из #ui (position:fixed; z-index:10) прямо в конец <body>.
+         #ui создаёт СВОЙ stacking context — любой элемент внутри него
+         (в т.ч. #toast-wrap со сколь угодно большим собственным z-index)
+         не может оказаться выше элементов ВНЕ #ui с более высоким
+         z-index (модалки, попапы, admin-панели и т.д. — у них z-index
+         вплоть до 10000, что больше z-index:10 самого #ui). Из-за этого
+         тосты залипали под модалками/панелями. Теперь #toast-wrap —
+         независимый элемент верхнего уровня, поэтому его z-index (см.
+         style.css, #toast-wrap) сравнивается напрямую со всеми остальными
+         и тосты всегда поверх всего интерфейса. -->
+    <div id="toast-wrap"></div>
+
     <script>document.write(`<script src="timelapse_client.js?v=${window.BUILD_V}"><\/script>`);</script>
 </body>
 </html>ml>

@@ -80,6 +80,7 @@ function handleJSON(d) {
     currentClan=d.clan||'';
     currentXp=d.xp||0;
     unlockedAchievements=d.unlocked_achievements||[];
+    currentFriendsCount=(d.friends||[]).length;
     claimedRanks=d.claimed_ranks||[];
     claimedAchievements=d.claimed_achievements||[];
     selectedEmoji=currentEmoji;
@@ -332,6 +333,9 @@ function handleJSON(d) {
     cpFriends  = d.friends  || [];
     cpIncoming = d.incoming || [];
     cpOutgoing = d.outgoing || [];
+    currentFriendsCount = cpFriends.length;
+    const friendsStatEl = document.getElementById('prof-friends');
+    if (friendsStatEl && (!viewingProfileUsername || viewingProfileUsername === currentUser)) friendsStatEl.textContent = currentFriendsCount.toLocaleString();
     [...cpFriends, ...cpIncoming, ...cpOutgoing].forEach(cpCacheUser);
     if (typeof cpUpdateFreqBadge === 'function') cpUpdateFreqBadge();
     if (typeof cpRenderSidebar === 'function') cpRenderSidebar();

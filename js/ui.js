@@ -109,6 +109,88 @@ function updateProfileStats(pixels,xp) {
   renderRankProgress(xp);
 }
 
+// updateProfileExtraStats — три доп. карточки статистики (Ачивки/Покупки/
+// Друзья), добавленные под панель клана. Для своего профиля берём данные
+// из глобального state.js (unlockedAchievements/purchasedItems/
+// currentFriendsCount), для чужого — из публичных полей profile_data
+// (unlocked_achievements/purchased_count/friends_count), которые сервер
+// уже отдаёт в profile_get (см. server.js).
+function updateProfileExtraStats(p, isSelf) {
+  const achTotal = (typeof ACHIEVEMENTS !== 'undefined' && ACHIEVEMENTS.length) || 0;
+  const achEl = document.getElementById('prof-achievements');
+  if (achEl) {
+    const unlocked = isSelf ? (unlockedAchievements||[]).length : (p.unlocked_achievements||[]).length;
+    achEl.textContent = achTotal ? `${unlocked}/${achTotal}` : unlocked.toLocaleString();
+  }
+  const purchEl = document.getElementById('prof-purchases');
+  if (purchEl) {
+    const n = isSelf ? (purchasedItems||[]).length : (p.purchased_count||0);
+    purchEl.textContent = n.toLocaleString();
+  }
+  const friendsEl = document.getElementById('prof-friends');
+  if (friendsEl) {
+    const n = isSelf ? (currentFriendsCount||0) : (p.friends_count||0);
+    friendsEl.textContent = n.toLocaleString();
+  }
+  renderProfileStatsCharts(p, isSelf);
+}
+
+// ── ГРАФИКИ СТАТИСТИКИ ПРОФИЛЯ ──
+// Небольшой дашборд под сеткой статистики: общий донат-прогресс по ачивкам
+// + бары по категориям (опыт/монеты/покупки/друзья/баннеры). Считается на
+// лету из ACHIEVEMENTS (config.js) + unlocked-списка — никаких доп. полей
+// с сервера не требуется, работает и для своего, и для чужого профиля.
+const PROFILE_ACH_CATEGORIES = [
+  { key:'xp',        label:'Опыт',    match:id => id === 'first_pixel' || id.startsWith('pixels_'), color:'#818cf8' },
+  { key:'coins',     label:'Монеты',  match:id => id.startsWith('coins_'), color:'#fbbf24' },
+  { key:'purchases', label:'Покупки', match:id => id === 'first_purchase' || id.startsWith('purchase_'), color:'#34d399' },
+  { key:'friends',   label:'Друзья',  match:id => id.startsWith('friend_'), color:'#f472b6' },
+  { key:'banners',   label:'Баннеры', match:id => id.startsWith('banners_'), color:'#60a5fa' },
+];
+
+function renderProfileStatsCharts(p, isSelf) {
+  const root = document.getElementById('profile-stats-charts');
+  if (!root || typeof ACHIEVEMENTS === 'undefined' || !ACHIEVEMENTS.length) return;
+
+  const unlocked = new Set(isSelf ? (unlockedAchievements||[]) : (p.unlocked_achievements||[]));
+  const total = ACHIEVEMENTS.length;
+  const done = unlocked.size;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  const r = 40, cFull = 2*Math.PI*r;
+  const dash = (cFull*pct/100).toFixed(1);
+
+  const donutSvg = `
+    <svg viewBox="0 0 100 100" class="profile-donut">
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="var(--surface3)" stroke-width="9"/>
+      <circle cx="50" cy="50" r="${r}" fill="none" stroke="url(#profDonutGrad)" stroke-width="9"
+        stroke-dasharray="${dash} ${(cFull-dash).toFixed(1)}" stroke-linecap="round" transform="rotate(-90 50 50)"/>
+      <defs><linearGradient id="profDonutGrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#818cf8"/><stop offset="100%" stop-color="#c4b5fd"/>
+      </linearGradient></defs>
+      <text x="50" y="47" text-anchor="middle" class="profile-donut-pct">${pct}%</text>
+      <text x="50" y="63" text-anchor="middle" class="profile-donut-sub">${done}/${total}</text>
+    </svg>`;
+
+  const bars = PROFILE_ACH_CATEGORIES.map(cat => {
+    const ids = ACHIEVEMENTS.filter(a => cat.match(a.id)).map(a => a.id);
+    const catDone = ids.filter(id => unlocked.has(id)).length;
+    const catPct = ids.length ? Math.round(catDone/ids.length*100) : 0;
+    return `<div class="stats-bar-row">
+      <div class="stats-bar-label">${esc(cat.label)}</div>
+      <div class="stats-bar-track"><div class="stats-bar-fill" style="width:${catPct}%;background:${cat.color}"></div></div>
+      <div class="stats-bar-val">${catDone}/${ids.length}</div>
+    </div>`;
+  }).join('');
+
+  root.innerHTML = `
+    <div class="profile-stats-charts-title">📊 Статистика достижений</div>
+    <div class="profile-stats-charts-body">
+      <div class="profile-donut-wrap">${donutSvg}</div>
+      <div class="stats-bars">${bars}</div>
+    </div>`;
+}
+
 // renderRankProgress — мини прогресс-бар "сколько xp осталось до следующего
 // звания" + бейдж награды за него, и отдельный "живой" индикатор — сколько
 // уже ДОСТИГНУТЫХ наград ещё не забрано (считается по всем RANKS <= текущего,
@@ -124,11 +206,14 @@ function claimableRankCount(xp) {
   // Считаем ПО ЧЕКПОИНТАМ (не по званиям): у звания может быть несколько
   // наград с разными порогами xpRequired (см. getRankCheckpoints), и
   // порог — это НЕ момент достижения звания, а точка между ним и следующим.
+  // Плюс отдельно — собственная монетная награда звания (RankName#self),
+  // которая теперь тоже требует ручного "Забрать" (см. coinChipHtml).
   let n = 0;
   for (const r of RANKS) {
     for (const cp of getRankCheckpoints(r.name)) {
       if (xp >= cp.xpRequired && !(claimedRanks||[]).includes(cp.id)) n++;
     }
+    if (RANK_COIN_BONUS[r.name] && xp >= r.min && !(claimedRanks||[]).includes(`${r.name}#self`)) n++;
   }
   return n;
 }
@@ -149,6 +234,9 @@ function renderRankProgress(xp) {
   // Текст "осталось N XP до <следующее звание>" рядом с названием текущего
   // звания — та самая наглядная привязка прогресса к реальному опыту,
   // которой раньше не было (прогресс был виден только по самой дороге).
+  const xpPill = document.getElementById('prof-rank-xp-pill');
+  if (xpPill) xpPill.textContent = `${Math.max(0,xp).toLocaleString()} XP`;
+
   const remainEl = document.getElementById('prof-rank-xp-remaining');
   if (remainEl) {
     const curIdx = RANKS.reduce((acc,r,i)=> xp>=r.min ? i : acc, 0);
@@ -183,13 +271,15 @@ function renderRanksList(containerId, xp) {
   const curIdx = sorted.reduce((acc,r,i)=> xp>=r.min ? i : acc, 0);
   const isSelf = !viewingProfileUsername || viewingProfileUsername === currentUser;
 
-  // Чекпоинт под карточкой — маленький кружок с замком (locked) / галочкой
-  // (done, current). Все чекпоинты одного размера независимо от карточки
+  // Чекпоинт под карточкой — маленький кружок с замком (locked/done) или
+  // галочкой (current). Все чекпоинты одного размера независимо от карточки
   // над ними (звание/награда разного размера) — именно на них, а не на
   // иконках карточек, нанизана линия-прогрессбар, поэтому линия больше не
-  // "плавает" из-за разной высоты контента.
+  // "плавает" из-за разной высоты контента. done = уже пройденный чекпоинт
+  // (открытый замок), current = текущий (галочка), locked = ещё впереди
+  // (закрытый замок) — цвета берутся из .road-checkpoint-* в style.css.
   const checkpointHtml = (state) => {
-    const icon = state === 'locked' ? '🔒' : '✓';
+    const icon = state === 'locked' ? ICON_ROAD_LOCK_CLOSED : state === 'current' ? ICON_ROAD_CHECK : ICON_ROAD_LOCK_OPEN;
     return `<div class="road-checkpoint road-checkpoint-${state}">${icon}</div>`;
   };
 
@@ -200,25 +290,82 @@ function renderRanksList(containerId, xp) {
 
   // Монетная плашка под карточкой ЛЮБОГО звания (отдельно от жетона-
   // сюрприза между карточками) — иконка монеты слева, "N монет" справа.
-  const coinChipHtml = (rankName) => {
-    const amount = RANK_COIN_BONUS[rankName];
-    if (!amount) return '';
-    return `<div class="road-card-coin-chip"><span class="road-card-coin-chip-icon">🪙</span><span class="road-card-coin-chip-text">${amount} монет</span></div>`;
+  // Раньше это был чисто декоративный плейсхолдер (никогда не выдавался
+  // по-настоящему). Теперь эта награда тоже требует ручного "Забрать" —
+  // тем же способом, что и промежуточные награды между карточками: свой
+  // checkpoint с id "RankName#self" и порогом xp = r.min (доступна сразу
+  // по достижению самого звания, т.к. это награда САМОГО звания, а не
+  // "между" ним и следующим).
+  //
+  // rankSelfClaim() считает locked/claimed/canClaim РОВНО так же, как и для
+  // промежуточных наград (см. rewardNodeHtml ниже) — единая логика подбора,
+  // как и просили. Возвращает null, если у звания вообще нет денежной
+  // награды (RANK_COIN_BONUS[r.name] не задан).
+  const rankSelfClaim = (r) => {
+    const amount = RANK_COIN_BONUS[r.name];
+    if (!amount) return null;
+    const claimId = `${r.name}#self`;
+    const claimed = (claimedRanks||[]).includes(claimId);
+    const isLocked = xp < r.min;
+    const canClaim = isSelf && !isLocked && !claimed;
+    return { amount, claimId, claimed, isLocked, canClaim };
+  };
+
+  // Сама плашка — теперь ЧИСТО отображение состояния, без своего onclick:
+  // кликается вся карточка звания целиком (см. rankNodeHtml), как и у
+  // промежуточных наград, а не маленькая пилюля внутри.
+  const coinChipHtml = (r, self) => {
+    if (!self) return '';
+    const { amount, claimed, canClaim } = self;
+    if (canClaim) {
+      return `<div class="road-card-coin-chip road-card-coin-chip-claimable" title="Забрать">
+        <span class="road-card-coin-chip-icon">🪙</span><span class="road-card-coin-chip-text">Забрать ${amount} монет</span>
+      </div>`;
+    }
+    if (claimed) {
+      return `<div class="road-card-coin-chip road-card-coin-chip-done" title="Получено">
+        <span class="road-card-coin-chip-icon">🪙</span><span class="road-card-coin-chip-text">${amount} монет ✓</span>
+      </div>`;
+    }
+    return `<div class="road-card-coin-chip road-card-coin-chip-locked" title="Ещё не открыто">
+      <span class="road-card-coin-chip-icon">🪙</span><span class="road-card-coin-chip-text">${amount} монет</span>
+    </div>`;
   };
 
   const rankNodeHtml = (r, i) => {
-    const isCurrent = i === curIdx;
+    const self = rankSelfClaim(r);
+
+    // "Текущим" (СЕЙЧАС + светящийся чекпоинт) звание считается только пока
+    // XP ещё не дотянулся ни до одной ИЗ ЕГО промежуточных наград — как
+    // только игрок пересёк порог хотя бы одной из них (получена она или ещё
+    // нет), "активная" позиция на дороге логически уезжает вперёд, на эту
+    // награду, и карточка звания переходит в состояние "пройдено". Раньше
+    // "текущим" всегда считалось только звание, из-за чего сразу ДВА узла
+    // на дороге могли одновременно светиться как "текущие" (само звание и
+    // награда впереди) — теперь активный узел на дороге всегда один, и это
+    // всегда последний фактически достигнутый (по XP) узел, будь то звание
+    // или промежуточная награда.
+    const ownCheckpoints = getRankCheckpoints(r.name);
+    const passedOwnCheckpoint = ownCheckpoints.some(cp => xp >= cp.xpRequired);
+
+    const isCurrent = i === curIdx && !passedOwnCheckpoint;
     const isLocked  = i > curIdx;
-    const isDone    = i < curIdx;
+    const isDone    = i < curIdx || (i === curIdx && passedOwnCheckpoint);
     const state = isCurrent ? 'current' : isDone ? 'done' : 'locked';
+
+    // Клик по ВСЕЙ карточке (не по пилюле) — точно так же, как у
+    // промежуточных наград: data-onclick вешается на .road-card, только
+    // когда награда самого звания реально доступна к получению.
+    const clickableAttrs = self?.canClaim ? `data-onclick="claimRankReward('${esc(r.name)}','self')" title="Забрать"` : '';
+    const claimableClass = self?.canClaim ? ' claimable' : '';
 
     return `
     <div class="road-node road-node-rank is-${state}" data-rank-idx="${i}">
-      <div class="road-card road-card-rank">
+      <div class="road-card road-card-rank${claimableClass}" ${clickableAttrs}>
         ${isCurrent ? '<div class="road-card-current-tag">Сейчас</div>' : xpTagHtml(r.min)}
         <div class="road-card-icon road-card-icon-rank">${r.icon}</div>
         <div class="road-card-title">${esc(r.name)}</div>
-        ${coinChipHtml(r.name)}
+        ${coinChipHtml(r, self)}
       </div>
       ${checkpointHtml(state)}
     </div>`;
@@ -245,10 +392,11 @@ function renderRanksList(containerId, xp) {
       const state = isLocked ? 'locked' : (isDone ? 'done' : 'current');
 
       // Для наград чекпоинт снизу отражает не прогресс по XP, а собрана ли
-      // награда: замок пока порог не набран, галочка — когда награда уже
-      // забрана, "!" на кнопке — когда доступна к получению.
+      // награда: закрытый замок пока порог не набран, открытый замок —
+      // когда награда уже забрана (тот же язык иконок, что и у чекпоинтов
+      // званий), "!" на кнопке — когда доступна к получению.
       const cpState = isLocked ? 'locked' : (isDone ? 'done' : 'current');
-      const cpIcon = isLocked ? '🔒' : (isDone ? '✓' : '!');
+      const cpIcon = isLocked ? ICON_ROAD_LOCK_CLOSED : (isDone ? ICON_ROAD_LOCK_OPEN : '!');
 
       // Визуал жетона зависит от типа награды: монеты — кружок с иконкой
       // монеты; всё остальное (баннер, предмет магазина, vip) — плоский
@@ -303,6 +451,16 @@ function layoutRanksRoadFill(containerId) {
   const track = document.getElementById(`${containerId}-track`);
   const fill = document.getElementById(`${containerId}-track-fill`);
   if (!list || !track || !fill) return;
+  // Если вкладка "Обзор" сейчас скрыта (открыта другая вкладка профиля,
+  // например "Ачивки"), у контейнера display:none и все offsetLeft/
+  // offsetWidth/scrollWidth равны 0 — посчитанный отсюда trackWidth/fill
+  // получился бы мусорным (полоса "падает" в 0 или в случайное значение).
+  // Раньше это значение всё равно записывалось в style.width и оставалось
+  // так навсегда, поэтому после возврата на вкладку "Обзор" прогресс-бар
+  // на дороге званий оказывался сломан/сжат ("уезжал"), пока xp не
+  // изменится ещё раз. Просто пропускаем пересчёт, пока список не виден —
+  // актуальный пересчёт сделает switchProfileTab() при возврате на вкладку.
+  if (list.offsetParent === null) return;
 
   const trackWidth = Math.max(0, list.scrollWidth - 40); // 40 = 20px отступ слева + 20px справа
   track.style.width = trackWidth + 'px';
@@ -437,7 +595,16 @@ function switchProfileTab(tab) {
   }
   if (tab === 'friends' && isSelf) renderProfileFriendsTab();
   if (tab === 'achievements') renderProfileAchievementsTab();
-  if (tab === 'overview') renderProfileClanCard(isSelf ? null : viewingProfileData);
+  if (tab === 'overview') {
+    renderProfileClanCard(isSelf ? null : viewingProfileData);
+    // Дорога званий (#profile-ranks-road-list) живёт на этой вкладке и
+    // пропускает пересчёт своей заливки-прогресса, пока скрыта (см.
+    // layoutRanksRoadFill) — досчитываем её ровно в момент, когда вкладка
+    // снова становится видимой, иначе полоса прогресса остаётся в
+    // "сломанном" состоянии, посчитанном ещё при xp-обновлении на другой
+    // вкладке (например, после claimAchievementReward на вкладке "Ачивки").
+    requestAnimationFrame(() => layoutRanksRoadFill('profile-ranks-road-list'));
+  }
 }
 
 // ── АЧИВКИ ──
@@ -503,14 +670,7 @@ function renderProfileAchievementsTab() {
   const claimedIds = new Set(isSelf ? (claimedAchievements || []) : []);
   const claimableCount = isSelf ? unlocked.filter(a => !claimedIds.has(a.id)).length : 0;
 
-  const summary = `<div class="clan-shop-balance-row" style="margin-bottom:12px;">
-    <div class="clan-shop-balance-label">🏆 Получено ачивок</div>
-    <div class="clan-shop-balance-amount">${unlocked.length} / ${ACHIEVEMENTS.length}</div>
-  </div>
-  <div class="clan-shop-balance-row" style="margin-bottom:12px;">
-    <div class="clan-shop-balance-label">✨ Всего опыта</div>
-    <div class="clan-shop-balance-amount">${totalXp.toLocaleString()} XP</div>
-  </div>${claimableCount > 0 ? `<div class="clan-shop-balance-row" style="margin-bottom:12px;border-color:rgba(251,191,36,.35);">
+  const summary = `${claimableCount > 0 ? `<div class="clan-shop-balance-row" style="margin-bottom:12px;border-color:rgba(251,191,36,.35);">
     <div class="clan-shop-balance-label">🎁 Готово к получению</div>
     <div class="clan-shop-balance-amount" style="color:#fbbf24;">${claimableCount}</div>
   </div>` : ''}`;
@@ -5036,6 +5196,7 @@ function renderProfileData(d) {
     document.getElementById('prof-session-card').style.display = '';
     document.getElementById('prof-coins-card').style.display = '';
     document.getElementById('profile-overview-actions').innerHTML = renderProfileOverviewActions(p, true);
+    updateProfileExtraStats(p, true);
   } else {
     document.getElementById('prof-pixels').textContent = (p.pixels||0).toLocaleString();
     document.getElementById('prof-rank').textContent = p.rank || 'Новичок';
@@ -5047,6 +5208,7 @@ function renderProfileData(d) {
     document.getElementById('prof-session-card').style.display = 'none';
     document.getElementById('prof-coins-card').style.display = 'none';
     document.getElementById('profile-overview-actions').innerHTML = renderProfileOverviewActions(p, false);
+    updateProfileExtraStats(p, false);
   }
 
   switchProfileTab('overview');
@@ -5727,24 +5889,34 @@ function cpRenderSearchResults() {
   const q = document.getElementById('cp-modal-search-input')?.value || '';
   if (!q.trim()) return;
   if (cpSearchResults.length === 0) { root.appendChild(cpEmptyHint('Пользователь не найден')); return; }
-  cpSearchResults.forEach(u => {
+  cpSearchResults.forEach((u, i) => {
+    const b = profileBannerRowHTML(u.banner);
     const row = document.createElement('div');
-    row.className = 'cp-suggest-row';
+    row.className = `lb-row fr-row${b.cls}`;
+    row.style.animation = `float-in .25s ease ${i * 0.03}s both`;
     const isFriend = u.isFriend;
     const label = isFriend ? 'В друзьях' : u.requestSent ? 'Отправлено' : u.requestReceived ? 'Принять' : 'Добавить';
     row.innerHTML = `
-      ${cpAvatarEl(u.username, 'sm').outerHTML}
-      <div class="cp-row-body"><div class="cp-row-name">${esc(u.username)}</div><div class="cp-row-preview">${esc(u.rank || 'Новичок')}</div></div>
-      <div class="cp-suggest-add ${isFriend || u.requestSent ? 'added' : ''}">${label}</div>
+      ${b.html}
+      ${cpAvatarHTML(u.username, 'sm', {emoji: u.emoji, avatar: u.avatar, rank: u.rank, online: u.online, showDot: false})}
+      <div class="fr-info">
+        <div class="fr-name">${esc(u.username)}</div>
+        <div class="fr-rank">${esc(u.rank || 'Новичок')}</div>
+      </div>
+      <button class="fr-action-btn ${isFriend || u.requestSent ? 'added' : ''}">${label}</button>
     `;
+    row.querySelector('.fr-info').onclick = () => openProfile(u.username);
+    const btn = row.querySelector('.fr-action-btn');
     if (!isFriend) {
-      row.querySelector('.cp-suggest-add').onclick = () => {
+      btn.onclick = () => {
         if (u.requestReceived) cpAcceptFriendReq(u.username);
         else if (!u.requestSent) cpSendFriendRequest(u.username);
         else return;
         cpToast(u.requestReceived ? `Вы подружились с ${u.username}` : `Заявка отправлена: ${u.username}`);
         setTimeout(() => cpSearchUsers(q.trim()), 150);
       };
+    } else {
+      btn.disabled = true;
     }
     root.appendChild(row);
   });

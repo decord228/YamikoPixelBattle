@@ -274,7 +274,7 @@ const ACHIEVEMENTS = [
   { id:'pixels_20000',  title:'Бог Пикселей',      desc:'Наберите 20 000 очков опыта',            icon:'👑', xp:380,  check: s => s.xp >= 20000,    progress: s => [s.xp, 20000] },
   { id:'pixels_50000',  title:'Пиксельный титан',  desc:'Наберите 50 000 очков опыта',            icon:'🔥', xp:600,  check: s => s.xp >= 50000,    progress: s => [s.xp, 50000] },
   { id:'pixels_100000', title:'Повелитель холста', desc:'Наберите 100 000 очков опыта',           icon:'🌌', xp:1000, check: s => s.xp >= 100000,   progress: s => [s.xp, 100000] },
-  { id:'pixels_250000', title:'Мифический творец', desc:'Наберите 250 000 очков опыта',           icon:'🐉', xp:2000, check: s => s.xp >= 250000,   progress: s => [s.xp, 250000] },
+  { id:'pixels_250000', title:'Чисто залутал ауры', desc:'Наберите 250 000 очков опыта',           icon:'🐉', xp:2000, check: s => s.xp >= 250000,   progress: s => [s.xp, 250000] },
   // ── Монеты ──
   { id:'coins_100',     title:'Первая заначка',    desc:'Накопи 100 монет одновременно',          icon:'👛', xp:15,   check: s => s.coins >= 100,       progress: s => [s.coins, 100] },
   { id:'coins_500',     title:'Коллекционер',      desc:'Накопи 500 монет одновременно',          icon:'🪙', xp:30,   check: s => s.coins >= 500,       progress: s => [s.coins, 500] },
@@ -282,33 +282,33 @@ const ACHIEVEMENTS = [
   { id:'coins_2500',    title:'Инвестор',           desc:'Накопи 2500 монет одновременно',         icon:'💴', xp:90,   check: s => s.coins >= 2500,      progress: s => [s.coins, 2500] },
   { id:'coins_5000',    title:'Магнат',            desc:'Накопи 5000 монет одновременно',         icon:'💰', xp:130,  check: s => s.coins >= 5000,      progress: s => [s.coins, 5000] },
   { id:'coins_10000',   title:'Олигарх',            desc:'Накопи 10 000 монет одновременно',       icon:'🏦', xp:200,  check: s => s.coins >= 10000,     progress: s => [s.coins, 10000] },
-  { id:'coins_25000',   title:'Финансовый гений',   desc:'Накопи 25 000 монет одновременно',       icon:'💎', xp:350,  check: s => s.coins >= 25000,     progress: s => [s.coins, 25000] },
-  { id:'coins_50000',   title:'Хранитель сокровищ', desc:'Накопи 50 000 монет одновременно',       icon:'🏆', xp:600,  check: s => s.coins >= 50000,     progress: s => [s.coins, 50000] },
-  { id:'coins_100000',  title:'Пиксельный миллионер', desc:'Накопи 100 000 монет одновременно',    icon:'🤑', xp:1100, check: s => s.coins >= 100000,    progress: s => [s.coins, 100000] },
+  { id:'coins_25000',   title:'Хранитель семени',   desc:'Накопи 25 000 монет одновременно',       icon:'💎', xp:350,  check: s => s.coins >= 25000,     progress: s => [s.coins, 25000] },
+  { id:'coins_50000',   title:'Владелец Ямианиме', desc:'Накопи 50 000 монет одновременно',       icon:'🏆', xp:600,  check: s => s.coins >= 50000,     progress: s => [s.coins, 50000] },
+  { id:'coins_100000',  title:'ЮЕЧКА ЗАМЕТЬ МЕНЯЯЯ', desc:'Накопи 100 000 монет одновременно',    icon:'🤑', xp:1100, check: s => s.coins >= 100000,    progress: s => [s.coins, 100000] },
   // ── Покупки ──
   { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', xp:15,   check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
   { id:'purchase_5',    title:'Постоянный клиент', desc:'Соверши 5 покупок в магазине',           icon:'🛍️', xp:25,   check: s => s.purchasedCount >= 5,  progress: s => [s.purchasedCount, 5] },
   { id:'purchase_10',   title:'Завсегдатай магазина', desc:'Соверши 10 покупок в магазине',       icon:'🧺', xp:45,   check: s => s.purchasedCount >= 10, progress: s => [s.purchasedCount, 10] },
   { id:'purchase_20',   title:'Шопоголик',         desc:'Соверши 20 покупок в магазине',          icon:'🧾', xp:75,   check: s => s.purchasedCount >= 20, progress: s => [s.purchasedCount, 20] },
   { id:'purchase_50',   title:'Скупщик товаров',   desc:'Соверши 50 покупок в магазине',          icon:'📦', xp:150,  check: s => s.purchasedCount >= 50, progress: s => [s.purchasedCount, 50] },
-  { id:'purchase_100',  title:'Владелец лавки',     desc:'Соверши 100 покупок в магазине',         icon:'🏪', xp:280,  check: s => s.purchasedCount >= 100, progress: s => [s.purchasedCount, 100] },
+  { id:'purchase_100',  title:'Данил Колбасенко',     desc:'Соверши 100 покупок в магазине',         icon:'🏪', xp:280,  check: s => s.purchasedCount >= 100, progress: s => [s.purchasedCount, 100] },
   // ── Друзья ──
-  { id:'friend_1',      title:'Первый друг',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,   check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
+  { id:'friend_1',      title:'Больше не изгой :(',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,   check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
   { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', xp:35,   check: s => s.friendsCount >= 5,  progress: s => [s.friendsCount, 5] },
   { id:'friend_10',     title:'Душа общества',     desc:'Добавь 10 друзей',                       icon:'🎊', xp:60,   check: s => s.friendsCount >= 10, progress: s => [s.friendsCount, 10] },
   { id:'friend_25',     title:'Центр тусовки',      desc:'Добавь 25 друзей',                       icon:'🥳', xp:120,  check: s => s.friendsCount >= 25, progress: s => [s.friendsCount, 25] },
-  { id:'friend_50',     title:'Мэр сообщества',     desc:'Добавь 50 друзей',                       icon:'🌐', xp:220,  check: s => s.friendsCount >= 50, progress: s => [s.friendsCount, 50] },
-  { id:'friend_100',    title:'Легенда социума',    desc:'Добавь 100 друзей',                      icon:'🫂', xp:400,  check: s => s.friendsCount >= 100, progress: s => [s.friendsCount, 100] },
+  { id:'friend_50',     title:'Легенда социума',     desc:'Добавь 50 друзей',                       icon:'🌐', xp:220,  check: s => s.friendsCount >= 50, progress: s => [s.friendsCount, 50] },
+  { id:'friend_100',    title:'Гений, Кукловод, Манипулятор Аянакоджи',    desc:'Добавь 100 друзей',                      icon:'🫂', xp:400,  check: s => s.friendsCount >= 100, progress: s => [s.friendsCount, 100] },
   // ── Баннеры ──
   { id:'banners_3',     title:'Коллекционер баннеров', desc:'Владей 3 баннерами профиля',         icon:'🖼️', xp:40,   check: s => (s.ownedBannersCount||0) >= 3,  progress: s => [s.ownedBannersCount||0, 3] },
   { id:'banners_6',     title:'Ценитель стиля',     desc:'Владей 6 баннерами профиля',             icon:'🎏', xp:70,   check: s => (s.ownedBannersCount||0) >= 6,  progress: s => [s.ownedBannersCount||0, 6] },
   { id:'banners_10',    title:'Модный игрок',       desc:'Владей 10 баннерами профиля',            icon:'🏳️', xp:120,  check: s => (s.ownedBannersCount||0) >= 10, progress: s => [s.ownedBannersCount||0, 10] },
-  { id:'banners_15',    title:'Витрина достижений', desc:'Владей 15 баннерами профиля',            icon:'🪧', xp:200,  check: s => (s.ownedBannersCount||0) >= 15, progress: s => [s.ownedBannersCount||0, 15] },
-  { id:'banners_20',    title:'Галерея баннеров',   desc:'Владей 20 баннерами профиля',            icon:'🏵️', xp:320,  check: s => (s.ownedBannersCount||0) >= 20, progress: s => [s.ownedBannersCount||0, 20] },
+  { id:'banners_15',    title:'Создатель стиля', desc:'Владей 15 баннерами профиля',            icon:'🪧', xp:200,  check: s => (s.ownedBannersCount||0) >= 15, progress: s => [s.ownedBannersCount||0, 15] },
+  { id:'banners_20',    title:'Нефор',   desc:'Владей 20 баннерами профиля',            icon:'🏵️', xp:320,  check: s => (s.ownedBannersCount||0) >= 20, progress: s => [s.ownedBannersCount||0, 20] },
   // ── Сессия (только клиент, не персистится на сервере) ──
-  { id:'session_100',   title:'Продуктивная сессия', desc:'Поставь 100 пикселей за одну сессию',  icon:'🕐', xp:25,  check: s => s.sessionPixels >= 100, progress: s => [s.sessionPixels||0, 100] },
+  { id:'session_100',   title:'Дикий огурец', desc:'Поставь 100 пикселей за одну сессию',  icon:'🕐', xp:25,  check: s => s.sessionPixels >= 100, progress: s => [s.sessionPixels||0, 100] },
   // ── Клан / статус ──
-  { id:'clan_member',   title:'Не один в поле',    desc:'Вступи в клан',                           icon:'🚩', xp:20,   check: s => !!s.clan,             progress: s => [s.clan ? 1 : 0, 1] },
+  { id:'clan_member',   title:'Возьми телефон, Детка',    desc:'Вступи в клан',                           icon:'🚩', xp:20,   check: s => !!s.clan,             progress: s => [s.clan ? 1 : 0, 1] },
   { id:'vip',           title:'Особый статус',     desc:'Получи VIP-роль',                        icon:'✨', xp:50,   check: s => s.isVip || s.isAdmin, progress: s => [(s.isVip||s.isAdmin) ? 1 : 0, 1] },
   // ── Комбо-ачивки ──
   { id:'combo_starter',          title:'Крепкий старт',          desc:'Наберите 50 опыта и накопите 100 монет',                                        icon:'🚀', xp:30,   check: s => s.xp >= 50 && s.coins >= 100, progress: s => [(s.xp>=50&&s.coins>=100)?1:0, 1] },
@@ -316,7 +316,7 @@ const ACHIEVEMENTS = [
   { id:'combo_shopaholic',       title:'Транжира',               desc:'20 покупок и 5000 монет в кошельке одновременно',                               icon:'💸', xp:200,  check: s => s.purchasedCount >= 20 && s.coins >= 5000, progress: s => [(s.purchasedCount>=20&&s.coins>=5000)?1:0, 1] },
   { id:'combo_collector_deluxe', title:'Коллекционер де люкс',   desc:'10 баннеров и 20 покупок в магазине',                                           icon:'🎭', xp:220,  check: s => (s.ownedBannersCount||0) >= 10 && s.purchasedCount >= 20, progress: s => [((s.ownedBannersCount||0)>=10&&s.purchasedCount>=20)?1:0, 1] },
   { id:'combo_ultimate',         title:'Идеальный игрок',        desc:'100 000 опыта, 50 000 монет, 25 друзей, 15 баннеров, клан и VIP — всё сразу',   icon:'🌠', xp:1500, check: s => s.xp >= 100000 && s.coins >= 50000 && s.friendsCount >= 25 && (s.ownedBannersCount||0) >= 15 && !!s.clan && (s.isVip||s.isAdmin), progress: s => [[s.xp>=100000,s.coins>=50000,s.friendsCount>=25,(s.ownedBannersCount||0)>=15,!!s.clan,(s.isVip||s.isAdmin)].filter(Boolean).length, 6] },
-  { id:'combo_grandmaster',      title:'Гроссмейстер пикселей',  desc:'250 000 опыта, 100 000 монет и 100 покупок — вершина мастерства',               icon:'🏅', xp:2500, check: s => s.xp >= 250000 && s.coins >= 100000 && s.purchasedCount >= 100, progress: s => [[s.xp>=250000,s.coins>=100000,s.purchasedCount>=100].filter(Boolean).length, 3] },
+  { id:'combo_grandmaster',      title:'Ты на улицу выходишь вообще?',  desc:'250 000 опыта, 100 000 монет и 100 покупок — вершина мастерства',               icon:'🏅', xp:2500, check: s => s.xp >= 250000 && s.coins >= 100000 && s.purchasedCount >= 100, progress: s => [[s.xp>=250000,s.coins>=100000,s.purchasedCount>=100].filter(Boolean).length, 3] },
 ];
 
 const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com');

@@ -80,6 +80,29 @@ const RANK_REWARDS = {
 // xpRequired — порог XP, на котором награда становится доступной: точка
 // МЕЖДУ min этого звания и min следующего. Если звание последнее в списке
 // (следующего нет) — используем min самого звания.
+// rewardKey — стабильный "отпечаток" содержимого награды (тип + значение),
+// а НЕ порядковый индекс. БАГ (жалоба "получил VIP, а градиентный баннер
+// сам стал 'получен'"): раньше id чекпоинта был чисто позиционным
+// (`${rankName}#${i}`). Как только массив наград какого-то звания менялся
+// (см. историю правок выше — у 'Вдохновлённый'/'Зодчий' дописали вторую
+// промежуточную награду), позиция i у СУЩЕСТВУЮЩИХ наград могла съехать,
+// и старый claimed_ranks-id, записанный игроку под старую награду на этой
+// позиции, начинал совпадать с id уже ДРУГОЙ (новой) награды на той же
+// позиции — она мгновенно показывалась как "Получено", хотя её никто не
+// забирал. Пока чекпоинт ошибочно считался claimed, он никогда не попадал
+// в "яркое"/is-current состояние (см. rewardNodeHtml в ui.js) — отсюда и
+// вторая часть жалобы ("промежуточная награда не становится активной/
+// яркой"). Фикс: id теперь строится из содержимого награды, а не из её
+// позиции — переживает любые правки состава массива.
+function rewardKey(reward) {
+  if (!reward) return 'none';
+  if (reward.type === 'coins')     return `coins_${reward.amount}`;
+  if (reward.type === 'banner')    return `banner_${reward.tier}`;
+  if (reward.type === 'shop_item') return `item_${reward.itemId}`;
+  if (reward.type === 'vip_temp')  return `vip_${reward.hours}`;
+  return `x_${JSON.stringify(reward)}`;
+}
+
 function getRankCheckpoints(rankName) {
   const rewards = RANK_REWARDS[rankName];
   if (!rewards || !rewards.length) return [];
@@ -90,7 +113,7 @@ function getRankCheckpoints(rankName) {
   const span = next ? (next.min - rank.min) : 0;
   const count = rewards.length;
   return rewards.map((reward, i) => ({
-    id: `${rankName}#${i}`,
+    id: `${rankName}#${rewardKey(reward)}`,
     reward,
     index: i,
     count,

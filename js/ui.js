@@ -5058,12 +5058,24 @@ function getBannerEntry(bannerId) {
   return (profileBannersCatalog || []).find(b => b.id === bannerId) || null;
 }
 
+// bannerMediaTagHTML — рисует <img> ИЛИ <video> для загруженного вручную
+// баннера (b.url), в зависимости от b.isVideo (см. loadAnimatedBanners в
+// server.js, автоопределение по расширению .mp4/.webm). Видео зациклено,
+// без звука и без контролов — ведёт себя как гифка, просто эффективнее.
+function bannerMediaTagHTML(b, cls) {
+  if (!b.url) return '';
+  if (b.isVideo) {
+    return `<video class="${cls}" src="${esc(b.url)}" autoplay loop muted playsinline disablepictureinpicture></video>`;
+  }
+  return `<img class="${cls}" src="${esc(b.url)}" alt="" loading="lazy">`;
+}
+
 function profileBannerRowHTML(bannerId) {
   const b = getBannerEntry(bannerId);
   if (!b || (!b.css && !b.url)) return { cls: '', html: '' };
   const animCls = b.anim ? ` ${esc(b.anim)}` : '';
   const bg = b.url
-    ? `<img class="row-banner-bg" src="${esc(b.url)}" alt="" loading="lazy">`
+    ? bannerMediaTagHTML(b, 'row-banner-bg')
     : `<div class="row-banner-bg${animCls}" style="background:${esc(b.css)}">${pbannerParticlesHTML(b.anim)}</div>`;
   return { cls: ' has-profile-banner', html: `${bg}<div class="row-banner-overlay"></div>` };
 }
@@ -5245,7 +5257,7 @@ function renderReadOnlyBannerTab(p) {
     const equipped = p.banner === b.id;
     const animCls = b.anim ? ` ${esc(b.anim)}` : '';
     const bg = b.url
-      ? `<img class="profile-banner-card-bg" src="${esc(b.url)}" alt="" loading="lazy">`
+      ? bannerMediaTagHTML(b, 'profile-banner-card-bg')
       : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}">${pbannerParticlesHTML(b.anim)}</div>` : '');
     return `<div class="profile-banner-card${equipped ? ' equipped' : ''}${!bg ? ' none-banner' : ''}" title="${esc(b.name)}">
       ${bg}
@@ -5454,7 +5466,7 @@ function buildBannerPicker() {
       const equipped = currentBannerId === b.id || (!currentBannerId && b.id === 'banner_none');
       const animCls = b.anim ? ` ${esc(b.anim)}` : '';
       const bg = b.url
-        ? `<img class="profile-banner-card-bg" src="${esc(b.url)}" alt="" loading="lazy">`
+        ? bannerMediaTagHTML(b, 'profile-banner-card-bg')
         : (b.css ? `<div class="profile-banner-card-bg${animCls}" style="background:${esc(b.css)}">${pbannerParticlesHTML(b.anim)}</div>` : '');
       const action = owned
         ? `selectBanner('${esc(b.id)}')`

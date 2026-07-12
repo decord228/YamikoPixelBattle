@@ -53,7 +53,25 @@ wrap.addEventListener('mousemove',e=>{
     const dx = e.clientX-dragStart.x, dy = e.clientY-dragStart.y;
     if (smoothCamera) { targetCamX = camStart.x + dx; targetCamY = camStart.y + dy; camX = targetCamX; camY = targetCamY; } 
     else { camX=camStart.x+dx; camY=camStart.y+dy; targetCamX=camX; targetCamY=camY; }
-    applyTransform(); updateAllCursorFlags(); return;
+    applyTransform(); updateAllCursorFlags();
+    // БАГ (жалоба: "лейбл пикселя остаётся на месте, пока таскаю холст
+    // зажатым колёсиком"): раньше updateInspector вообще не вызывался во
+    // время панорамирования (ранний return тут), поэтому подсказка
+    // "отклеивалась" от курсора и зависала на старом экранном месте до
+    // отпускания кнопки. Прятать её на всё время драга тоже оказалось
+    // неудобно (мигает/пропадает сразу при зажатии колёсика) — вместо
+    // этого пересчитываем её на каждый кадр драга точно так же, как в
+    // обычном режиме наведения ниже: холст под курсором двигается, но
+    // сам курсор в экранных координатах стоит на месте, поэтому пиксель
+    // под ним меняется — подсказка должна следовать за этим, а не
+    // прятаться.
+    const p = getCanvasPos(e.clientX, e.clientY);
+    const px = Math.floor(p.x), py = Math.floor(p.y);
+    if (px!==hoveredPixel.x||py!==hoveredPixel.y){
+      hoveredPixel={x:px,y:py}; renderOverlay(); updateCoordsBar(px,py);
+    }
+    updateInspector(e.clientX,e.clientY,px,py);
+    return;
   }
   if (isDraggingTool){
     if (adminActiveHandle) handleToolInteractionMove(e.clientX,e.clientY);
@@ -78,6 +96,14 @@ wrap.addEventListener('mousemove',e=>{
 });
 
 wrap.addEventListener('mouseup',e=>{
+  if (isDragging) {
+    const p = getCanvasPos(e.clientX, e.clientY);
+    const px = Math.floor(p.x), py = Math.floor(p.y);
+    hoveredPixel = { x: px, y: py };
+    renderOverlay();
+    updateInspector(e.clientX, e.clientY, px, py);
+    updateCoordsBar(px, py);
+  }
   if (e.button===1||e.button===2||(e.button===0&&isDragging)){ isDragging=false;wrap.style.cursor='crosshair'; }
   // Всегда сбрасываем, даже если событие потерялось
   if (e.button===0) { isDragging=false; wrap.style.cursor='crosshair'; }

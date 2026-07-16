@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-7';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-8';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -1096,6 +1096,13 @@
                         <div class="section-sep"></div>
                         <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
                         <button class="btn btn-danger" data-onclick="adminClearCanvas()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" /><path d="M10 11v6" /><path d="M14 11v6" /></svg> Очистить весь холст</button>
+
+                        <div class="section-sep"></div>
+                        <div style="border:1px solid #ef4444;border-radius:12px;padding:14px;background:rgba(239,68,68,.08);">
+                            <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">⚠️ Опасная зона — перед мероприятием</div>
+                            <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Полностью очищает холст, все статистики, уровни, монеты, ачивки, кланы, новости и чат. Удаляет всех обычных игроков — остаются только админ-аккаунты (тоже обнулённые). Необратимо!</p>
+                            <button class="btn btn-danger" data-onclick="adminFullReset()" style="width:100%"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><circle cx="12" cy="2" r="1" fill="currentColor" stroke="none" /></svg> Полный сброс проекта</button>
+                        </div>
                     </div>
 
                     <div id="admin-tab-broadcast" style="display:none">

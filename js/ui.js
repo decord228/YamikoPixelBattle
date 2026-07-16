@@ -3613,6 +3613,32 @@ async function adminClearCanvas(){
   if (!ok) return;
   sendJSON({action:'admin_cmd',cmd:'clear_canvas'});
 }
+
+// ── ПОЛНЫЙ СБРОС (перед новым мероприятием) ──
+// Удаляет всех обычных игроков, обнуляет статистику админам, очищает холст,
+// кланы, новости, ЛС и чат. Необратимо — поэтому двойное подтверждение:
+// сначала предупреждающий showConfirm, затем ввод точной фразы через showPrompt.
+async function adminFullReset(){
+  const step1 = await showConfirm(
+    'Это ПОЛНОСТЬЮ очистит холст, все статистики, уровни, монеты, ачивки, кланы, новости, чат и удалит всех обычных игроков. Останутся только админ-аккаунты (тоже обнулённые). Действие необратимо!',
+    { title: '⚠️ Полный сброс Пиксель Батла', icon: '⚠️', danger: true, confirmText: 'Продолжить' }
+  );
+  if (!step1) return;
+
+  const phrase = await showPrompt(
+    'Чтобы подтвердить, введите фразу ОЧИСТИТЬ ВСЁ (без кавычек):',
+    '',
+    { title: 'Подтверждение полного сброса', icon: '⚠️', confirmText: 'Очистить всё' }
+  );
+  if (phrase === null) return;
+  if (phrase.trim().toUpperCase() !== 'ОЧИСТИТЬ ВСЁ'){
+    showToast('Фраза введена неверно. Сброс отменён.', 'error');
+    return;
+  }
+
+  sendJSON({action:'admin_cmd', cmd:'full_reset', params: phrase.trim().toUpperCase()});
+  showToast('Выполняется полный сброс...', 'info');
+}
 function adminToggleCursors(){
   serverCursorsEnabled=!serverCursorsEnabled;
   sendJSON({action:'admin_cmd',cmd:'toggle_cursors',params:serverCursorsEnabled});

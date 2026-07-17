@@ -223,7 +223,7 @@ const SHOP_ITEMS_VIP = [
 // процентах (а не в фикс. секундах), чтобы работать предсказуемо при любом
 // базовом кулдауне, который задаёт админ через слайдер.
 const SHOP_ITEMS_COOLDOWN = [
-  {id:'cooldown_boost_90',title:'Турбо-режим −90%',desc:'Снижает кулдаун установки пикселя на 90% на 5 минут. Для настоящего спринта!',icon:ICON_ROCKET,cost:55,type:'cooldown_boost',pct:90,durationMin:5,count:1},
+  {id:'cooldown_boost_90',title:'Турбо-режим −90%',desc:'Снижает кулдаун установки пикселя на 90% на 30 минут. Для настоящего спринта!',icon:ICON_ROCKET,cost:300,type:'cooldown_boost',pct:90,durationMin:30,count:1},
 ];
 
 const SHOP_ITEMS_ADMIN = [

@@ -11492,3 +11492,172 @@ body.mini-mode #backdrop {
     #color-grid { grid-template-columns: repeat(7, 1fr); }
     .panel-body { padding-inline: 12px; }
 }
+
+/* ── MOBILE SHEETS: единый паттерн всех окон ─────────────────────── */
+@media (max-width: 640px) {
+    :root {
+        --mobile-control-size: 52px;
+        --mobile-sheet-height: min(78dvh, 720px);
+    }
+
+    /* Крупные, удобные для пальца элементы верхней строки. */
+    #profile-hud, #news-indicator {
+        width: var(--mobile-control-size);
+        height: var(--mobile-control-size);
+        border-radius: 16px;
+    }
+
+    #profile-hud { justify-content: center; }
+    #phud-avatar, #phud-avatar canvas { width: 42px; height: 42px; }
+
+    #top-bar-row { left: 68px; right: 68px; }
+    #top-bar { height: var(--mobile-control-size); padding: 0 12px; }
+    #logo { font-size: 10px; }
+    #online-badge { font-size: 11px; }
+
+    /* Любая основная панель становится нижним листом, а не центровой модалкой. */
+    .overlay-panel,
+    #news-panel,
+    #admin-panel,
+    #shop-panel,
+    #clan-panel,
+    #profile-panel,
+    #auth-panel,
+    #leaderboard-panel,
+    #chat-panel {
+        z-index: 120;
+        top: auto !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        height: var(--mobile-sheet-height) !important;
+        max-width: none;
+        max-height: var(--mobile-sheet-height);
+        border-radius: 22px 22px 0 0;
+        transform: translateY(104%) !important;
+        box-shadow: 0 -14px 42px rgba(0,0,0,.48);
+    }
+
+    .overlay-panel.show,
+    #leaderboard-panel.show,
+    #chat-panel.open {
+        transform: translateY(0) !important;
+    }
+
+    /* Нижний тулбар остаётся позади открытого листа. */
+    #sidebar { z-index: 60; }
+    #chat-btn { z-index: 61; }
+
+    .panel-header {
+        min-height: 62px;
+        padding: 11px 14px 11px 18px;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .panel-title { font-size: 14px; }
+    .panel-close { width: 44px; height: 44px; border-radius: 13px; }
+    .panel-body { padding: 16px 18px calc(22px + env(safe-area-inset-bottom)); }
+
+    /* Чат тоже лист; крестик всегда видим и имеет touch-цель 44px. */
+    #chat-header { min-height: 62px; padding: 10px 14px 10px 18px; }
+    #chat-close {
+        display: flex !important;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        border-radius: 13px;
+    }
+
+    #chat-messages { min-height: 0; height: auto; }
+
+    /* Палитра — компактный лист с горизонтальным перелистыванием цветов. */
+    #palette-panel {
+        z-index: 125;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        max-height: 192px;
+        padding: 14px 16px calc(12px + env(safe-area-inset-bottom));
+        overflow: hidden;
+        border-radius: 22px 22px 0 0;
+        box-shadow: 0 -14px 42px rgba(0,0,0,.48);
+    }
+
+    #color-name-bar { text-align: left; padding-left: 2px; }
+    #color-grid {
+        display: flex;
+        grid-template-columns: none;
+        gap: 8px;
+        margin: 0 -2px 12px;
+        padding: 3px 2px 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        scroll-snap-type: x proximity;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    #color-grid::-webkit-scrollbar { display: none; }
+    .color-cell { width: 42px; min-width: 42px; height: 42px; scroll-snap-align: start; }
+    #place-btn-wrap { height: 42px; }
+
+    /* Dock трафарета выше тулбара, а рабочее место отдано содержимому. */
+    .stencil-dock {
+        z-index: 125;
+        bottom: 0;
+        width: 100vw;
+        max-height: min(42dvh, 340px);
+        border-radius: 22px 22px 0 0;
+    }
+
+    .stencil-dock-bar { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+    .stencil-dock-scroll { min-width: 0; flex: 1 1 auto; }
+    #stencil-clan-share-status { display: none; }
+    .dock-group-actions .dock-share-btn { width: 42px; padding: 9px; }
+    .dock-control-opacity { min-width: min(230px, 62vw); }
+    .dock-control-opacity input[type="range"] { width: min(180px, 46vw); min-width: 140px; }
+
+    /* Системные и специализированные диалоги получают ту же анимацию листа. */
+    .modal-dialog,
+    .ncm-dialog,
+    .bcm-dialog,
+    .rme-dialog,
+    .aum-dialog {
+        z-index: 520;
+        top: auto !important;
+        right: 0 !important;
+        bottom: 0 !important;
+        left: 0 !important;
+        width: 100% !important;
+        max-width: none;
+        max-height: min(82dvh, 760px);
+        margin: 0;
+        border-radius: 22px 22px 0 0;
+        transform: translateY(104%) !important;
+    }
+
+    .modal-dialog.show,
+    .ncm-dialog.show,
+    .bcm-dialog.show,
+    .rme-dialog.show,
+    .aum-dialog.show { transform: translateY(0) !important; }
+
+    /* Рекламный диалог подчиняется тому же паттерну нижнего листа. */
+    #ad-popup-backdrop { align-items: flex-end; }
+    #ad-popup-card {
+        width: 100%;
+        max-width: none;
+        max-height: min(80dvh, 720px);
+        margin: 0;
+        padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+        overflow: auto;
+        border-radius: 22px 22px 0 0;
+    }
+
+    #ad-popup-close { top: 12px; right: 12px; width: 42px; height: 42px; }
+}

@@ -11261,6 +11261,10 @@ body.mini-mode #backdrop {
         --mobile-edge: 8px;
     }
 
+    /* #backdrop расположен вне #ui. Он должен затемнять холст, а не
+       перекрывать листы, которые находятся внутри #ui. */
+    #backdrop { z-index: 9; }
+
     html, body {
         min-width: 0;
         overflow: hidden;
@@ -11540,6 +11544,12 @@ body.mini-mode #backdrop {
     }
 
     .overlay-panel.show,
+    #news-panel.show,
+    #admin-panel.show,
+    #shop-panel.show,
+    #clan-panel.show,
+    #profile-panel.show,
+    #auth-panel.show,
     #leaderboard-panel.show,
     #chat-panel.open {
         transform: translateY(0) !important;
@@ -11576,7 +11586,8 @@ body.mini-mode #backdrop {
     #palette-panel {
         z-index: 125;
         right: 0;
-        bottom: 0;
+        /* Палитра открывается НАД нижним тулбаром и не перекрывает его. */
+        bottom: calc(var(--mobile-bottom-bar) + 8px);
         left: 0;
         width: 100%;
         max-width: none;

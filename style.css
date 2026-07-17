@@ -11717,4 +11717,20 @@ body.mini-mode #backdrop {
     }
 
     #ad-popup-close { top: 12px; right: 12px; width: 42px; height: 42px; }
+
+    /* Новый чат открывается через #chat-popup-overlay. Его боковая панель
+       имеет z-index:20, поэтому крестик должен быть выше неё. */
+    #chat-popup-close-btn {
+        z-index: 60;
+        top: calc(10px + env(safe-area-inset-top));
+        right: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+        background: rgba(20,20,22,.96);
+        color: var(--text);
+        box-shadow: 0 5px 18px rgba(0,0,0,.4);
+    }
+
+    #chat-popup-close-btn .icon { width: 21px; height: 21px; }
 }

@@ -11502,6 +11502,7 @@ body.mini-mode #backdrop {
     :root {
         --mobile-control-size: 52px;
         --mobile-sheet-height: min(78dvh, 720px);
+        --mobile-palette-height: 170px;
     }
 
     /* Крупные, удобные для пальца элементы верхней строки. */
@@ -11587,14 +11588,17 @@ body.mini-mode #backdrop {
         z-index: 125;
         right: 0;
         /* Палитра открывается НАД нижним тулбаром и не перекрывает его. */
-        bottom: calc(var(--mobile-bottom-bar) + 8px);
+        bottom: var(--mobile-bottom-bar);
         left: 0;
         width: 100%;
         max-width: none;
-        max-height: 192px;
+        height: var(--mobile-palette-height);
+        max-height: var(--mobile-palette-height);
         padding: 14px 16px calc(12px + env(safe-area-inset-bottom));
         overflow: hidden;
-        border-radius: 22px 22px 0 0;
+        border-radius: 0;
+        border-right: 0;
+        border-left: 0;
         box-shadow: 0 -14px 42px rgba(0,0,0,.48);
     }
 
@@ -11620,13 +11624,20 @@ body.mini-mode #backdrop {
     /* Dock трафарета выше тулбара, а рабочее место отдано содержимому. */
     .stencil-dock {
         z-index: 125;
-        bottom: 0;
+        bottom: var(--mobile-bottom-bar);
         width: 100vw;
-        max-height: min(42dvh, 340px);
-        border-radius: 22px 22px 0 0;
+        height: 76px;
+        max-height: 76px;
+        border-radius: 0;
+        border-right: 0;
+        border-left: 0;
     }
 
-    .stencil-dock-bar { padding: 10px 12px calc(10px + env(safe-area-inset-bottom)); }
+    body.palette-open .stencil-dock {
+        bottom: calc(var(--mobile-bottom-bar) + var(--mobile-palette-height));
+    }
+
+    .stencil-dock-bar { padding: 10px 12px; }
     .stencil-dock-scroll { min-width: 0; flex: 1 1 auto; }
     #stencil-clan-share-status { display: none; }
     .dock-group-actions .dock-share-btn { width: 42px; padding: 9px; }

@@ -3714,6 +3714,7 @@ function togglePalette(){
   const p = document.getElementById('palette-panel');
   const isHidden = p.style.display === 'none';
   p.style.display = isHidden ? 'block' : 'none';
+  document.body.classList.toggle('palette-open', isHidden);
   const btn = document.getElementById('btn-palette');
   if(btn) btn.classList.toggle('active', isHidden);
 }

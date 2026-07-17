@@ -49,6 +49,25 @@ async function init() {
 // блокируется песочницей iframe Discord Activity (нет allow-popups).
 let discordSdk = null;
 
+// Публикуем Rich Presence для Activity. Discord сам связывает кнопку
+// «Запросить вход» с sdk.instanceId, поэтому секрет комнаты для Embedded
+// Activity не нужен. Поле party только показывает друзьям, сколько мест
+// доступно в этой сессии.
+async function publishDiscordPresence(sdk) {
+  try {
+    await sdk.commands.setActivity({
+      activity: {
+        type: 0,
+        details: 'Рисует на общем полотне',
+        state: 'Pixel Battle',
+        party: { size: [1, 5] },
+      },
+    });
+  } catch (e) {
+    console.warn('[Discord] Не удалось обновить Rich Presence:', JSON.stringify(e));
+  }
+}
+
 async function initDiscordActivity() {
   let sdk;
   try {
@@ -70,7 +89,7 @@ async function initDiscordActivity() {
       client_id:     DISCORD_CLIENT_ID,
       response_type: 'code',
       prompt:        'consent',
-      scope:         ['identify'],
+      scope:         ['identify', 'rpc.activities.write'],
     });
 
     console.log('[Discord] authorize result:', JSON.stringify(authorizeResult));
@@ -101,7 +120,18 @@ async function initDiscordActivity() {
       throw new Error('Сервер не вернул access_token: ' + JSON.stringify(tokenData));
     }
 
+    // Завершаем OAuth-авторизацию и в клиенте Discord. Это обязательно для
+    // команд SDK, которым нужны запрошенные scopes, включая setActivity().
+    const discordAuth = await sdk.commands.authenticate({ access_token });
+    if (!discordAuth) {
+      throw new Error('Discord SDK authenticate() не вернул данные пользователя');
+    }
+
     console.log('[Discord] Got access_token, connecting...');
+
+    // Без этого Discord показывает лишь базовый статус приложения. Rich
+    // Presence делает сессию понятной и доступной для запроса входа.
+    await publishDiscordPresence(sdk);
 
     // Скрываем форму логина ДО подключения WS
     document.getElementById('auth-panel').style.display = 'none';

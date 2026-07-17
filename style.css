@@ -11247,3 +11247,248 @@ body.mini-mode #backdrop {
 #ad-popup-goto {
     width: 100%;
 }
+
+/* ══════════════════════════════════════════════════════════════════
+   MOBILE FOUNDATION
+   Единственный финальный слой мобильной вёрстки. Он расположен в конце
+   файла намеренно: старые точечные @media-правила выше не могут случайно
+   переопределить раскладку на телефоне.
+   ══════════════════════════════════════════════════════════════════ */
+@media (max-width: 640px) {
+    :root {
+        --mobile-top: calc(8px + env(safe-area-inset-top));
+        --mobile-bottom-bar: calc(64px + env(safe-area-inset-bottom));
+        --mobile-edge: 8px;
+    }
+
+    html, body {
+        min-width: 0;
+        overflow: hidden;
+        overscroll-behavior: none;
+    }
+
+    /* iOS не увеличивает экран при фокусе текстового поля. */
+    input, select, textarea { font-size: 16px; }
+
+    /* Верхняя строка: профиль — отдельная кнопка, статус — компактная капсула. */
+    #left-col {
+        display: contents;
+    }
+
+    #profile-hud {
+        position: fixed;
+        z-index: 60;
+        top: var(--mobile-top);
+        left: var(--mobile-edge);
+        width: 40px;
+        height: 40px;
+        min-height: 40px;
+        padding: 0;
+        gap: 0;
+        justify-content: center;
+        border-radius: 13px;
+    }
+
+    #phud-avatar { width: 32px; height: 32px; }
+    #phud-avatar canvas { width: 32px; height: 32px; }
+    #phud-name, #phud-role, #phud-coins, #profile-hud .phud-divider { display: none; }
+
+    #top-bar-row {
+        position: fixed;
+        z-index: 55;
+        top: var(--mobile-top);
+        left: 56px;
+        right: 54px;
+        max-width: none;
+        transform: none;
+        gap: 0;
+    }
+
+    #top-bar {
+        width: 100%;
+        height: 40px;
+        min-width: 0;
+        padding: 0 10px;
+        gap: 7px;
+        justify-content: center;
+    }
+
+    #logo { font-size: 9px; letter-spacing: .5px; overflow: hidden; text-overflow: ellipsis; }
+    #online-badge { font-size: 10px; flex-shrink: 0; }
+    #conn-status, #coords-badge, #made-by, #top-bar .top-divider { display: none; }
+    #tl-rec-indicator { display: none !important; }
+
+    #news-indicator {
+        position: fixed;
+        top: var(--mobile-top);
+        right: var(--mobile-edge);
+        width: 40px;
+        height: 40px;
+        border-radius: 13px;
+    }
+
+    /* Нижняя панель не перекрывает холст: крупные touch-цели и свайп по кнопкам. */
+    #sidebar {
+        position: fixed;
+        z-index: 60;
+        inset: auto 0 0;
+        height: var(--mobile-bottom-bar);
+        margin: 0;
+        padding: 8px 10px calc(8px + env(safe-area-inset-bottom));
+        display: block;
+        overflow: hidden;
+        background: rgba(15,15,17,.98);
+        border: 0;
+        border-top: 1px solid var(--border2);
+        border-radius: 0;
+        backdrop-filter: blur(20px);
+    }
+
+    #sidebar-inner {
+        width: 100%;
+        height: 48px;
+        min-height: 48px;
+        padding: 0;
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        justify-content: flex-start;
+        gap: 8px;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-x: contain;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+    }
+
+    #sidebar-inner::before, #sidebar-inner::after { display: none; }
+    #sidebar-inner::-webkit-scrollbar { display: none; }
+    .sidebar-btn { width: 48px; height: 48px; min-width: 48px; min-height: 48px; border-radius: 13px; }
+    .sidebar-btn .icon { width: 21px; height: 21px; }
+    .sidebar-divider { width: 1px; height: 28px; margin: 0 2px; }
+    #sidebar-tooltip { display: none !important; }
+
+    #chat-btn {
+        position: fixed;
+        z-index: 61;
+        bottom: calc(var(--mobile-bottom-bar) + 10px);
+        left: 10px;
+        width: 46px;
+        height: 46px;
+        border-radius: 14px;
+    }
+
+    #palette-panel {
+        position: fixed;
+        z-index: 70;
+        right: var(--mobile-edge);
+        left: auto;
+        bottom: calc(var(--mobile-bottom-bar) + 8px);
+        width: min(288px, calc(100vw - 72px));
+        max-height: calc(100dvh - var(--mobile-bottom-bar) - 66px);
+        padding: 12px;
+        overflow-y: auto;
+    }
+
+    #color-grid { grid-template-columns: repeat(8, 1fr); gap: 4px; }
+    #place-btn-wrap { height: 44px; }
+
+    /* Обычные окна занимают доступную область между шапкой и тулбаром. */
+    .overlay-panel,
+    #news-panel,
+    #admin-panel,
+    #shop-panel,
+    #clan-panel,
+    #profile-panel {
+        position: fixed;
+        z-index: 70;
+        top: calc(var(--mobile-top) + 48px);
+        right: var(--mobile-edge) !important;
+        bottom: calc(var(--mobile-bottom-bar) + 8px);
+        left: var(--mobile-edge) !important;
+        width: auto !important;
+        height: auto !important;
+        max-width: none;
+        max-height: none;
+        transform: translateY(12px) scale(.98);
+        border-radius: 16px;
+    }
+
+    .overlay-panel.show { transform: translateY(0) scale(1); }
+    .panel-header { min-height: 56px; padding: 10px 12px 10px 16px; }
+    .panel-title { font-size: 13px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .panel-close { width: 40px; height: 40px; flex: 0 0 40px; }
+    .panel-body { padding: 14px 16px 18px; overscroll-behavior: contain; }
+
+    #news-panel .panel-header { padding: 10px 12px 0 16px; }
+    #news-panel-body { padding: 12px 14px 16px; gap: 10px; min-height: 0; }
+    #news-lower { min-height: 0; }
+    #news-list-col { flex-basis: 132px; }
+
+    /* Большие кабинетные панели: сохраняем прокручиваемую область контента. */
+    #profile-panel .panel-body, #clan-panel .panel-body, #admin-panel .panel-body { min-height: 0; }
+    .clan-shell-main { min-height: 0; }
+    .clan-content { min-width: 0; }
+    .clan-sidenav { -webkit-overflow-scrolling: touch; }
+
+    #chat-panel {
+        position: fixed;
+        z-index: 70;
+        top: auto;
+        right: var(--mobile-edge);
+        bottom: calc(var(--mobile-bottom-bar) + 8px);
+        left: var(--mobile-edge);
+        width: auto;
+        max-height: min(62dvh, 520px);
+        border-radius: 16px;
+    }
+
+    #chat-messages { height: auto; min-height: 150px; flex: 1; }
+
+    #leaderboard-panel {
+        position: fixed;
+        z-index: 70;
+        top: auto;
+        right: var(--mobile-edge);
+        bottom: calc(var(--mobile-bottom-bar) + 8px);
+        left: var(--mobile-edge);
+        width: auto;
+        max-height: min(60dvh, 480px);
+        transform: translateY(12px) scale(.98);
+    }
+
+    #leaderboard-panel.show { transform: translateY(0) scale(1); }
+
+    /* Трафарет — отдельный скроллируемый док над нижней панелью. */
+    .stencil-dock {
+        z-index: 75;
+        bottom: calc(var(--mobile-bottom-bar) + 8px);
+        width: calc(100vw - 16px);
+        max-height: min(42dvh, 330px);
+    }
+
+    .stencil-dock-bar { max-height: inherit; }
+
+    .modal-dialog, .ncm-dialog, .bcm-dialog, .rme-dialog {
+        width: calc(100vw - 24px);
+        max-width: 460px;
+        max-height: calc(100dvh - 32px);
+        overflow: auto;
+    }
+
+    #lockdown-card { width: calc(100vw - 32px); padding: 28px 18px; }
+    #lockdown-title { font-size: 17px; }
+    .lockdown-timer-unit { min-width: 56px; }
+
+    #ad-banner { width: calc(100vw - 16px); bottom: calc(var(--mobile-bottom-bar) + 8px); }
+    #ad-popup-card { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); overflow: auto; }
+    #ad-popup-image { max-height: 58dvh; }
+}
+
+@media (max-width: 360px) {
+    #logo { font-size: 8px; }
+    #online-badge { font-size: 9px; }
+    #top-bar { padding: 0 7px; gap: 4px; }
+    #color-grid { grid-template-columns: repeat(7, 1fr); }
+    .panel-body { padding-inline: 12px; }
+}

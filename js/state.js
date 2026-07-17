@@ -24,9 +24,13 @@ function recomputeCooldownTime() {
     }, cooldownBoostUntil - Date.now());
   }
 }
-function applyCooldownBoost(pct, until) {
+function applyCooldownBoost(pct, until, serverNow) {
   cooldownBoostPct = pct || 0;
-  cooldownBoostUntil = until || 0;
+  // `until` выдаёт сервер. У части игроков системные часы отличаются от
+  // серверных, поэтому абсолютный timestamp мог выглядеть уже истёкшим.
+  // Переводим оставшуюся серверную длительность в локальный отсчёт.
+  const remainingMs = serverNow ? Math.max(0, (until || 0) - serverNow) : 0;
+  cooldownBoostUntil = remainingMs ? Date.now() + remainingMs : (until || 0);
   recomputeCooldownTime();
   if (typeof buildShopUI === 'function') buildShopUI();
 }

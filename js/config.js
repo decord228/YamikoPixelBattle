@@ -351,7 +351,9 @@ const DISCORD_CLIENT_ID = '1521337257938911283';
 
 // Этот адрес нужно добавить в Discord Developer Portal → OAuth2 → Redirects.
 // Он используется только при входе с сайта, а не внутри Discord Activity.
-const DISCORD_WEB_REDIRECT_URI = 'https://decord228.github.io/YamikoPixelBattle/';
+// OAuth2 сверяет redirect URI посимвольно. В Developer Portal добавлен
+// именно этот адрес — без завершающего слеша.
+const DISCORD_WEB_REDIRECT_URI = 'https://decord228.github.io/YamikoPixelBattle';
 
 // WS_URL вычисляется в момент вызова connect(), после patchUrlMappings
 function getWsUrl() {

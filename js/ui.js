@@ -18,22 +18,6 @@ const CLAN_BANNER_MAX_MB = 5;
 const RANK_STAR_SVG = `<svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 0C12 6.2 13 9.7 14.6 11.3 16.2 12.9 19.6 14 24 14 19.6 14 16.2 15.1 14.6 16.7 13 18.3 12 21.8 12 24 12 21.8 11 18.3 9.4 16.7 7.8 15.1 4.4 14 0 14 4.4 14 7.8 12.9 9.4 11.3 11 9.7 12 6.2 12 0Z"/></svg>`;
 
 // ── UI & LOGIC ──
-function switchAuthTab(tab) {
-  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',(tab==='login'&&i===0)||(tab==='register'&&i===1)));
-  document.getElementById('auth-login-form').style.display=tab==='login'?'':'none';
-  document.getElementById('auth-register-form').style.display=tab==='register'?'':'none';
-}
-
-function doAuth(isReg) {
-  if (!ws||ws.readyState!==WebSocket.OPEN){showToast('Нет соединения','error');return;}
-  const u=isReg?document.getElementById('reg-username').value.trim():document.getElementById('auth-username').value.trim();
-  const p=isReg?document.getElementById('reg-password').value:document.getElementById('auth-password').value;
-  const e=isReg?document.getElementById('reg-email').value.trim():'';
-  if (!u||!p){showToast('Заполните все поля','error');return;}
-  sessionFile={username:u,password:p};
-  sendJSON({action:'auth',username:u,password:p,email:e,is_register:isReg});
-}
-
 function onAuthSuccess(d) {
   document.getElementById('auth-panel').classList.remove('show');
   document.getElementById('backdrop').classList.remove('show');
@@ -69,8 +53,6 @@ function onAuthSuccess(d) {
   loadAvatarFromStorage();
   drawAvatarCanvas(selectedEmoji);
   drawHudAvatar(selectedEmoji);
-  saveSession(sessionFile.username,sessionFile.password);
-  
   if (d.stencil) applySharedStencil(d.stencil);
   if (currentClan) sendJSON({action:'clan_get'});
   updateStencilPanelClanStatus();
@@ -79,6 +61,8 @@ function onAuthSuccess(d) {
 
 function doLogout() {
   clearSession();
+  sessionStorage.removeItem('pb_discord_access_token');
+  if (typeof websiteDiscordToken !== 'undefined') websiteDiscordToken='';
   isLoggedIn=false;isAdmin=false;isVip=false;currentUser='';currentClan='';
   if (typeof tlStopStatusPolling === 'function') tlStopStatusPolling();
   const tlInd=document.getElementById('tl-rec-indicator'); if (tlInd) tlInd.style.display='none';

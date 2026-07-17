@@ -38,6 +38,7 @@ async function init() {
   if (IS_DISCORD_ACTIVITY) {
     await initDiscordActivity();
   } else {
+    await finishWebsiteDiscordLogin();
     connect();
   }
 }
@@ -48,6 +49,50 @@ async function init() {
 // discordSdk.commands.openExternalLink(), а не window.open(), который молча
 // блокируется песочницей iframe Discord Activity (нет allow-popups).
 let discordSdk = null;
+let websiteDiscordToken = sessionStorage.getItem('pb_discord_access_token') || '';
+
+function beginDiscordLogin() {
+  const state = crypto.randomUUID();
+  sessionStorage.setItem('pb_discord_oauth_state', state);
+  const query = new URLSearchParams({
+    client_id: DISCORD_CLIENT_ID,
+    redirect_uri: DISCORD_WEB_REDIRECT_URI,
+    response_type: 'code',
+    scope: 'identify',
+    state,
+  });
+  window.location.assign(`https://discord.com/oauth2/authorize?${query}`);
+}
+
+async function finishWebsiteDiscordLogin() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+
+  const state = params.get('state');
+  const expectedState = sessionStorage.getItem('pb_discord_oauth_state');
+  sessionStorage.removeItem('pb_discord_oauth_state');
+  history.replaceState({}, document.title, window.location.pathname);
+  if (!state || state !== expectedState) {
+    showToast('Не удалось подтвердить вход через Discord', 'error');
+    return;
+  }
+
+  try {
+    const response = await fetch(`${getApiUrl()}/discord-web-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, redirect_uri: DISCORD_WEB_REDIRECT_URI }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.access_token) throw new Error(data.error || 'Token exchange failed');
+    websiteDiscordToken = data.access_token;
+    sessionStorage.setItem('pb_discord_access_token', websiteDiscordToken);
+  } catch (e) {
+    console.error('[Discord] Website login failed:', e);
+    showToast('Не удалось войти через Discord', 'error');
+  }
+}
 
 // Публикуем Rich Presence для Activity. Discord сам связывает кнопку
 // «Запросить вход» с sdk.instanceId, поэтому секрет комнаты для Embedded
@@ -164,7 +209,4 @@ async function initDiscordActivity() {
     connect();
   }
 }
-document.getElementById('auth-password').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth(false);});
-document.getElementById('reg-password').addEventListener('keydown',e=>{if(e.key==='Enter')doAuth(true);});
-
 init();

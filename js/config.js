@@ -349,6 +349,10 @@ const IS_DISCORD_ACTIVITY = window.location.hostname.endsWith('.discordsays.com'
 // Взять его можно в Discord Developer Portal → ваше приложение → General Information → Application ID.
 const DISCORD_CLIENT_ID = '1521337257938911283';
 
+// Этот адрес нужно добавить в Discord Developer Portal → OAuth2 → Redirects.
+// Он используется только при входе с сайта, а не внутри Discord Activity.
+const DISCORD_WEB_REDIRECT_URI = 'https://decord228.github.io/YamikoPixelBattle/';
+
 // WS_URL вычисляется в момент вызова connect(), после patchUrlMappings
 function getWsUrl() {
   return IS_DISCORD_ACTIVITY

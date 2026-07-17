@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-9';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-10';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -527,22 +527,9 @@
             <div class="auth-logo-sub">Захвати каждый пиксель</div>
             <div class="auth-by">made by <span>d3cord</span></div>
         </div>
-        <div class="auth-tabs">
-            <div class="auth-tab active" data-onclick="switchAuthTab('login')">Войти</div>
-            <div class="auth-tab" data-onclick="switchAuthTab('register')">Регистрация</div>
-        </div>
         <div class="panel-body">
-            <div id="auth-login-form">
-                <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="auth-username" type="text" placeholder="введите ник" autocomplete="username"></div>
-                <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
-                <button class="btn btn-primary" data-onclick="doAuth(false)">Войти</button>
-            </div>
-            <div id="auth-register-form" style="display:none">
-                <div class="form-group"><label class="form-label">Никнейм</label><input class="form-input" id="reg-username" type="text" placeholder="придумайте ник" autocomplete="username"></div>
-                <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="reg-email" type="email" placeholder="your@email.com" autocomplete="email"></div>
-                <div class="form-group"><label class="form-label">Пароль</label><input class="form-input" id="reg-password" type="password" placeholder="минимум 4 символа" autocomplete="new-password"></div>
-                <button class="btn btn-primary" data-onclick="doAuth(true)">Создать аккаунт</button>
-            </div>
+            <p class="auth-discord-note">Вход и создание аккаунта — только через Discord.</p>
+            <button class="btn btn-primary" data-onclick="beginDiscordLogin()">Войти через Discord</button>
         </div>
     </div>
 

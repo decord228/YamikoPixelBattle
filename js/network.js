@@ -10,10 +10,8 @@ function connect() {
   ws.onopen = () => {
     updateConnStatus(true);
     document.getElementById('connecting-screen').classList.add('hide');
-    const s=loadSession();
-    if (s&&s.username&&s.password) {
-      sessionFile=s;
-      sendJSON({action:'auth',username:s.username,password:s.password,email:'',is_register:false});
+    if (typeof websiteDiscordToken !== 'undefined' && websiteDiscordToken) {
+      sendJSON({ action: 'auth', discord_token: websiteDiscordToken });
     }
   };
 
@@ -126,7 +124,9 @@ function handleJSON(d) {
   }
   else if (a==='resize') {
     resizeCanvas(d.w,d.h||canvasH);
-    sendJSON({action:'auth',username:sessionFile.username,password:sessionFile.password,email:'',is_register:false});
+    if (typeof websiteDiscordToken !== 'undefined' && websiteDiscordToken) {
+      sendJSON({ action: 'auth', discord_token: websiteDiscordToken });
+    }
   }
   else if (a==='cursor') {
     otherCursors[d.u]={x:d.x,y:d.y,c:d.c,emoji:d.emoji||'👾',avatar:d.avatar||null,clan:d.clan||''};

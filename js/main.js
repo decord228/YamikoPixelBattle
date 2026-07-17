@@ -33,6 +33,7 @@ async function init() {
   // Открываем палитру при старте и зажигаем новую кнопку
   document.getElementById('palette-panel').style.display = 'block';
   document.body.classList.add('palette-open');
+  if (typeof updatePlaceStatus === 'function') updatePlaceStatus();
   const palBtn = document.getElementById('btn-palette');
   if (palBtn) palBtn.classList.add('active');
 

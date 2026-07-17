@@ -842,6 +842,7 @@ function sendPixel(x,y,cidx) {
 function startCooldown() {
   cooldown=cooldownTime;
   document.getElementById('place-btn').disabled=true;
+  updatePlaceStatus();
   if (cooldownTimer) clearInterval(cooldownTimer);
   cooldownTimer=setInterval(()=>{
     cooldown-=0.05;
@@ -852,11 +853,30 @@ function startCooldown() {
       document.getElementById('place-btn').disabled=false;
       document.getElementById('place-btn').textContent='ПОСТАВИТЬ';
       document.getElementById('place-btn-fill').style.transform='scaleX(1)';
+      updatePlaceStatus();
       clearInterval(cooldownTimer);
     } else {
       document.getElementById('place-btn').textContent=`ОЖИДАНИЕ ${Math.ceil(cooldown)}С`;
+      updatePlaceStatus();
     }
   },50);
+}
+
+function updatePlaceStatus() {
+  const status = document.getElementById('place-status');
+  const icon = document.getElementById('place-status-icon');
+  const time = document.getElementById('place-status-time');
+  if (!status || !icon || !time) return;
+  const seconds = Math.max(0, Math.ceil(cooldown));
+  const waiting = seconds > 0;
+  status.disabled = waiting;
+  status.classList.toggle('waiting', waiting);
+  status.title = waiting ? `Следующий пиксель через ${seconds} с` : 'Можно поставить пиксель';
+  status.setAttribute('aria-label', status.title);
+  icon.innerHTML = waiting
+    ? '<circle cx="12" cy="12" r="8.5"/><path d="M12 7v5l3.5 2"/>'
+    : '<path d="M5 12.5l4.2 4.2L19.5 6.5"/>';
+  time.textContent = waiting ? `${seconds}с` : '';
 }
 
 function spawnPixelFlash(x,y) {

@@ -11248,6 +11248,8 @@ body.mini-mode #backdrop {
     width: 100%;
 }
 
+#place-status { display: none; }
+
 /* ══════════════════════════════════════════════════════════════════
    MOBILE FOUNDATION
    Единственный финальный слой мобильной вёрстки. Он расположен в конце
@@ -11502,7 +11504,7 @@ body.mini-mode #backdrop {
     :root {
         --mobile-control-size: 52px;
         --mobile-sheet-height: min(78dvh, 720px);
-        --mobile-palette-height: 170px;
+        --mobile-palette-height: 72px;
     }
 
     /* Крупные, удобные для пальца элементы верхней строки. */
@@ -11543,6 +11545,10 @@ body.mini-mode #backdrop {
         transform: translateY(104%) !important;
         box-shadow: 0 -14px 42px rgba(0,0,0,.48);
     }
+
+    /* JS показывает палитру inline-стилем display:block. На телефоне
+       открытая палитра всегда должна быть горизонтальным flex-рядом. */
+    #palette-panel[style*="display: block"] { display: flex !important; }
 
     .overlay-panel.show,
     #news-panel.show,
@@ -11594,7 +11600,10 @@ body.mini-mode #backdrop {
         max-width: none;
         height: var(--mobile-palette-height);
         max-height: var(--mobile-palette-height);
-        padding: 14px 16px calc(12px + env(safe-area-inset-bottom));
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
         overflow: hidden;
         border-radius: 0;
         border-right: 0;
@@ -11602,13 +11611,15 @@ body.mini-mode #backdrop {
         box-shadow: 0 -14px 42px rgba(0,0,0,.48);
     }
 
-    #color-name-bar { text-align: left; padding-left: 2px; }
+    #color-name-bar, #place-btn-wrap { display: none; }
     #color-grid {
         display: flex;
         grid-template-columns: none;
+        flex: 1 1 auto;
+        min-width: 0;
         gap: 8px;
-        margin: 0 -2px 12px;
-        padding: 3px 2px 8px;
+        margin: 0;
+        padding: 3px 2px;
         overflow-x: auto;
         overflow-y: hidden;
         scroll-snap-type: x proximity;
@@ -11619,7 +11630,31 @@ body.mini-mode #backdrop {
 
     #color-grid::-webkit-scrollbar { display: none; }
     .color-cell { width: 42px; min-width: 42px; height: 42px; scroll-snap-align: start; }
-    #place-btn-wrap { height: 42px; }
+
+    #place-status {
+        width: 50px;
+        height: 50px;
+        min-width: 50px;
+        padding: 0;
+        border: 1px solid rgba(129,140,248,.55);
+        border-radius: 10px;
+        background: linear-gradient(135deg,var(--accent),#7c3aed);
+        color: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        font-family: 'Space Mono',monospace;
+        font-size: 11px;
+        font-weight: 700;
+        cursor: pointer;
+        box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    #place-status .icon { width: 23px; height: 23px; stroke-width: 2.8; }
+    #place-status.waiting { background: var(--surface3); border-color: var(--border2); color: var(--text2); box-shadow: none; }
+    #place-status.waiting .icon { width: 18px; height: 18px; }
+    #place-status:disabled { opacity: 1; cursor: default; }
 
     /* Dock трафарета выше тулбара, а рабочее место отдано содержимому. */
     .stencil-dock {

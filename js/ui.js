@@ -3405,6 +3405,16 @@ function renderLeaderboardPlayers(data){
   }).join('');
 }
 
+// Один цвет ранга для любых представлений игрока: лидерборд, чат, друзья,
+// участники клана и шапка профиля. Цвет выбирается по положению в RANKS,
+// поэтому новые звания автоматически получают подходящий оттенок.
+function userRankColor(rankName) {
+  const colors = ['#4ade80','#60a5fa','#a78bfa','#c084fc','#f472b6','#f59e0b','#fbbf24','#fde047','#fb7185','#f97316','#22c55e','#14b8a6','#06b6d4','#38bdf8','#818cf8','#a78bfa','#c084fc','#e879f9'];
+  const index = RANKS.findIndex(r => r.name === rankName);
+  if (index < 0) return '#4ade80';
+  return colors[Math.min(colors.length - 1, Math.floor(index * colors.length / RANKS.length))];
+}
+
 function renderLeaderboardClans(data){
   const c=document.getElementById('lb-clans-list');
   if (!data.length){c.innerHTML='<div style="color:var(--text3);text-align:center;padding:20px;">Кланов пока нет</div>';return;}
@@ -5273,7 +5283,7 @@ function renderProfileBannerHeader(p, isSelf) {
     ${b.html}
     ${!b.html ? `<div class="clan-banner-glow clan-banner-glow-1"></div><div class="clan-banner-glow clan-banner-glow-2"></div>` : ''}
     <div class="clan-banner-content">
-      <div class="clan-banner-icon profile-banner-avatar">${avatarInnerHTML(p)}</div>
+      <div class="clan-banner-icon profile-banner-avatar" style="--user-rank-color:${userRankColor(p.rank)}">${avatarInnerHTML(p)}</div>
       <div class="clan-banner-info">
         <div class="clan-banner-name-row">
           <span class="clan-banner-name">${esc(p.username)}</span>
@@ -5642,7 +5652,7 @@ function cpAvatarHTML(username, size = '', overrides = {}) {
   // где это осознанно требовалось.
   const showDot = overrides.showDot !== false;
   const dot = showDot ? `<div class="cp-status-dot ${user.online ? 'online' : ''}"></div>` : '';
-  return `<div class="cp-avatar ${size} ${rankClass}">${avatarInnerHTML(user)}${dot}</div>`;
+  return `<div class="cp-avatar ${size} ${rankClass}" style="--user-rank-color:${userRankColor(user.rank)}">${avatarInnerHTML(user)}${dot}</div>`;
 }
 
 function cpAvatarEl(username, size = '', overrides = {}) {

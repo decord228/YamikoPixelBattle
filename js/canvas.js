@@ -9,21 +9,51 @@ function initCanvases() {
   applyTransform();
 }
 
+let overlayCssWidth = 0, overlayCssHeight = 0, overlayDpr = 1;
+let lastCanvasTransform = '';
+let lastCanvasFarZoomState = null;
 function resizeOverlay() {
-  overlayCanvas.width = window.innerWidth;
-  overlayCanvas.height = window.innerHeight;
+  // Основной холст живёт в CSS-координатах, поэтому overlay тоже должен
+  // рисоваться в них. Backing store повышаем до DPR, но viewport-расчёты
+  // всегда ведём по CSS-размеру — иначе при масштабе браузера сетка уезжает.
+  overlayCssWidth = window.innerWidth;
+  overlayCssHeight = window.innerHeight;
+  overlayDpr = window.devicePixelRatio || 1;
+  overlayCanvas.style.width = `${overlayCssWidth}px`;
+  overlayCanvas.style.height = `${overlayCssHeight}px`;
+  overlayCanvas.width = Math.max(1, Math.round(overlayCssWidth * overlayDpr));
+  overlayCanvas.height = Math.max(1, Math.round(overlayCssHeight * overlayDpr));
+  octx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
   renderOverlay();
 }
 
 function getRenderOffset() {
-  return { x: Math.floor(camX), y: Math.floor(camY) };
+  // И основной canvas (CSS transform), и overlay получают одинаково
+  // привязанное к физическому пикселю смещение. Это устраняет накопление
+  // расхождения при 90%/110% масштабе интерфейса и на Retina-экранах.
+  const dpr = window.devicePixelRatio || 1;
+  return { x: Math.round(camX * dpr) / dpr, y: Math.round(camY * dpr) / dpr };
 }
 
 function applyTransform() {
   const off = getRenderOffset();
-  const t = `translate(${off.x}px,${off.y}px) scale(${camZoom})`;
-  mainCanvas.style.transform = t;
-  shadowDiv.style.transform = t;
+  // translate3d фиксирует слой холста в композиторе. Особенно это важно в
+  // Discord/Electron при отдалении: обычный 2D-transform большого canvas мог
+  // периодически пересобираться и визуально мигать.
+  const t = `translate3d(${off.x}px,${off.y}px,0) scale(${camZoom})`;
+  if (t !== lastCanvasTransform) {
+    mainCanvas.style.transform = t;
+    shadowDiv.style.transform = t;
+    lastCanvasTransform = t;
+  }
+  // Ниже одного CSS-пикселя на клетку nearest-neighbor даёт мерцание на
+  // дробных координатах. На таком расстоянии отдельные пиксели всё равно
+  // не читаются, поэтому используем стабильную фильтрацию браузера.
+  const farZoom = camZoom < 1;
+  if (farZoom !== lastCanvasFarZoomState) {
+    mainCanvas.classList.toggle('canvas-far-zoom', farZoom);
+    lastCanvasFarZoomState = farZoom;
+  }
   shadowDiv.style.width = canvasW + 'px';
   shadowDiv.style.height = canvasH + 'px';
   renderOverlay();
@@ -62,7 +92,10 @@ function renderOverlay() {
 }
 
 function renderOverlayNow() {
-  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+  // resize/reset контекста мог сбросить матрицу, поэтому задаём базовую
+  // CSS→device-pixel матрицу перед каждой отрисовкой.
+  octx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
+  octx.clearRect(0, 0, overlayCssWidth, overlayCssHeight);
 
   // Во время тайм-лапса в полноэкранном режиме оверлей (сетка, трафарет/шаблон,
   // курсор, инструменты админа и т.д.) рисуется поверх ИГРОВОЙ камеры (camX/camY/
@@ -89,9 +122,9 @@ function renderOverlayNow() {
     octx.beginPath();
     
     const startX = Math.max(0, Math.floor(-off.x / camZoom));
-    const endX = Math.min(canvasW, Math.ceil((overlayCanvas.width - off.x) / camZoom));
+    const endX = Math.min(canvasW, Math.ceil((overlayCssWidth - off.x) / camZoom));
     const startY = Math.max(0, Math.floor(-off.y / camZoom));
-    const endY = Math.min(canvasH, Math.ceil((overlayCanvas.height - off.y) / camZoom));
+    const endY = Math.min(canvasH, Math.ceil((overlayCssHeight - off.y) / camZoom));
 
     for (let i = startX; i <= endX; i++) {
       octx.moveTo(i, startY);
@@ -262,8 +295,8 @@ function renderStencilErrors(ctx) {
   
   const startX = Math.max(0, Math.max(ir.x, Math.floor(-off.x / camZoom)));
   const startY = Math.max(0, Math.max(ir.y, Math.floor(-off.y / camZoom)));
-  const endX = Math.min(canvasW, Math.min(ir.x + ir.w, Math.ceil((overlayCanvas.width - off.x) / camZoom)));
-  const endY = Math.min(canvasH, Math.min(ir.y + ir.h, Math.ceil((overlayCanvas.height - off.y) / camZoom)));
+  const endX = Math.min(canvasW, Math.min(ir.x + ir.w, Math.ceil((overlayCssWidth - off.x) / camZoom)));
+  const endY = Math.min(canvasH, Math.min(ir.y + ir.h, Math.ceil((overlayCssHeight - off.y) / camZoom)));
 
   ctx.fillStyle = 'rgba(239, 68, 68, 0.4)';
   ctx.strokeStyle = 'rgba(239, 68, 68, 0.9)';

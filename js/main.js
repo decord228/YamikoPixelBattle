@@ -1,7 +1,19 @@
 ﻿'use strict';
 
 // ── INIT ──
-window.addEventListener('resize',()=>{applyTransform();resizeOverlay();updateAllCursorFlags();checkMiniMode();});
+let miniModeCheckTimer = null;
+window.addEventListener('resize', () => {
+  // Сначала меняем backing store оверлея, а уже затем запрашиваем рендер.
+  // Это не даёт браузеру показать кадр со старым размером canvas.
+  resizeOverlay();
+  applyTransform();
+  updateAllCursorFlags();
+
+  // Discord во время изменения раскладки шлёт несколько промежуточных resize.
+  // Не переключаем экран на каждом из них: это и было причиной мигания UI.
+  clearTimeout(miniModeCheckTimer);
+  miniModeCheckTimer = setTimeout(checkMiniMode, 120);
+});
 
 // ── MINI MODE ──
 // Discord может свернуть Activity в маленькое плавающее окно (например,
@@ -11,13 +23,26 @@ window.addEventListener('resize',()=>{applyTransform();resizeOverlay();updateAll
 // в index.html). Работает только внутри Discord Activity — обычный узкий
 // браузер (мобильный режим) вход в мини-режим не триггерит, т.к. телефон
 // в портретной ориентации хоть и узкий, но высокий (высота остаётся большой).
-const MINI_MODE_MAX_W = 400;
-const MINI_MODE_MAX_H = 280;
+const MINI_MODE_ENTER_W = 380;
+const MINI_MODE_ENTER_H = 260;
+const MINI_MODE_EXIT_W = 430;
+const MINI_MODE_EXIT_H = 310;
+let miniModeActive = false;
 
 function checkMiniMode() {
   if (typeof IS_DISCORD_ACTIVITY === 'undefined' || !IS_DISCORD_ACTIVITY) return;
-  const isMini = window.innerWidth <= MINI_MODE_MAX_W && window.innerHeight <= MINI_MODE_MAX_H;
-  document.body.classList.toggle('mini-mode', isMini);
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  // Гистерезис: войти в компактный режим можно только в действительно
+  // маленьком окне, а выйти — лишь после заметного увеличения. Поэтому
+  // пограничный размер окна Discord больше не прячет и не возвращает UI
+  // десятки раз подряд.
+  const isMini = miniModeActive
+    ? width <= MINI_MODE_EXIT_W && height <= MINI_MODE_EXIT_H
+    : width <= MINI_MODE_ENTER_W && height <= MINI_MODE_ENTER_H;
+  if (isMini === miniModeActive) return;
+  miniModeActive = isMini;
+  document.body.classList.toggle('mini-mode', miniModeActive);
 }
 
 async function init() {

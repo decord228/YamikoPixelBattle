@@ -88,6 +88,13 @@ html, body {
     left: 0;
 }
 
+/* При масштабе меньше 1px на клетку nearest-neighbor даёт мерцание на
+   дробных координатах. Далёкий вид — обзорный, поэтому здесь важнее
+   стабильная картинка, чем резкость отдельной клетки. */
+#main-canvas.canvas-far-zoom {
+    image-rendering: auto;
+}
+
 #canvas-shadow {
     position: absolute;
     top: 0;
@@ -900,7 +907,7 @@ html, body {
     align-items: center;
     justify-content: center;
     font-size: 19px;
-    border: 1.5px solid var(--border2);
+    border: 2.5px solid var(--user-rank-color, var(--border2));
 }
 
     .cp-avatar.sm {
@@ -913,7 +920,7 @@ html, body {
         width: 24px;
         height: 24px;
         font-size: 12px;
-        border-width: 1px;
+        border-width: 2px;
     }
 
     .cp-avatar.lg {
@@ -923,32 +930,29 @@ html, body {
     }
 
     .cp-avatar.cp-rank-novice {
-        border-color: #2d5a3f;
+        border-color: var(--user-rank-color, #2d5a3f);
     }
 
     .cp-avatar.cp-rank-artist {
-        border-color: var(--accent2);
+        border-color: var(--user-rank-color, var(--accent2));
         box-shadow: 0 0 0 1px var(--accent-glow) inset;
     }
 
     .cp-avatar.cp-rank-maestro {
-        border-color: #b44ac0;
+        border-color: var(--user-rank-color, #b44ac0);
     }
 
     .cp-avatar.cp-rank-legend {
-        border-color: var(--vip);
+        border-color: var(--user-rank-color, var(--vip));
         box-shadow: 0 0 0 1px var(--vip-glow) inset;
     }
 
     .cp-avatar.cp-rank-architect {
-        border-color: #00cc78;
+        border-color: var(--user-rank-color, #00cc78);
     }
 
     .cp-avatar.cp-rank-god {
-        border-color: transparent;
-        background-image: linear-gradient(var(--surface3), var(--surface3)), conic-gradient(from 180deg, #f59e0b, #ec4899, #818cf8, #22c55e, #f59e0b);
-        background-origin: border-box;
-        background-clip: padding-box, border-box;
+        border-color: var(--user-rank-color, #fbbf24);
     }
 
 #chat-popup-panel .cp-channel-icon {
@@ -10569,6 +10573,7 @@ body.mini-mode #backdrop {
     border-radius: 50%;
     padding: 0;
     overflow: hidden;
+    border: 2.5px solid var(--user-rank-color, var(--border2));
 }
 
     .profile-banner-avatar .cp-avatar-img {

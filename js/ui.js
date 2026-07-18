@@ -874,6 +874,13 @@ function renderProfileChangelogTab() {
   const box = document.getElementById('profile-changelog-list');
   if (!box) return;
   const versions = [
+    { version:'v2026.07.30', title:'Стабильность холста и интерфейса', items:[
+      'Исправлено мерцание холста и интерфейса при сильном отдалении в Discord.',
+      'Координаты холста, сетки и трафарета синхронизированы при любом масштабе окна, браузера и Retina-экранах.',
+      'На обзорном масштабе холст отрисовывается стабильнее без ряби дробных пикселей.',
+      'Обводка аватаров стала толще и использует цвет ранга в лидерборде, чате и профиле; у «Бога Пикселей» она радужная.',
+      'OAuth-вход теперь возвращает обратно в локально открытый проект для тестирования перед публикацией.'
+    ]},
     { version:'v2026.07.29', title:'Точность и производительность трафаретов', items:[
       'Автоподбор берёт точный индекс палитры из клетки трафарета — без повторного подбора похожего цвета.',
       'Подсветка ошибок и автоподбор используют одну координатную сетку.',
@@ -5279,11 +5286,12 @@ function renderProfileBannerHeader(p, isSelf) {
     }
   }
 
+  const profileRankClass = CP_RANK_CLASS[p.rank] || 'cp-rank-novice';
   return `<div class="clan-banner-wrap${b.cls}">
     ${b.html}
     ${!b.html ? `<div class="clan-banner-glow clan-banner-glow-1"></div><div class="clan-banner-glow clan-banner-glow-2"></div>` : ''}
     <div class="clan-banner-content">
-      <div class="clan-banner-icon profile-banner-avatar" style="--user-rank-color:${userRankColor(p.rank)}">${avatarInnerHTML(p)}</div>
+      <div class="clan-banner-icon profile-banner-avatar ${profileRankClass}" style="--user-rank-color:${userRankColor(p.rank)}">${avatarInnerHTML(p)}</div>
       <div class="clan-banner-info">
         <div class="clan-banner-name-row">
           <span class="clan-banner-name">${esc(p.username)}</span>

@@ -76,17 +76,51 @@ async function init() {
 // discordSdk.commands.openExternalLink(), а не window.open(), который молча
 // блокируется песочницей iframe Discord Activity (нет allow-popups).
 let discordSdk = null;
-let websiteDiscordToken = sessionStorage.getItem('pb_discord_access_token') || '';
+const IS_LOCAL_FILE = window.location.protocol === 'file:';
+
+// Discord не умеет добавлять file:// в список OAuth redirect URI. Для
+// локальной проверки он возвращает на зарегистрированный production-адрес,
+// а тот после обмена кода переносит токен обратно сюда во fragment (fragment
+// не отправляется в сеть). Так локальный файл можно тестировать без деплоя.
+function takeLocalDiscordToken() {
+  if (!IS_LOCAL_FILE || !window.location.hash) return '';
+  const token = new URLSearchParams(window.location.hash.slice(1)).get('pb_discord_token') || '';
+  if (token) {
+    try { history.replaceState({}, document.title, window.location.pathname); } catch (_) {}
+  }
+  return token;
+}
+
+function getLocalOAuthReturnUrl(state) {
+  if (!state || !state.startsWith('local-file:')) return '';
+  try {
+    const data = JSON.parse(atob(state.slice('local-file:'.length)));
+    const url = new URL(data.returnUrl);
+    // OAuth callback разрешён только обратно в локальный файл этого проекта,
+    // никогда — на произвольный сайт.
+    return url.protocol === 'file:' && /^\/D:\/YamikoPixelBattle\//i.test(url.pathname)
+      ? url.href.split('#')[0]
+      : '';
+  } catch (_) {
+    return '';
+  }
+}
+
+let websiteDiscordToken = takeLocalDiscordToken() || sessionStorage.getItem('pb_discord_access_token') || '';
+if (IS_LOCAL_FILE && websiteDiscordToken) sessionStorage.setItem('pb_discord_access_token', websiteDiscordToken);
 
 function beginDiscordLogin() {
   const state = crypto.randomUUID();
   sessionStorage.setItem('pb_discord_oauth_state', state);
+  const oauthState = IS_LOCAL_FILE
+    ? `local-file:${btoa(JSON.stringify({ returnUrl: window.location.href.split('#')[0] }))}`
+    : state;
   const query = new URLSearchParams({
     client_id: DISCORD_CLIENT_ID,
     redirect_uri: DISCORD_WEB_REDIRECT_URI,
     response_type: 'code',
     scope: 'identify',
-    state,
+    state: oauthState,
   });
   window.location.assign(`https://discord.com/oauth2/authorize?${query}`);
 }
@@ -97,10 +131,11 @@ async function finishWebsiteDiscordLogin() {
   if (!code) return;
 
   const state = params.get('state');
+  const localReturnUrl = getLocalOAuthReturnUrl(state);
   const expectedState = sessionStorage.getItem('pb_discord_oauth_state');
   sessionStorage.removeItem('pb_discord_oauth_state');
   history.replaceState({}, document.title, window.location.pathname);
-  if (!state || state !== expectedState) {
+  if ((!localReturnUrl && (!state || state !== expectedState))) {
     showToast('Не удалось подтвердить вход через Discord', 'error');
     return;
   }
@@ -115,6 +150,12 @@ async function finishWebsiteDiscordLogin() {
     if (!response.ok || !data.access_token) throw new Error(data.error || 'Token exchange failed');
     websiteDiscordToken = data.access_token;
     sessionStorage.setItem('pb_discord_access_token', websiteDiscordToken);
+    if (localReturnUrl) {
+      const returnUrl = new URL(localReturnUrl);
+      returnUrl.hash = new URLSearchParams({ pb_discord_token: websiteDiscordToken }).toString();
+      window.location.replace(returnUrl.href);
+      return;
+    }
   } catch (e) {
     console.error('[Discord] Website login failed:', e);
     showToast('Не удалось войти через Discord', 'error');

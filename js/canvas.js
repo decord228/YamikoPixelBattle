@@ -28,19 +28,18 @@ function resizeOverlay() {
 }
 
 function getRenderOffset() {
-  // И основной canvas (CSS transform), и overlay получают одинаково
-  // привязанное к физическому пикселю смещение. Это устраняет накопление
-  // расхождения при 90%/110% масштабе интерфейса и на Retina-экранах.
-  const dpr = window.devicePixelRatio || 1;
-  return { x: Math.round(camX * dpr) / dpr, y: Math.round(camY * dpr) / dpr };
+  // И основной canvas, и overlay работают в одних CSS-координатах. Здесь
+  // нельзя округлять смещение до физических пикселей: при 90%/110% масштабе
+  // браузер округляет CSS-transform и Canvas 2D по-разному, из-за чего
+  // сетка/трафарет могли совпадать друг с другом, но сдвигаться от холста.
+  return { x: camX, y: camY };
 }
 
 function applyTransform() {
   const off = getRenderOffset();
-  // translate3d фиксирует слой холста в композиторе. Особенно это важно в
-  // Discord/Electron при отдалении: обычный 2D-transform большого canvas мог
-  // периодически пересобираться и визуально мигать.
-  const t = `translate3d(${off.x}px,${off.y}px,0) scale(${camZoom})`;
+  // Та же 2D-матрица, что у overlay: это гарантирует совпадение каждой
+  // клетки холста с сеткой и трафаретом при любом масштабе интерфейса.
+  const t = `translate(${off.x}px,${off.y}px) scale(${camZoom})`;
   if (t !== lastCanvasTransform) {
     mainCanvas.style.transform = t;
     shadowDiv.style.transform = t;

@@ -952,7 +952,11 @@ html, body {
     }
 
     .cp-avatar.cp-rank-god {
-        border-color: var(--user-rank-color, #fbbf24);
+        border-color: transparent;
+        background-image: linear-gradient(var(--surface3), var(--surface3)),
+            conic-gradient(from 180deg, #f59e0b, #ec4899, #818cf8, #22c55e, #38bdf8, #f59e0b);
+        background-origin: border-box;
+        background-clip: padding-box, border-box;
     }
 
 #chat-popup-panel .cp-channel-icon {
@@ -10574,6 +10578,14 @@ body.mini-mode #backdrop {
     padding: 0;
     overflow: hidden;
     border: 2.5px solid var(--user-rank-color, var(--border2));
+}
+
+.profile-banner-avatar.cp-rank-god {
+    border-color: transparent;
+    background-image: linear-gradient(var(--surface3), var(--surface3)),
+        conic-gradient(from 180deg, #f59e0b, #ec4899, #818cf8, #22c55e, #38bdf8, #f59e0b);
+    background-origin: border-box;
+    background-clip: padding-box, border-box;
 }
 
     .profile-banner-avatar .cp-avatar-img {

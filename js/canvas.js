@@ -6,16 +6,36 @@ function initCanvases() {
   resizeOverlay();
   mctx.fillStyle = '#ffffff';
   mctx.fillRect(0,0,canvasW,canvasH);
+  invalidateCanvasContent();
   applyTransform();
 }
 
 let overlayCssWidth = 0, overlayCssHeight = 0, overlayDpr = 1;
 let lastCanvasTransform = '';
 let lastCanvasFarZoomState = null;
+let worldFrameCanvas = null;
+let worldFrameCtx = null;
+let worldFrameKey = '';
+let boardRevision = 0;
+let canvasContentRevision = 0;
+let stencilErrorMaskCanvas = null;
+let stencilErrorMaskKey = '';
+
+function invalidateWorldFrame() {
+  boardRevision++;
+  worldFrameKey = '';
+}
+
+function invalidateCanvasContent(refreshErrorMask = true) {
+  if (refreshErrorMask) {
+    canvasContentRevision++;
+    stencilErrorMaskKey = '';
+  }
+  invalidateWorldFrame();
+}
 function resizeOverlay() {
-  // Основной холст живёт в CSS-координатах, поэтому overlay тоже должен
-  // рисоваться в них. Backing store повышаем до DPR, но viewport-расчёты
-  // всегда ведём по CSS-размеру — иначе при масштабе браузера сетка уезжает.
+  // Overlay живёт в CSS-координатах viewport. Backing store повышаем до DPR,
+  // но viewport-расчёты всегда ведём по CSS-размеру.
   overlayCssWidth = window.innerWidth;
   overlayCssHeight = window.innerHeight;
   overlayDpr = window.devicePixelRatio || 1;
@@ -24,6 +44,7 @@ function resizeOverlay() {
   overlayCanvas.width = Math.max(1, Math.round(overlayCssWidth * overlayDpr));
   overlayCanvas.height = Math.max(1, Math.round(overlayCssHeight * overlayDpr));
   octx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
+  invalidateWorldFrame();
   renderOverlay();
 }
 
@@ -41,9 +62,8 @@ function applyTransform() {
   // клетки холста с сеткой и трафаретом при любом масштабе интерфейса.
   const t = `translate(${off.x}px,${off.y}px) scale(${camZoom})`;
   if (t !== lastCanvasTransform) {
-    mainCanvas.style.transform = t;
-    shadowDiv.style.transform = t;
     lastCanvasTransform = t;
+    invalidateWorldFrame();
   }
   // Ниже одного CSS-пикселя на клетку nearest-neighbor даёт мерцание на
   // дробных координатах. На таком расстоянии отдельные пиксели всё равно
@@ -62,6 +82,13 @@ function renderPixel(x,y,colorIdx) {
   const c = PALETTE[colorIdx] || PALETTE[0];
   mctx.fillStyle = c.c;
   mctx.fillRect(x,y,1,1);
+  // Обновление за пределами трафарета не меняет маску ошибок. Это важно при
+  // активном большом шаблоне: чужие пиксели на другом участке не заставляют
+  // повторно проходить весь шаблон.
+  const affectsStencilErrors = stencilActive && stencilRect &&
+    x >= stencilRect.x && x < stencilRect.x + stencilRect.w &&
+    y >= stencilRect.y && y < stencilRect.y + stencilRect.h;
+  invalidateCanvasContent(!!affectsStencilErrors);
 }
 
 function fullRender(data) {
@@ -76,6 +103,7 @@ function fullRender(data) {
     buf[i*4+3] = 255;
   }
   mctx.putImageData(imgData,0,0);
+  invalidateCanvasContent();
 }
 
 // Ввод, курсоры и сетка могут запрашивать перерисовку десятки раз за кадр.
@@ -91,10 +119,10 @@ function renderOverlay() {
 }
 
 function renderOverlayNow() {
-  // resize/reset контекста мог сбросить матрицу, поэтому задаём базовую
-  // CSS→device-pixel матрицу перед каждой отрисовкой.
-  octx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
-  octx.clearRect(0, 0, overlayCssWidth, overlayCssHeight);
+  // Базовый кадр хранится в физических пикселях, поэтому сначала очищаем
+  // итоговый canvas без дополнительной матрицы.
+  octx.setTransform(1, 0, 0, 1, 0, 0);
+  octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
   // Во время тайм-лапса в полноэкранном режиме оверлей (сетка, трафарет/шаблон,
   // курсор, инструменты админа и т.д.) рисуется поверх ИГРОВОЙ камеры (camX/camY/
@@ -109,32 +137,19 @@ function renderOverlayNow() {
 
   const off = getRenderOffset();
 
-  // Применяем ту же матрицу трансформации, что и CSS, чтобы избежать субпиксельных сдвигов
+  // Тяжёлая часть (полотно + сетка + трафарет) кэшируется. При движении
+  // курсора или показе инспектора мы только копируем готовый кадр и рисуем
+  // динамические подсказки, не ресемплируя заново весь холст.
+  const frame = getWorldFrame(off);
+  octx.drawImage(frame, 0, 0);
+
+  // Динамические элементы ниже по-прежнему используют CSS-координаты.
+  octx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
+
+  // Оставшиеся интерактивные оверлеи используют ту же world-матрицу.
   octx.save();
   octx.translate(off.x, off.y);
   octx.scale(camZoom, camZoom);
-
-  // Сетка
-  if (gridEnabled && camZoom >= 4) {
-    octx.strokeStyle = 'rgba(0,0,0,0.3)';
-    octx.lineWidth = 1 / camZoom; // Чтобы толщина линии всегда была 1 пиксель на экране
-    octx.beginPath();
-    
-    const startX = Math.max(0, Math.floor(-off.x / camZoom));
-    const endX = Math.min(canvasW, Math.ceil((overlayCssWidth - off.x) / camZoom));
-    const startY = Math.max(0, Math.floor(-off.y / camZoom));
-    const endY = Math.min(canvasH, Math.ceil((overlayCssHeight - off.y) / camZoom));
-
-    for (let i = startX; i <= endX; i++) {
-      octx.moveTo(i, startY);
-      octx.lineTo(i, endY);
-    }
-    for (let j = startY; j <= endY; j++) {
-      octx.moveTo(startX, j);
-      octx.lineTo(endX, j);
-    }
-    octx.stroke();
-  }
 
   // Фигуры админа
   if (isDraggingAdminShape && (tool === 'admin_rect' || tool === 'admin_circle' || tool === 'admin_line')) {
@@ -207,13 +222,10 @@ function renderOverlayNow() {
     });
   }
 
-  // Трафарет
+  // Рамка трафарета. Само пиксельное изображение уже нарисовано выше через
+  // drawStencilSurface() в общем с полотном рендер-пайплайне.
   if (stencilActive && stencilImg) {
     let ir=stencilRect;
-    octx.globalAlpha=stencilOpacity; octx.imageSmoothingEnabled=false;
-    octx.drawImage(stencilImg, ir.x, ir.y, ir.w, ir.h); 
-    octx.globalAlpha=1;
-    
     if (stencilEditMode) {
       octx.strokeStyle='#22c55e'; octx.lineWidth=2 / camZoom;
       octx.setLineDash([6 / camZoom, 3 / camZoom]); 
@@ -275,12 +287,137 @@ function renderOverlayNow() {
     octx.setLineDash([]);
   }
 
-  // Ошибки трафарета
-  if (stencilActive && stencilImg && stencilAutoHighlightEnabled && purchasedItems.includes('stencil_auto_2') && !stencilEditMode) {
-    renderStencilErrors(octx);
-  }
-
   octx.restore();
+}
+
+function getVisibleBoardRect(off) {
+  const x0 = Math.max(0, Math.floor(-off.x / camZoom));
+  const y0 = Math.max(0, Math.floor(-off.y / camZoom));
+  const x1 = Math.min(canvasW, Math.ceil((overlayCssWidth - off.x) / camZoom));
+  const y1 = Math.min(canvasH, Math.ceil((overlayCssHeight - off.y) / camZoom));
+  return { x0, y0, x1, y1 };
+}
+
+function getWorldFrame(off) {
+  const stencilKey = stencilActive && stencilImg && stencilRect
+    ? `${stencilImg.src || ''}:${stencilRect.x},${stencilRect.y},${stencilRect.w},${stencilRect.h}:${stencilOpacity}`
+    : 'none';
+  const key = [
+    boardRevision, overlayCanvas.width, overlayCanvas.height,
+    camX, camY, camZoom, gridEnabled, stencilKey,
+    stencilAutoHighlightEnabled, purchasedItems.includes('stencil_auto_2')
+  ].join('|');
+
+  if (worldFrameCanvas && worldFrameKey === key) return worldFrameCanvas;
+
+  if (!worldFrameCanvas) {
+    worldFrameCanvas = document.createElement('canvas');
+    worldFrameCtx = worldFrameCanvas.getContext('2d');
+  }
+  if (worldFrameCanvas.width !== overlayCanvas.width || worldFrameCanvas.height !== overlayCanvas.height) {
+    worldFrameCanvas.width = overlayCanvas.width;
+    worldFrameCanvas.height = overlayCanvas.height;
+  }
+  worldFrameCtx.setTransform(1, 0, 0, 1, 0, 0);
+  worldFrameCtx.clearRect(0, 0, worldFrameCanvas.width, worldFrameCanvas.height);
+  worldFrameCtx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
+  drawBoardSurface(worldFrameCtx, off);
+  drawGridSurface(worldFrameCtx, off);
+  drawStencilSurface(worldFrameCtx, off);
+  drawStencilErrorsSurface(worldFrameCtx, off);
+  worldFrameKey = key;
+  return worldFrameCanvas;
+}
+
+function drawBoardSurface(ctx, off) {
+  const r = getVisibleBoardRect(off);
+  const w = r.x1 - r.x0, h = r.y1 - r.y0;
+  if (w <= 0 || h <= 0) return;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(
+    mainCanvas, r.x0, r.y0, w, h,
+    off.x + r.x0 * camZoom, off.y + r.y0 * camZoom,
+    w * camZoom, h * camZoom
+  );
+  ctx.restore();
+}
+
+function drawGridSurface(ctx, off) {
+  if (!gridEnabled || camZoom < 4) return;
+  const r = getVisibleBoardRect(off);
+  const line = 1 / overlayDpr;
+  const left = off.x + r.x0 * camZoom;
+  const top = off.y + r.y0 * camZoom;
+  const right = off.x + r.x1 * camZoom;
+  const bottom = off.y + r.y1 * camZoom;
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,.32)';
+  for (let x = r.x0; x <= r.x1; x++) ctx.fillRect(off.x + x * camZoom, top, line, bottom - top);
+  for (let y = r.y0; y <= r.y1; y++) ctx.fillRect(left, off.y + y * camZoom, right - left, line);
+  ctx.restore();
+}
+
+function drawStencilSurface(ctx, off) {
+  if (!stencilActive || !stencilImg || !stencilRect) return;
+  const ir = stencilRect;
+  ctx.save();
+  ctx.globalAlpha = stencilOpacity;
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(
+    stencilImg,
+    off.x + ir.x * camZoom, off.y + ir.y * camZoom,
+    ir.w * camZoom, ir.h * camZoom
+  );
+  ctx.restore();
+}
+
+function getStencilErrorMask() {
+  if (!stencilImageData || !stencilPaletteIndices || !stencilRect) return null;
+  const ir = stencilRect;
+  const width = stencilImageData.width;
+  const height = stencilImageData.height;
+  const key = `${canvasContentRevision}|${stencilImg?.src || ''}|${ir.x},${ir.y},${width},${height}`;
+  if (stencilErrorMaskCanvas && stencilErrorMaskKey === key) return stencilErrorMaskCanvas;
+
+  if (!stencilErrorMaskCanvas) stencilErrorMaskCanvas = document.createElement('canvas');
+  stencilErrorMaskCanvas.width = width;
+  stencilErrorMaskCanvas.height = height;
+  const maskCtx = stencilErrorMaskCanvas.getContext('2d');
+  const maskData = maskCtx.createImageData(width, height);
+  const out = maskData.data;
+
+  // Полная проверка выполняется только после изменения полотна/трафарета.
+  // В обычном кадре эта маска рисуется одним drawImage ниже.
+  for (let sy = 0; sy < height; sy++) {
+    const cy = ir.y + sy;
+    if (cy < 0 || cy >= canvasH) continue;
+    for (let sx = 0; sx < width; sx++) {
+      const expected = stencilPaletteIndices[sy * width + sx];
+      if (expected === 255) continue;
+      const cx = ir.x + sx;
+      if (cx < 0 || cx >= canvasW) continue;
+      const actual = canvasData[cy * canvasW + cx];
+      if (actual === 0 || actual === expected) continue;
+      const i = (sy * width + sx) * 4;
+      out[i] = 239; out[i + 1] = 68; out[i + 2] = 68; out[i + 3] = 105;
+    }
+  }
+  maskCtx.putImageData(maskData, 0, 0);
+  stencilErrorMaskKey = key;
+  return stencilErrorMaskCanvas;
+}
+
+function drawStencilErrorsSurface(ctx, off) {
+  if (!stencilActive || stencilEditMode || !stencilImg || !stencilAutoHighlightEnabled || !purchasedItems.includes('stencil_auto_2')) return;
+  if (camZoom < 2) return;
+  const mask = getStencilErrorMask();
+  if (!mask || !stencilRect) return;
+  const ir = stencilRect;
+  ctx.save();
+  ctx.imageSmoothingEnabled = false;
+  ctx.drawImage(mask, off.x + ir.x * camZoom, off.y + ir.y * camZoom, ir.w * camZoom, ir.h * camZoom);
+  ctx.restore();
 }
 
 function renderStencilErrors(ctx) {
@@ -334,16 +471,21 @@ function renderStencilErrors(ctx) {
 // чтобы текст оставался читаемым на любом зуме). Видна только когда трафарет
 // показан в режиме просмотра (не редактирования) — именно тогда легче всего
 // спутать его с уже выставленными пикселями холста.
+let stencilLabelContentKey = '';
 function updateStencilLabel() {
   const el = document.getElementById('stencil-label');
   if (!el) return;
-  if (!stencilActive || stencilEditMode) { el.style.display = 'none'; return; }
+  if (!stencilActive || stencilEditMode) { el.style.display = 'none'; stencilLabelContentKey = ''; return; }
 
   const isMine = !stencilLocked;
-  if (isMine) {
-    el.innerHTML = `<span class="stencil-label-icon">🖼️</span><span>Ваш трафарет</span>`;
-  } else {
-    el.innerHTML = `<span class="stencil-label-icon">👥</span><span>Трафарет: <span class="stencil-label-owner">${esc(stencilOwnerName || '?')}</span></span>`;
+  const contentKey = isMine ? 'mine' : `shared:${stencilOwnerName || '?'}`;
+  if (contentKey !== stencilLabelContentKey) {
+    if (isMine) {
+      el.innerHTML = `<span class="stencil-label-icon">🖼️</span><span>Ваш трафарет</span>`;
+    } else {
+      el.innerHTML = `<span class="stencil-label-icon">👥</span><span>Трафарет: <span class="stencil-label-owner">${esc(stencilOwnerName || '?')}</span></span>`;
+    }
+    stencilLabelContentKey = contentKey;
   }
 
   const ir = stencilRect;

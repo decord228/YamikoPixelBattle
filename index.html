@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-37';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-51';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -208,6 +208,13 @@
             </div>
         </div>
 
+        <div id="active-buff-pill" role="status" aria-live="polite">
+            <span id="active-buff-icon">⚡</span>
+            <span id="active-buff-title">Ускорение пикселей</span>
+            <span id="active-buff-value">−90%</span>
+            <span id="active-buff-time">00:00</span>
+        </div>
+
         <!-- ── РЕКЛАМА: полноширинный баннер под top-bar (картинка как фон) ── -->
         <div id="ad-banner">
             <div id="ad-banner-bg" data-onclick="adClickThrough()"></div>
@@ -274,6 +281,7 @@
                 <span id="place-status-time"></span>
             </button>
         </div>
+        <div id="item-quickbar" aria-label="Предметы для холста" style="display:none"></div>
 
         <div id="stencil-panel" class="stencil-dock" style="display:none;">
             <div id="stencil-panel-inner" class="stencil-dock-bar">

@@ -40,9 +40,25 @@ function updateConnStatus(ok){
   el.className=ok?'ok':'';
 }
 
+let awaitingCanvasSnapshot = false;
+
+function applyCanvasSnapshot(data) {
+  if (data.length !== canvasW * canvasH) {
+    console.warn('[canvas] Получен снимок неверного размера:', data.length, 'ожидалось:', canvasW * canvasH);
+    return;
+  }
+  canvasData.set(data);
+  fullRender(data);
+  renderOverlay();
+}
+
 function handleBinary(data) {
   const len=data.length;
-  if (len===canvasW*canvasH){canvasData.set(data);fullRender(data);}
+  if (awaitingCanvasSnapshot) {
+    awaitingCanvasSnapshot = false;
+    applyCanvasSnapshot(data);
+  }
+  else if (len===canvasW*canvasH){applyCanvasSnapshot(data);}
   else if (len===3&&data[0]===255){document.getElementById('online-count').textContent=(data[1]<<8)|data[2];}
   else if (len%5===0&&len>0){
     for (let i=0;i<len;i+=5){
@@ -53,13 +69,19 @@ function handleBinary(data) {
         pixelOwnerCache.delete(`${x},${y}`);
       }
     }
+    renderOverlay();
   }
 }
 
 function handleJSON(d) {
   const a=d.action||d.type||'';
 
-  if (a==='auth_success'||a==='auth_ok') {
+  if (a==='canvas_snapshot') {
+    if (d.w && d.h && (d.w !== canvasW || d.h !== canvasH)) resizeCanvas(d.w, d.h);
+    awaitingCanvasSnapshot = true;
+  }
+
+  else if (a==='auth_success'||a==='auth_ok') {
     isLoggedIn=true;
     currentUser=d.username||'?';
     isAdmin=(d.role==='admin');
@@ -76,6 +98,7 @@ function handleJSON(d) {
     currentCoins=d.coins||0;
     purchasedItems=d.purchased_items||d.purchased_levels||[];
     if (typeof updateStencilAutoControls === 'function') updateStencilAutoControls();
+    if (typeof renderItemQuickbar === 'function') renderItemQuickbar();
     currentClan=d.clan||'';
     currentXp=d.xp||0;
     unlockedAchievements=d.unlocked_achievements||[];
@@ -419,6 +442,7 @@ function handleJSON(d) {
   else if (a==='purchase_update' || a==='stencil_level_update') {
     purchasedItems=d.purchased_items||d.purchased_levels||[];
     if (typeof updateStencilAutoControls === 'function') updateStencilAutoControls();
+    if (typeof renderItemQuickbar === 'function') renderItemQuickbar();
     if (d.coins!==undefined){currentCoins=d.coins;updateCoinsUI(currentCoins);}
     if (d.message) showToast(d.message,'success');
     buildShopUI();

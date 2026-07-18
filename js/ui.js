@@ -874,12 +874,21 @@ function renderProfileChangelogTab() {
   const box = document.getElementById('profile-changelog-list');
   if (!box) return;
   const versions = [
+    { version:'v2026.07.31', title:'Надёжность и скорость полотна', items:[
+      'Исправлена загрузка полотна после перезапуска: случайные белые точки больше не появляются на готовых артах.',
+      'Полотно, сетка и трафарет теперь отрисовываются единым кадром и работают стабильнее при долгой игре.',
+      'Уменьшена лишняя перерисовка холста при движении курсора.',
+      'Подсветка неверных пикселей трафарета ускорена для больших изображений.',
+      'Активный ускоритель пикселей показывается компактной пилюлей с обратным отсчётом под верхней панелью.',
+      'История личных сообщений надёжно сохраняется и восстанавливается после перезагрузки игры.',
+      'Магазин стал компактнее: единые кнопки действий, меньше визуального шума и удобнее использование предметов.',
+      'Расходники для холста теперь доступны в быстром поясе над палитрой — с иконкой, остатком и выбором в одно нажатие.'
+    ]},
     { version:'v2026.07.30', title:'Стабильность холста и интерфейса', items:[
       'Исправлено мерцание холста и интерфейса при сильном отдалении в Discord.',
-      'Координаты холста, сетки и трафарета синхронизированы при любом масштабе окна, браузера и Retina-экранах.',
+      'Рендер холста, сетки и трафарета объединён в один Canvas-пайплайн: они не расходятся при масштабе окна, браузера и Retina-экранах.',
       'На обзорном масштабе холст отрисовывается стабильнее без ряби дробных пикселей.',
-      'Обводка аватаров стала толще и использует цвет ранга в лидерборде, чате и профиле; у «Бога Пикселей» она радужная.',
-      'OAuth-вход поддерживает локальное тестирование через http://localhost:5500 без перехода на GitHub Pages.'
+      'Обводка аватаров стала толще и использует цвет ранга в лидерборде, чате и профиле; у «Бога Пикселей» она радужная.'
     ]},
     { version:'v2026.07.29', title:'Точность и производительность трафаретов', items:[
       'Автоподбор берёт точный индекс палитры из клетки трафарета — без повторного подбора похожего цвета.',
@@ -901,6 +910,34 @@ function renderProfileChangelogTab() {
     ]},
   ];
   box.innerHTML = `<div style="display:grid;gap:10px">${versions.map((entry, index) => `<details ${index === 0 ? 'open' : ''} style="border:1px solid var(--surface3);border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(15,15,17,.25));overflow:hidden"><summary style="display:flex;align-items:center;gap:10px;padding:13px;cursor:pointer;list-style:none"><span style="display:grid;place-items:center;min-width:30px;height:24px;padding:0 6px;border-radius:7px;background:var(--accent);color:#fff;font-size:10px;font-weight:800">${esc(entry.version)}</span><strong style="font-size:13px">${esc(entry.title)}</strong><span style="margin-left:auto;color:var(--text2);font-size:16px">⌄</span></summary><div style="padding:0 13px 14px;border-top:1px solid var(--surface3);font-size:12px;line-height:1.45;color:var(--text2)"><ul style="margin:10px 0 0;padding-left:18px;display:grid;gap:6px">${entry.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul></div></details>`).join('')}</div>`;
+}
+
+let activeBuffPillTimer = null;
+
+function updateActiveBuffPill() {
+  const pill = document.getElementById('active-buff-pill');
+  const title = document.getElementById('active-buff-title');
+  const value = document.getElementById('active-buff-value');
+  const time = document.getElementById('active-buff-time');
+  if (!pill || !title || !value || !time) return;
+
+  const leftMs = Math.max(0, cooldownBoostUntil - Date.now());
+  const active = cooldownBoostPct > 0 && leftMs > 0;
+  pill.classList.toggle('show', active);
+
+  if (!active) {
+    if (activeBuffPillTimer) { clearInterval(activeBuffPillTimer); activeBuffPillTimer = null; }
+    return;
+  }
+
+  const totalSeconds = Math.ceil(leftMs / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  title.textContent = 'Ускорение пикселей';
+  value.textContent = `−${cooldownBoostPct}%`;
+  time.textContent = `${minutes}:${String(seconds).padStart(2, '0')}`;
+
+  if (!activeBuffPillTimer) activeBuffPillTimer = setInterval(updateActiveBuffPill, 1000);
 }
 
 function updatePlaceStatus() {
@@ -951,7 +988,56 @@ function useItemAt(x, y) {
 function cancelUseItem() {
   activeItem = null;
   document.getElementById('use-item-overlay').classList.remove('active');
+  renderItemQuickbar();
   renderOverlay();
+}
+
+// Быстрый пояс над палитрой: в нём только предметы, которые применяются
+// кликом по холсту. Магазин остаётся местом покупки, а игра — местом использования.
+function renderItemQuickbar() {
+  const bar = document.getElementById('item-quickbar');
+  const palette = document.getElementById('palette-panel');
+  if (!bar || !palette) return;
+
+  const catalog = [...SHOP_ITEMS_USER, ...SHOP_ITEMS_VIP];
+  const items = catalog.filter(item => item.type === 'consumable' && getItemCount(item.id) > 0);
+  const paletteOpen = palette.style.display !== 'none';
+  const visible = isLoggedIn && paletteOpen && items.length > 0;
+  bar.style.display = visible ? 'flex' : 'none';
+  document.body.classList.toggle('items-quickbar-open', visible);
+  if (!visible) return;
+
+  bar.innerHTML = `
+    <div class="item-quickbar-items">${items.map(item => {
+      const count = getItemCount(item.id);
+      const selected = activeItem === item.id;
+      return `<button class="item-quickbar-btn ${selected ? 'selected' : ''}" data-onclick="selectQuickItem('${item.id}')" title="${esc(item.title)} · осталось: ${count}" aria-label="${esc(item.title)}, осталось: ${count}">
+        <span class="item-quickbar-icon">${item.icon}</span><b>${count}</b>
+      </button>`;
+    }).join('')}</div>`;
+
+  // На десктопе палитра меняет высоту от числа цветов. Привязываем пояс к
+  // её фактической верхней границе, а не к хрупкому фиксированному отступу.
+  if (window.matchMedia('(min-width: 641px)').matches) {
+    requestAnimationFrame(() => {
+      if (bar.style.display === 'none' || palette.style.display === 'none') return;
+      const rect = palette.getBoundingClientRect();
+      bar.style.right = `${Math.max(0, window.innerWidth - rect.right)}px`;
+      bar.style.bottom = `${Math.max(0, window.innerHeight - rect.top + 8)}px`;
+    });
+  } else {
+    bar.style.right = '';
+    bar.style.bottom = '';
+  }
+}
+
+function selectQuickItem(itemId) {
+  if (activeItem === itemId) {
+    cancelUseItem();
+    showToast('Выбор предмета отменён', 'info');
+    return;
+  }
+  activateItem(itemId);
 }
 
 function activateItem(itemId) {
@@ -970,7 +1056,8 @@ function activateItem(itemId) {
   };
   document.getElementById('use-item-label').innerHTML = names[itemId] || 'Кликни на холст';
   document.getElementById('use-item-overlay').classList.add('active');
-  hidePanel('shop-panel');
+  if (document.getElementById('shop-panel')?.classList.contains('show')) hidePanel('shop-panel');
+  renderItemQuickbar();
 }
 
 function toggleStencilPanel() {
@@ -3253,27 +3340,21 @@ function buildShopUI(){
   function shopCardHtml(item, buyBtnClass) {
     const kindClass = item.type === 'cooldown_boost' ? 'kind-boost' : (item.type === 'consumable' ? 'kind-consumable' : 'kind-upgrade');
     let actionHtml, ownedClass = '';
+    const buyAction = `<button class="shop-compact-action shop-price-action" data-onclick="buyItem('${item.id}')" title="Купить «${esc(item.title)}» за ${item.cost} монет" aria-label="Купить «${esc(item.title)}» за ${item.cost} монет"><span>${item.cost}</span><span class="shop-coin">🪙</span></button>`;
+    const useAction = (count, label, icon, disabled = false) => `<button class="shop-compact-action shop-use-action" data-onclick="activateItem('${item.id}')" title="${disabled ? 'Уже активен другой ускоритель' : `${label}: ${esc(item.title)}`} (${count})" aria-label="${label}: ${esc(item.title)} (${count})" ${disabled ? 'disabled' : ''}><span class="shop-action-icon">${icon}</span><span class="shop-action-count">${count}</span></button>`;
     if (item.type === 'upgrade') {
       const owned = purchasedItems.includes(item.id);
       const reqMet = !item.requires || purchasedItems.includes(item.requires);
       ownedClass = owned ? 'is-owned' : '';
-      if (owned) actionHtml = `<span class="shop-owned"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg> Куплено</span>`;
+      if (owned) actionHtml = `<span class="shop-owned" title="Улучшение куплено"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12.5l4.5 4.5L19 7"/></svg><span>Куплено</span></span>`;
       else if (!reqMet) actionHtml = `<span class="shop-lock-inline" title="Требуется: ${esc(item.requires)}">🔒</span>`;
-      else actionHtml = `<button class="btn ${buyBtnClass} btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>`;
+      else actionHtml = buyAction;
     } else if (item.type === 'cooldown_boost') {
       const count = getItemCount(item.id);
-      actionHtml = `
-        <div class="shop-item-action-col">
-          <button class="btn ${buyBtnClass} btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')" ${boostActiveNow?'disabled title="Уже активен другой ускоритель"':''}>Активировать (${count})</button>` : ''}
-        </div>`;
+      actionHtml = `<div class="shop-item-action-col">${buyAction}${count > 0 ? useAction(count, 'Активировать', '⚡', boostActiveNow) : ''}</div>`;
     } else {
       const count = getItemCount(item.id);
-      actionHtml = `
-        <div class="shop-item-action-col">
-          <button class="btn ${buyBtnClass} btn-sm" data-onclick="buyItem('${item.id}')">${item.cost}🪙</button>
-          ${count > 0 ? `<button class="btn btn-secondary btn-sm" data-onclick="activateItem('${item.id}')">Использовать (${count})</button>` : ''}
-        </div>`;
+      actionHtml = `<div class="shop-item-action-col">${buyAction}${count > 0 ? useAction(count, 'Использовать', '✦') : ''}</div>`;
     }
     return `
     <div class="clan-shop-item shop-card ${kindClass} ${ownedClass}">
@@ -3851,6 +3932,7 @@ function togglePalette(){
   const isHidden = p.style.display === 'none';
   p.style.display = isHidden ? 'block' : 'none';
   document.body.classList.toggle('palette-open', isHidden);
+  renderItemQuickbar();
   const btn = document.getElementById('btn-palette');
   if(btn) btn.classList.toggle('active', isHidden);
 }

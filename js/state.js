@@ -23,6 +23,7 @@ function recomputeCooldownTime() {
       if (typeof buildShopUI === 'function') buildShopUI();
     }, cooldownBoostUntil - Date.now());
   }
+  if (typeof updateActiveBuffPill === 'function') updateActiveBuffPill();
 }
 function applyCooldownBoost(pct, until, serverNow) {
   cooldownBoostPct = pct || 0;

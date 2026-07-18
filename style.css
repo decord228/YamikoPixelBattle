@@ -82,10 +82,13 @@ html, body {
     image-rendering: pixelated;
     image-rendering: crisp-edges;
     transform-origin: 0 0;
-    will-change: transform;
+    will-change: auto;
     position: absolute;
     top: 0;
     left: 0;
+    /* Это исходный буфер пикселей. Финальный кадр собирается в
+       #overlay-canvas, чтобы все слои проходили один рендер-пайплайн. */
+    visibility: hidden;
 }
 
 /* При масштабе меньше 1px на клетку nearest-neighbor даёт мерцание на
@@ -95,14 +98,16 @@ html, body {
     image-rendering: auto;
 }
 
+
 #canvas-shadow {
     position: absolute;
     top: 0;
     left: 0;
     pointer-events: none;
     transform-origin: 0 0;
-    will-change: transform;
+    will-change: auto;
     box-shadow: 0 0 0 1px rgba(255,255,255,0.15),0 8px 48px rgba(0,0,0,.8);
+    display: none;
 }
 
 #overlay-canvas {
@@ -2083,6 +2088,81 @@ html, body {
     width: 260px;
     padding: 14px;
     border-radius: var(--radius);
+}
+
+/* Предметы для холста: быстрый пояс над палитрой. Он появляется только при
+   наличии предметов в инвентаре и не заставляет открывать магазин посреди игры. */
+#item-quickbar {
+    position: fixed;
+    z-index: 12;
+    align-items: center;
+    gap: 8px;
+    min-height: 46px;
+    max-width: min(360px, calc(100vw - 28px));
+    padding: 4px 6px;
+    border: 1px solid var(--border2);
+    border-radius: 13px;
+    background: rgba(14,14,17,.96);
+    box-shadow: 0 9px 26px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.04);
+    backdrop-filter: blur(12px);
+    overflow: visible;
+}
+
+.item-quickbar-label {
+    color: var(--text3);
+    font: 700 8px/1 'Space Mono', monospace;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.item-quickbar-items {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    min-width: 0;
+    overflow: visible;
+    padding: 0;
+}
+
+.item-quickbar-btn {
+    position: relative;
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border2);
+    border-radius: 9px;
+    background: var(--surface2);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform .15s ease, border-color .15s ease, background .15s ease;
+}
+
+.item-quickbar-btn:hover,
+.item-quickbar-btn.selected {
+    transform: translateY(-1px);
+    border-color: var(--accent);
+    background: rgba(99,102,241,.16);
+}
+.item-quickbar-btn.selected { box-shadow: 0 0 0 2px rgba(129,140,248,.22); }
+.item-quickbar-icon { display:grid; place-items:center; width:18px; height:18px; }
+.item-quickbar-icon svg { width:18px; height:18px; }
+.item-quickbar-btn b {
+    position: absolute;
+    right: -4px;
+    bottom: -4px;
+    min-width: 17px;
+    height: 17px;
+    padding: 0 4px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--bg);
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    font: 700 8.5px/1 'Space Mono', monospace;
 }
 
 #color-name-bar {
@@ -4405,39 +4485,38 @@ html, body {
     font-weight: 600;
 }
 
-/* ── SHOP: уютный редизайн карточек товаров ──
-   Расширяем #shop-panel до размеров общей "клановой" оболочки (см. правило
-   #admin-panel, #shop-panel { width: 980px } выше) и делаем карточки товаров
-   заметно живее: больше воздуха, крупная цветная иконка, мягкое свечение по
-   типу товара (апгрейд / ускоритель / расходник), плавный hover-подъём. */
+/* ── SHOP: компактная витрина ── */
 #shop-panel .clan-shop-items-list {
-    gap: 10px;
+    gap: 8px;
 }
 
 #shop-panel .clan-shop-item.shop-card {
-    padding: 14px 16px;
-    border-radius: 16px;
-    gap: 14px;
-    background: linear-gradient(150deg, var(--surface2), var(--bg2) 70%);
+    min-height: 68px;
+    padding: 10px 14px;
+    border-radius: 13px;
+    gap: 12px;
+    background: var(--surface2);
     border-color: var(--border);
     box-shadow: 0 1px 0 rgba(255,255,255,.02) inset;
-    transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+    transition: border-color .18s ease, box-shadow .18s ease, background .18s ease;
 }
 
     #shop-panel .clan-shop-item.shop-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 24px -12px rgba(0,0,0,.5);
+        background: var(--surface3);
+        border-color: var(--border2);
+        box-shadow: 0 6px 18px -14px rgba(0,0,0,.75);
     }
 
     #shop-panel .clan-shop-item.shop-card.is-owned {
-        background: linear-gradient(150deg, rgba(34,197,94,.09), var(--bg2) 70%);
+        background: rgba(34,197,94,.035);
+        border-color: rgba(74,222,128,.18);
     }
 
 #shop-panel .shop-card-icon {
-    width: 40px;
-    height: 40px;
-    border-radius: 12px;
-    font-size: 17px;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    font-size: 16px;
 }
 
     #shop-panel .shop-card-icon .icon {
@@ -4474,18 +4553,85 @@ html, body {
     }
 
 #shop-panel .clan-shop-item-title {
-    font-size: 12.5px;
+    font-size: 12px;
 }
 
 #shop-panel .clan-shop-item-desc {
-    font-size: 11px;
+    font-size: 10.5px;
+    line-height: 1.35;
 }
 
 #shop-panel .shop-item-action-col {
     display: flex;
-    flex-direction: column;
-    gap: 6px;
+    flex-direction: row;
+    gap: 4px;
     align-items: flex-end;
+}
+
+/* Единый компактный контрол: цена — фиолетовая капсула, предмет в
+   инвентаре — нейтральная кнопка с иконкой и счётчиком. Текстовые подписи
+   доступны через tooltip/aria, но не раздувают строки магазина. */
+#shop-panel .shop-compact-action,
+#shop-panel .shop-owned {
+    height: 31px;
+    min-width: 38px;
+    padding: 0 9px;
+    border-radius: 9px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font: 700 10.5px/1 'Space Mono', monospace;
+    white-space: nowrap;
+}
+
+#shop-panel .shop-compact-action {
+    border: 1px solid var(--border2);
+    background: var(--bg);
+    color: var(--text);
+    cursor: pointer;
+    transition: transform .14s ease, border-color .14s ease, background .14s ease;
+}
+
+#shop-panel .shop-compact-action:hover:not(:disabled) {
+    transform: translateY(-1px);
+    border-color: rgba(255,255,255,.32);
+    background: var(--surface3);
+}
+
+#shop-panel .shop-compact-action:disabled {
+    opacity: .42;
+    cursor: not-allowed;
+}
+
+#shop-panel .shop-price-action {
+    color: #fff;
+    background: linear-gradient(135deg, #685cff, #7b3ff2);
+    border-color: transparent;
+    box-shadow: 0 5px 12px -7px rgba(115,72,255,.9);
+}
+
+#shop-panel .shop-price-action:hover:not(:disabled) {
+    background: linear-gradient(135deg, #766dff, #8a4dff);
+    border-color: transparent;
+}
+
+#shop-panel .shop-coin { font-size: 11px; }
+#shop-panel .shop-use-action { color: var(--text2); }
+#shop-panel .shop-action-icon { color: var(--accent2); font-size: 13px; line-height: 1; }
+#shop-panel .shop-action-count { min-width: 7px; }
+
+#shop-panel .shop-owned {
+    color: #4ade80;
+    border: 1px solid rgba(74,222,128,.22);
+    background: rgba(34,197,94,.07);
+    font-family: inherit;
+    font-size: 10px;
+}
+
+#shop-panel .shop-owned .icon {
+    width: 13px;
+    height: 13px;
 }
 
 #shop-panel .shop-boost-banner {
@@ -4495,8 +4641,8 @@ html, body {
 }
 
 #shop-panel .shop-card-locked {
-    padding: 20px 18px;
-    border-radius: 16px;
+    padding: 16px;
+    border-radius: 13px;
     opacity: .8;
 }
 
@@ -10580,6 +10726,49 @@ body.mini-mode #backdrop {
     border: 2.5px solid var(--user-rank-color, var(--border2));
 }
 
+/* ── ACTIVE BUFF PILL ── */
+#active-buff-pill {
+    position: absolute;
+    top: calc(14px + var(--bar-h) + 8px);
+    left: 50%;
+    z-index: 11;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    min-height: 30px;
+    padding: 5px 7px 5px 9px;
+    border: 1px solid rgba(250, 204, 21, .28);
+    border-radius: var(--radius-pill);
+    background: rgba(12, 12, 15, .94);
+    box-shadow: 0 7px 22px rgba(0,0,0,.42), inset 0 1px 0 rgba(255,255,255,.05);
+    color: var(--text);
+    font-size: 11px;
+    font-weight: 700;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -7px) scale(.96);
+    transition: opacity .18s ease, transform .18s ease;
+}
+
+#active-buff-pill.show {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+}
+
+#active-buff-icon { font-size: 13px; line-height: 1; }
+#active-buff-title { color: var(--text2); font-weight: 600; }
+#active-buff-value { color: #facc15; font-weight: 800; }
+#active-buff-time {
+    padding: 3px 6px;
+    border-radius: var(--radius-pill);
+    background: rgba(250, 204, 21, .12);
+    color: #fde68a;
+    font-family: 'Space Mono', monospace;
+    font-size: 10px;
+    font-weight: 700;
+}
+
 .profile-banner-avatar.cp-rank-god {
     border-color: transparent;
     background-image: linear-gradient(var(--surface3), var(--surface3)),
@@ -11352,6 +11541,19 @@ body.mini-mode #backdrop {
         gap: 0;
     }
 
+    #active-buff-pill {
+        position: fixed;
+        top: calc(var(--mobile-top) + 48px);
+        z-index: 55;
+        min-height: 27px;
+        gap: 5px;
+        padding: 4px 6px 4px 8px;
+        font-size: 10px;
+    }
+
+    #active-buff-icon { font-size: 12px; }
+    #active-buff-time { font-size: 9px; padding: 3px 5px; }
+
     #top-bar {
         width: 100%;
         height: 40px;
@@ -11547,6 +11749,7 @@ body.mini-mode #backdrop {
         --mobile-control-size: 52px;
         --mobile-sheet-height: min(78dvh, 720px);
         --mobile-palette-height: 72px;
+        --mobile-item-quickbar-height: 54px;
     }
 
     /* Крупные, удобные для пальца элементы верхней строки. */
@@ -11653,6 +11856,26 @@ body.mini-mode #backdrop {
         box-shadow: 0 -14px 42px rgba(0,0,0,.48);
     }
 
+    #item-quickbar {
+        z-index: 126;
+        right: 0 !important;
+        bottom: calc(var(--mobile-bottom-bar) + var(--mobile-palette-height) + 2px) !important;
+        left: 0;
+        width: 100%;
+        max-width: none;
+        min-height: var(--mobile-item-quickbar-height);
+        padding: 5px 6px;
+        border-right: 0;
+        border-bottom: 0;
+        border-left: 0;
+        border-radius: 0;
+        box-shadow: 0 -9px 20px rgba(0,0,0,.35);
+    }
+    .item-quickbar-label { display: none; }
+    .item-quickbar-items { gap: 8px; padding: 0; }
+    .item-quickbar-btn { width: 38px; height: 38px; min-width: 38px; border-radius: 10px; }
+    .item-quickbar-icon, .item-quickbar-icon svg { width:20px; height:20px; }
+
     #color-name-bar, #place-btn-wrap { display: none; }
     #color-grid {
         display: flex;
@@ -11712,6 +11935,10 @@ body.mini-mode #backdrop {
 
     body.palette-open .stencil-dock {
         bottom: calc(var(--mobile-bottom-bar) + var(--mobile-palette-height));
+    }
+
+    body.palette-open.items-quickbar-open .stencil-dock {
+        bottom: calc(var(--mobile-bottom-bar) + var(--mobile-palette-height) + var(--mobile-item-quickbar-height));
     }
 
     .stencil-dock-bar { padding: 10px 12px; }
@@ -11775,4 +12002,23 @@ body.mini-mode #backdrop {
     }
 
     #chat-popup-close-btn .icon { width: 21px; height: 21px; }
+
+    /* Магазин: строки остаются короткими и не превращают действия в две
+       широкие кнопки. Назначение кнопок раскрывается по удержанию. */
+    #shop-panel .shop-page-intro {
+        padding: 11px 12px;
+        margin-bottom: 10px;
+        border-radius: 12px;
+    }
+    #shop-panel .shop-page-intro-icon { font-size: 21px; }
+    #shop-panel .shop-page-intro-title { font-size: 12px; }
+    #shop-panel .shop-page-intro-desc { font-size: 10px; }
+    #shop-panel .clan-shop-items-list { gap: 7px; }
+    #shop-panel .clan-shop-item.shop-card { min-height: 62px; padding: 9px 10px; gap: 9px; }
+    #shop-panel .shop-card-icon { width: 33px; height: 33px; border-radius: 9px; font-size: 14px; }
+    #shop-panel .clan-shop-item-title { font-size: 11px; }
+    #shop-panel .clan-shop-item-desc { font-size: 9.5px; }
+    #shop-panel .shop-compact-action,
+    #shop-panel .shop-owned { height: 34px; min-width: 34px; padding: 0 8px; }
+    #shop-panel .shop-owned span { display: none; }
 }

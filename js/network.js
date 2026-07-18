@@ -75,6 +75,7 @@ function handleJSON(d) {
     if (d.banners_catalog) profileBannersCatalog=d.banners_catalog;
     currentCoins=d.coins||0;
     purchasedItems=d.purchased_items||d.purchased_levels||[];
+    if (typeof updateStencilAutoControls === 'function') updateStencilAutoControls();
     currentClan=d.clan||'';
     currentXp=d.xp||0;
     unlockedAchievements=d.unlocked_achievements||[];
@@ -138,6 +139,10 @@ function handleJSON(d) {
     currentCoins=d.coins||0;
     updateCoinsUI(currentCoins);
     if (d.pixels) currentPixels=d.pixels;
+    if (Number.isFinite(d.xp)) {
+      currentXp=d.xp;
+      updateProfileStats(currentPixels,currentXp);
+    }
   }
   else if (a==='achievement_unlocked') {
     // Опыт (d.xp) больше НЕ начисляется тут автоматически — это просто
@@ -213,12 +218,12 @@ function handleJSON(d) {
   else if (a==='clan_update') {
     if (d.clan) {
       currentClan=d.clan.name||'';
-      clanSharedStencil = d.clan.shared_stencil || null;
+      if (typeof setClanSharedStencils === 'function') setClanSharedStencils(d.clan.shared_stencils || (d.clan.shared_stencil ? [d.clan.shared_stencil] : []));
       clanFullData = d.clan;
       renderClanView(d.clan);
     } else {
       currentClan='';
-      clanSharedStencil = null;
+      if (typeof setClanSharedStencils === 'function') setClanSharedStencils([]); else clanSharedStencil = null;
       clanFullData = null;
       // Если мы только что покинули клан/были исключены, а на холсте у нас
       // показан "чужой" (locked) трафарет клана — он больше не актуален.
@@ -232,7 +237,7 @@ function handleJSON(d) {
   }
   else if (a==='clan_data') {
     if (d.clan) {
-      clanSharedStencil = d.clan.shared_stencil || null;
+      if (typeof setClanSharedStencils === 'function') setClanSharedStencils(d.clan.shared_stencils || (d.clan.shared_stencil ? [d.clan.shared_stencil] : []));
       clanFullData = d.clan;
       renderClanView(d.clan);
       if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
@@ -244,7 +249,7 @@ function handleJSON(d) {
       // и панель клана продолжала показывать "призрачные" данные вместо
       // экрана "клана нет" (см. баг с переименованием клана в админке).
       currentClan = '';
-      clanSharedStencil = null;
+      if (typeof setClanSharedStencils === 'function') setClanSharedStencils([]); else clanSharedStencil = null;
       clanFullData = null;
       if (stencilLocked) cancelStencil();
       renderNoClanView();
@@ -262,8 +267,9 @@ function handleJSON(d) {
     if (!clanShareCursor) clearCursorFlags();
   }
   else if (a==='clan_stencil_update') {
-    // Сервер шлёт уже готовый объект { owner, emoji, stencil } или null (если снят).
-    clanSharedStencil = d.stencil || null;
+    // Сервер шлёт весь набор слотов, чтобы старый/новый клиент не расходились.
+    if (typeof setClanSharedStencils === 'function') setClanSharedStencils(d.stencils || (d.stencil ? [d.stencil] : []));
+    else clanSharedStencil = d.stencil || null;
     if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
     if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
 
@@ -277,19 +283,22 @@ function handleJSON(d) {
     // его вживую: подвинулся/изменился у владельца → подвинется и у нас;
     // владелец снял трафарет → автоматически скрываем у себя тоже.
     if (isWatchingClanStencil) {
-      if (!clanSharedStencil || d.removed) {
+      const watchedStillExists = (typeof clanSharedStencils !== 'undefined') && clanSharedStencils.some(s => s.owner === stencilOwnerName);
+      if (!watchedStillExists) {
         cancelStencil();
         showToast('Трафарет клана был снят владельцем', 'info');
-      } else if (clanSharedStencil.stencil) {
-        const wasShowingOwner = stencilOwnerName === clanSharedStencil.owner;
+      } else {
+        const watchedStencil = clanSharedStencils.find(s => s.owner === stencilOwnerName);
+        if (!watchedStencil?.stencil) return;
+        const wasShowingOwner = true;
         if (wasShowingOwner) {
-          stencilRect = clanSharedStencil.stencil.rect || stencilRect;
-          stencilOpacity = clanSharedStencil.stencil.opacity || stencilOpacity;
-          personalStencilUrl = clanSharedStencil.stencil.img;
+          stencilRect = watchedStencil.stencil.rect || stencilRect;
+          stencilOpacity = watchedStencil.stencil.opacity || stencilOpacity;
+          personalStencilUrl = watchedStencil.stencil.img;
           document.getElementById('stencil-panel-opacity').value = stencilOpacity * 100;
           document.getElementById('stencil-opacity-val').textContent = Math.round(stencilOpacity * 100) + '%';
-          if (clanSharedStencil.stencil.img !== stencilOrigImg?.src) {
-            applySharedStencil(clanSharedStencil.stencil, true, clanSharedStencil.owner);
+          if (watchedStencil.stencil.img !== stencilOrigImg?.src) {
+            applySharedStencil(watchedStencil.stencil, true, watchedStencil.owner);
           } else {
             renderOverlay();
           }
@@ -299,7 +308,8 @@ function handleJSON(d) {
     }
   }
   else if (a==='clan_stencils_list') {
-    clanSharedStencil = d.stencil || null;
+    if (typeof setClanSharedStencils === 'function') setClanSharedStencils(d.stencils || (d.stencil ? [d.stencil] : []));
+    else clanSharedStencil = d.stencil || null;
     if (typeof renderClanStencilsList === 'function') renderClanStencilsList();
     // Обновляем «статус в клане» в панели трафарета, если она открыта
     if (typeof updateStencilPanelClanStatus === 'function') updateStencilPanelClanStatus();
@@ -401,6 +411,7 @@ function handleJSON(d) {
   }
   else if (a==='purchase_update' || a==='stencil_level_update') {
     purchasedItems=d.purchased_items||d.purchased_levels||[];
+    if (typeof updateStencilAutoControls === 'function') updateStencilAutoControls();
     if (d.coins!==undefined){currentCoins=d.coins;updateCoinsUI(currentCoins);}
     if (d.message) showToast(d.message,'success');
     buildShopUI();

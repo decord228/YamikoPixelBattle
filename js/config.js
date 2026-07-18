@@ -208,7 +208,7 @@ const SHOP_ITEMS_USER = [
   {id:'stencil_auto_2',title:'Авто-подбор цветов Ур.2',desc:'Ур.1 + подсветка соседних пустых пикселей того же цвета.',icon:ICON_PALETTE_PLUS,cost:150,type:'upgrade',requires:'stencil_auto_1'},
   {id:'cooldown_boost_25',title:'Ускоритель −25%',desc:'Снижает кулдаун установки пикселя на 25% на 15 минут.',icon:ICON_BOLT,cost:10,type:'cooldown_boost',pct:25,durationMin:15,count:1},
   {id:'cooldown_boost_50',title:'Ускоритель −50%',desc:'Снижает кулдаун установки пикселя на 50% на 15 минут.',icon:ICON_BOLT_DOUBLE,cost:25,type:'cooldown_boost',pct:50,durationMin:15,count:1},
-  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:5,type:'consumable',count:1},
+  {id:'bomb_3x3',title:'Цветная бомбочка 3×3',desc:'Заливает квадрат 3×3 вокруг выбранной точки выбранным цветом.',icon:ICON_BOMB,cost:10,type:'consumable',count:1},
 ];
 
 const SHOP_ITEMS_VIP = [
@@ -271,6 +271,16 @@ const CLAN_SHOP_ITEMS = [
     id:'banner_animated', title:'Анимированный баннер клана', icon:'🎞️',
     desc:'Открывает загрузку анимированного баннера (GIF, WebP и т.д.) — выделит клан среди остальных в лидерборде и шапке.',
     cost:150, type:'banner', requiresPerm:'manage_settings', requires:'banner_static',
+  },
+  {
+    id:'clan_stencil_slot_2', title:'Второй клановый трафарет', icon:'🖼️',
+    desc:'Открывает второй одновременный трафарет для участников клана.',
+    cost:100, type:'stencil', requiresPerm:'manage_treasury',
+  },
+  {
+    id:'clan_stencil_slot_3', title:'Третий клановый трафарет', icon:'🖼️',
+    desc:'Открывает третий и последний одновременный трафарет для участников клана.',
+    cost:250, type:'stencil', requiresPerm:'manage_treasury', requires:'clan_stencil_slot_2',
   },
 ];
 // ── АЧИВКИ ──

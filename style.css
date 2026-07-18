@@ -11248,6 +11248,31 @@ body.mini-mode #backdrop {
     width: 100%;
 }
 
+.dock-auto-controls {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 0 0;
+}
+.dock-auto-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    min-height: 34px;
+    padding: 7px 9px;
+    border: 1px solid var(--surface3);
+    border-radius: 8px;
+    background: var(--surface2);
+    color: var(--text);
+    font: inherit;
+    font-size: 11px;
+    cursor: pointer;
+}
+.dock-auto-toggle b { font-size: 10px; color: var(--accent); }
+.dock-auto-toggle.off { opacity: .72; }
+.dock-auto-toggle.off b { color: var(--muted); }
+
 #place-status { display: none; }
 
 /* ══════════════════════════════════════════════════════════════════

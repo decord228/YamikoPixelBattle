@@ -49,7 +49,19 @@ function fullRender(data) {
   mctx.putImageData(imgData,0,0);
 }
 
+// Ввод, курсоры и сетка могут запрашивать перерисовку десятки раз за кадр.
+// Объединяем их в один requestAnimationFrame: это убирает накопление дорогих
+// clear/draw-операций и мерцание UI после долгой игры.
+let _overlayRenderFrame = 0;
 function renderOverlay() {
+  if (_overlayRenderFrame) return;
+  _overlayRenderFrame = requestAnimationFrame(() => {
+    _overlayRenderFrame = 0;
+    renderOverlayNow();
+  });
+}
+
+function renderOverlayNow() {
   octx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 
   // Во время тайм-лапса в полноэкранном режиме оверлей (сетка, трафарет/шаблон,
@@ -232,7 +244,7 @@ function renderOverlay() {
   }
 
   // Ошибки трафарета
-  if (stencilActive && stencilImg && purchasedItems.includes('stencil_auto_2') && !stencilEditMode) {
+  if (stencilActive && stencilImg && stencilAutoHighlightEnabled && purchasedItems.includes('stencil_auto_2') && !stencilEditMode) {
     renderStencilErrors(octx);
   }
 

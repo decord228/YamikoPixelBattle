@@ -555,7 +555,7 @@ function saveSession(u,p){try{localStorage.setItem('pb_session',JSON.stringify({
 function loadSession(){try{const s=localStorage.getItem('pb_session');return s?JSON.parse(s):null;}catch(_){return null;}}
 function clearSession(){try{localStorage.removeItem('pb_session');}catch(_){}}
 
-const PROFILE_TABS = ['overview','banner','friends','achievements','settings'];
+const PROFILE_TABS = ['overview','banner','friends','achievements','changelog','settings'];
 
 function switchProfileTab(tab) {
   if (!PROFILE_TABS.includes(tab)) tab = 'overview';
@@ -579,6 +579,7 @@ function switchProfileTab(tab) {
   }
   if (tab === 'friends' && isSelf) renderProfileFriendsTab();
   if (tab === 'achievements') renderProfileAchievementsTab();
+  if (tab === 'changelog') renderProfileChangelogTab();
   if (tab === 'overview') {
     renderProfileClanCard(isSelf ? null : viewingProfileData);
     // Дорога званий (#profile-ranks-road-list) живёт на этой вкладке и
@@ -801,7 +802,7 @@ function placePixel() {
   if (x<0||y<0||x>=canvasW||y>=canvasH){showToast('Наведите на холст','error');return;}
   let colorToPlace=selectedColor;
   
-  if (stencilActive&&purchasedItems.includes('stencil_auto_1')&&stencilImageData&&!stencilEditMode) {
+  if (stencilActive&&stencilAutoColorEnabled&&purchasedItems.includes('stencil_auto_1')&&stencilImageData&&!stencilEditMode) {
     const ir=stencilRect;
     const sx=Math.floor((x-ir.x)/ir.w*stencilImageData.width);
     const sy=Math.floor((y-ir.y)/ir.h*stencilImageData.height);
@@ -860,6 +861,19 @@ function startCooldown() {
       updatePlaceStatus();
     }
   },50);
+}
+
+function renderProfileChangelogTab() {
+  const box = document.getElementById('profile-changelog-list');
+  if (!box) return;
+  const entries = [
+    ['Новый интерфейс трафаретов', 'Автоподбор цвета и подсветку теперь можно временно включать и выключать после покупки улучшений.'],
+    ['Бомбочки и статистика', 'Цветная бомбочка стоит 10 монет. Все закрашенные ею клетки принадлежат игроку, добавляются в пиксели, опыт, монеты и статистику клана.'],
+    ['Награды за достижения', 'Исправлена выдача «Дикого огурца»: прогресс одной игровой сессии проверяется сервером, поэтому награду можно забрать корректно.'],
+    ['Надёжнее инвентарь', 'Применение предметов берёт актуальное состояние аккаунта, что предотвращает потерю покупки при нескольких открытых вкладках.'],
+    ['Мобильная версия', 'Палитра и панели адаптированы для управления пальцем: больше рабочей области и более предсказуемое размещение меню.'],
+  ];
+  box.innerHTML = `<div class="profile-stats-charts"><div class="profile-stats-charts-title">✨ Последние изменения</div><div style="display:grid;gap:10px">${entries.map(([title, text], i) => `<article style="padding:13px;border:1px solid var(--surface3);border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(15,15,17,.25));"><div style="display:flex;gap:9px;align-items:center;margin-bottom:5px"><span style="display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;font-weight:800">${entries.length-i}</span><strong>${esc(title)}</strong></div><div style="font-size:12px;line-height:1.45;color:var(--text2)">${esc(text)}</div></article>`).join('')}</div></div>`;
 }
 
 function updatePlaceStatus() {
@@ -1084,7 +1098,11 @@ function snapColorToPalette(r, g, b) {
   let bestIdx = 0, bestDist = Infinity;
   for (let pi = 0; pi < _paletteRGB.length; pi++) {
     const p = _paletteRGB[pi];
-    const dist = (r-p.r)**2 + (g-p.g)**2 + (b-p.b)**2;
+    // RGB-каналы глаз воспринимает не одинаково. Взвешенная метрика лучше
+    // сохраняет яркость и зелёные/фиолетовые оттенки, чем простая дистанция
+    // по трём каналам, особенно в тёмных картинках.
+    const rMean = (r + p.r) / 2;
+    const dist = (2 + rMean / 256) * (r-p.r)**2 + 4 * (g-p.g)**2 + (2 + (255-rMean) / 256) * (b-p.b)**2;
     if (dist < bestDist) { bestDist = dist; bestIdx = pi; }
   }
   return _paletteRGB[bestIdx];
@@ -1156,7 +1174,8 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
         let bestIdx = 0, bestDist = Infinity;
         PALETTE.forEach((p, pi) => {
           const pr = parseInt(p.c.slice(1,3), 16), pg = parseInt(p.c.slice(3,5), 16), pb = parseInt(p.c.slice(5,7), 16);
-          const dist = (r-pr)**2 + (g-pg)**2 + (b-pb)**2;
+        const rMean = (r + pr) / 2;
+        const dist = (2 + rMean / 256) * (r-pr)**2 + 4 * (g-pg)**2 + (2 + (255-rMean) / 256) * (b-pb)**2;
           if (dist < bestDist) { bestDist = dist; bestIdx = pi; }
         });
         const c = PALETTE[bestIdx].c;
@@ -1373,11 +1392,6 @@ async function shareStencilToClan(){
   if (stencilLocked) {showToast('Это трафарет соклановца — поделиться им от своего имени нельзя','error');return;}
   if (stencilUploadPending) {showToast('Картинка ещё загружается в облако, подождите секунду...','info');return;}
 
-  if (clanSharedStencil && clanSharedStencil.owner !== currentUser) {
-    showToast(`В клане уже есть трафарет от ${clanSharedStencil.owner}`, 'error');
-    return;
-  }
-
   if (personalStencilUrl) {
       sendJSON({ action: 'clan_share_stencil', stencil: { img: personalStencilUrl, rect: stencilRect, opacity: stencilOpacity } });
       showToast('Трафарет отправлен соклановцам!', 'success');
@@ -1404,7 +1418,7 @@ async function shareStencilToClan(){
 // Владелец клановского трафарета убирает его — у всех соклановцев он исчезнет
 // (если они его сейчас просматривают).
 async function unshareClanStencil() {
-  if (!clanSharedStencil || clanSharedStencil.owner !== currentUser) {
+  if (!(clanSharedStencils || []).some(s => s.owner === currentUser)) {
     console.warn('[unshareClanStencil] Отмена: clanSharedStencil=', clanSharedStencil, 'currentUser=', currentUser);
     return;
   }
@@ -1413,8 +1427,13 @@ async function unshareClanStencil() {
   sendJSON({ action: 'clan_unshare_stencil' });
 }
 
-// ── CLAN STENCIL (один на клан, с владельцем) ──
+// ── CLAN STENCIL (до трёх на клан, с владельцем) ──
 let clanSharedStencil = null; // { owner, emoji, stencil } | null
+let clanSharedStencils = [];
+function setClanSharedStencils(stencils) {
+  clanSharedStencils = Array.isArray(stencils) ? stencils.filter(Boolean) : [];
+  clanSharedStencil = clanSharedStencils[0] || null; // совместимость со старым UI
+}
 
 function requestClanStencils() {
   if (!currentClan) return;
@@ -1424,18 +1443,18 @@ function requestClanStencils() {
 function renderClanStencilsList() {
   const c = document.getElementById('clan-stencils-list');
   if (!c) return;
-  if (!clanSharedStencil) {
+  if (!clanSharedStencils.length) {
     c.innerHTML = '<div class="dock-thumb-empty">Никто не поделился</div>';
     return;
   }
-  const entry = clanSharedStencil;
-  const isMine = entry.owner === currentUser;
-  const img = entry.stencil && entry.stencil.img;
-  const thumbUrl = img ? (typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(img) : img) : '';
-  const isShowingThis = stencilActive && personalStencilUrl === img;
-  const r = entry.stencil && entry.stencil.rect;
-  c.innerHTML = `
-    <div class="dock-thumb-card${isMine ? ' dock-thumb-card-mine' : ''}" data-onclick="loadClanMemberStencil()">
+  c.innerHTML = clanSharedStencils.map((entry, index) => {
+    const isMine = entry.owner === currentUser;
+    const img = entry.stencil && entry.stencil.img;
+    const thumbUrl = img ? (typeof getProxiedImageUrl === 'function' ? getProxiedImageUrl(img) : img) : '';
+    const isShowingThis = stencilActive && personalStencilUrl === img;
+    const r = entry.stencil && entry.stencil.rect;
+    return `
+    <div class="dock-thumb-card${isMine ? ' dock-thumb-card-mine' : ''}" data-onclick="loadClanMemberStencil(${index})">
       <div class="dock-thumb-pic${isShowingThis ? ' dock-thumb-pic-active' : ''}" style="${thumbUrl ? `background-image:url('${thumbUrl}')` : ''}">${thumbUrl ? '' : esc(entry.emoji||'👾')}</div>
       <div class="dock-thumb-body">
         <div class="dock-thumb-name">${isMine ? 'Ваш трафарет' : esc(entry.owner)}</div>
@@ -1446,10 +1465,11 @@ function renderClanStencilsList() {
         : `<div class="dock-thumb-take">${isShowingThis ? 'ПОКАЗ' : 'ВЗЯТЬ'}</div>`
       }
     </div>`;
+  }).join('');
 }
 
-function loadClanMemberStencil() {
-  const entry = clanSharedStencil;
+function loadClanMemberStencil(index = 0) {
+  const entry = clanSharedStencils[index];
   if (!entry || !entry.stencil || !entry.stencil.img) { showToast('Трафарет недоступен', 'error'); return; }
   if (entry.owner === currentUser) {
     // Это свой же трафарет — просто открываем его как редактируемый (полные права).
@@ -1498,6 +1518,43 @@ function applySharedStencil(data, locked = false, ownerName = ''){
   img.src=getProxiedImageUrl(data.img);
 }
 
+// Управление купленными автоматизациями: игрок может оставить улучшение
+// купленным, но временно рисовать вручную без смены выбранного цвета/подсветки.
+function updateStencilAutoControls() {
+  const wrap = document.getElementById('stencil-auto-controls');
+  const color = document.getElementById('stencil-auto-color-toggle');
+  const highlight = document.getElementById('stencil-auto-highlight-toggle');
+  const hasColor = purchasedItems.includes('stencil_auto_1');
+  const hasHighlight = purchasedItems.includes('stencil_auto_2');
+  if (wrap) wrap.style.display = hasColor ? '' : 'none';
+  if (color) {
+    color.classList.toggle('on', stencilAutoColorEnabled);
+    color.classList.toggle('off', !stencilAutoColorEnabled);
+    const value = color.querySelector('b');
+    if (value) value.textContent = stencilAutoColorEnabled ? 'ВКЛ' : 'ВЫКЛ';
+  }
+  if (highlight) {
+    highlight.style.display = hasHighlight ? '' : 'none';
+    highlight.classList.toggle('on', stencilAutoHighlightEnabled);
+    highlight.classList.toggle('off', !stencilAutoHighlightEnabled);
+    const value = highlight.querySelector('b');
+    if (value) value.textContent = stencilAutoHighlightEnabled ? 'ВКЛ' : 'ВЫКЛ';
+  }
+}
+function toggleStencilAutoColor() {
+  if (!purchasedItems.includes('stencil_auto_1')) return;
+  stencilAutoColorEnabled = !stencilAutoColorEnabled;
+  updateStencilAutoControls();
+  showToast(stencilAutoColorEnabled ? 'Автоподбор включён' : 'Автоподбор выключен', 'info');
+}
+function toggleStencilAutoHighlight() {
+  if (!purchasedItems.includes('stencil_auto_2')) return;
+  stencilAutoHighlightEnabled = !stencilAutoHighlightEnabled;
+  updateStencilAutoControls();
+  if (typeof renderOverlay === 'function') renderOverlay();
+  showToast(stencilAutoHighlightEnabled ? 'Подсветка включена' : 'Подсветка выключена', 'info');
+}
+
 // Показывает/скрывает элементы управления трафаретом в зависимости от того,
 // можно ли его двигать/масштабировать (нельзя — если он взят у соклановца).
 function updateStencilLockUI() {
@@ -1539,21 +1596,27 @@ function updateStencilPanelClanStatus() {
     btnEl.className = 'dock-btn dock-share-btn dock-share-secondary';
     btnEl.title = clanSharedStencil ? `Сейчас делится: ${clanSharedStencil.owner}` : '';
     btnEl.setAttribute('data-onclick', "showToast('Загрузите свою картинку, чтобы поделиться','info')");
-  } else if (!clanSharedStencil) {
+  } else {
+    const stencils = clanSharedStencils || [];
+    const myStencil = stencils.find(s => s.owner === currentUser);
+    const ownedShop = clanFullData?.shop_items || [];
+    const slots = ownedShop.includes('clan_stencil_slot_3') ? 3 : (ownedShop.includes('clan_stencil_slot_2') ? 2 : 1);
+    if (myStencil) {
+      statusEl.textContent = 'СНЯТЬ';
+      btnEl.className = 'dock-btn dock-share-btn dock-share-danger';
+      btnEl.title = 'Ваш трафарет виден всему клану';
+      btnEl.setAttribute('data-onclick', 'unshareClanStencil()');
+    } else if (stencils.length < slots) {
     statusEl.textContent = 'ОТПРАВИТЬ';
     btnEl.className = 'dock-btn dock-share-btn dock-share-primary';
     btnEl.title = 'Поделиться трафаретом с кланом';
     btnEl.setAttribute('data-onclick', 'shareStencilToClan()');
-  } else if (clanSharedStencil.owner === currentUser) {
-    statusEl.textContent = 'СНЯТЬ';
-    btnEl.className = 'dock-btn dock-share-btn dock-share-danger';
-    btnEl.title = 'Ваш трафарет виден всему клану';
-    btnEl.setAttribute('data-onclick', 'unshareClanStencil()');
-  } else {
+    } else {
     statusEl.textContent = 'ЗАНЯТО';
     btnEl.className = 'dock-btn dock-share-btn dock-share-secondary';
-    btnEl.title = `Сейчас делится: ${clanSharedStencil.owner}`;
+    btnEl.title = 'Все доступные слоты клановых трафаретов заняты';
     btnEl.setAttribute('data-onclick', 'shareStencilToClan()');
+    }
   }
 }
 

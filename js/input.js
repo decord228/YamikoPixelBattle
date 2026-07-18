@@ -1,6 +1,7 @@
 ﻿'use strict';
 
 // ── INPUT & EVENTS ──
+let _lastCursorSendAt = 0;
 wrap.addEventListener('mousedown',e=>{
   if (e.button===1||e.button===2){
     isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
@@ -89,7 +90,8 @@ wrap.addEventListener('mousemove',e=>{
   const px=Math.floor(p.x),py=Math.floor(p.y);
   if (px!==hoveredPixel.x||py!==hoveredPixel.y){
     hoveredPixel={x:px,y:py}; renderOverlay(); updateInspector(e.clientX,e.clientY,px,py); updateCoordsBar(px,py);
-    if (isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y)){
+    if (isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y) && performance.now() - _lastCursorSendAt >= 50){
+      _lastCursorSendAt = performance.now();
       lastSentCursor={x:px,y:py}; sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
     }
   }

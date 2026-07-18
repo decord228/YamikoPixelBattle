@@ -66,6 +66,10 @@ let currentClan = '';
 let clanFullData = null;   // последний полный объект клана с сервера (name, ranks, member_roles, ...)
 let clanRanksEditingId = null; // id звания, которое сейчас редактируется в панели "Звания" (null = форма создания скрыта)
 let tool = 'pencil'; 
+// Купленные улучшения трафарета не должны принудительно менять выбранный цвет.
+// Состояние живёт только в текущей сессии и по умолчанию сохраняет привычное
+// поведение улучшений.
+let stencilAutoColorEnabled = true, stencilAutoHighlightEnabled = true;
 let gridEnabled = false, smoothCamera = true, showCursors = true;
 let inspectorEnabled = true, soundEnabled = false;
 let camX = 0, camY = 0, camZoom = 3;

@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-22';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-25';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -332,6 +332,15 @@
                                 <button class="dock-scale-btn" data-onclick="scaleStencil(2)">×2</button>
                             </div>
                         </div>
+
+                        <div class="dock-auto-controls" id="stencil-auto-controls" style="display:none;">
+                            <button class="dock-auto-toggle on" id="stencil-auto-color-toggle" data-onclick="toggleStencilAutoColor()">
+                                <span>Автоподбор</span><b>ВКЛ</b>
+                            </button>
+                            <button class="dock-auto-toggle on" id="stencil-auto-highlight-toggle" data-onclick="toggleStencilAutoHighlight()" style="display:none;">
+                                <span>Подсветка</span><b>ВКЛ</b>
+                            </button>
+                        </div>
                     </div>
 
                     <div class="dock-sep"></div>
@@ -566,6 +575,10 @@
                             <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2.5l8 3.5v6c0 5-8 9.5-8 9.5S4 16.5 4 11.5v-6l8-3.5z" /><path d="M9.5 12l1.8 1.8L14.5 10" /></svg>
                             <span>Ачивки</span>
                         </div>
+                        <div class="csn-item" data-tab="changelog" data-onclick="switchProfileTab('changelog')">
+                            <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 4h11l3 3v13H5z"/><path d="M16 4v4h4M8 12h8M8 16h6"/></svg>
+                            <span>Changelog</span>
+                        </div>
                         <div class="csn-spacer"></div>
                         <div class="csn-sep" id="profile-nav-settings-sep"></div>
                         <div class="csn-item" id="profile-nav-settings" data-tab="settings" data-onclick="switchProfileTab('settings')">
@@ -607,6 +620,9 @@
                         <div id="prof-tab-achievements" style="display:none">
                             <div id="profile-stats-charts" class="profile-stats-charts"></div>
                             <div id="profile-achievements-list"></div>
+                        </div>
+                        <div id="prof-tab-changelog" style="display:none">
+                            <div id="profile-changelog-list"></div>
                         </div>
                         <div id="prof-tab-settings" style="display:none">
                             <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:9px;letter-spacing:.5px;text-transform:uppercase;">Настройки холста</div>

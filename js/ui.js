@@ -407,6 +407,21 @@ function renderRanksList(containerId, xp) {
     if (i > 0) html += rewardNodeHtml(i);
     html += rankNodeHtml(r,i);
   });
+  // После финального звания награда повторяется каждые 1 000 XP.
+  const repeatStart = 20000, repeatStep = 1000, repeatCoins = 200;
+  const maxCycle = Math.max(0, Math.floor((xp - repeatStart) / repeatStep));
+  const nextCycle = Array.from({ length: maxCycle }, (_, i) => i + 1).find(c => !(claimedXpCycles || []).includes(c)) || (maxCycle + 1);
+  const requiredXp = repeatStart + nextCycle * repeatStep;
+  const canClaimRepeat = isSelf && nextCycle <= maxCycle;
+  html += `<div class="road-node road-node-reward is-${canClaimRepeat ? 'current' : 'locked'}">
+    <div class="road-card road-card-reward${canClaimRepeat ? ' claimable' : ''}" ${canClaimRepeat ? `data-onclick="claimXpCycleReward(${nextCycle})" title="Забрать"` : ''}>
+      ${xpTagHtml(requiredXp)}
+      <div class="road-card-icon-badge road-card-icon-badge-coin">🪙</div>
+      <div class="road-card-title road-card-title-sm">${canClaimRepeat ? 'Забрать 200🪙' : '200🪙 / 1 000 XP'}</div>
+      <div class="road-card-sub">повторяемая награда</div>
+    </div>
+    <div class="road-checkpoint road-checkpoint-${canClaimRepeat ? 'current' : 'locked'}">${canClaimRepeat ? '!' : ICON_ROAD_LOCK_CLOSED}</div>
+  </div>`;
   list.innerHTML = html;
 
   requestAnimationFrame(() => layoutRanksRoadFill(containerId));
@@ -802,23 +817,11 @@ function placePixel() {
   if (x<0||y<0||x>=canvasW||y>=canvasH){showToast('Наведите на холст','error');return;}
   let colorToPlace=selectedColor;
   
-  if (stencilActive&&stencilAutoColorEnabled&&purchasedItems.includes('stencil_auto_1')&&stencilImageData&&!stencilEditMode) {
-    const ir=stencilRect;
-    const sx=Math.floor((x-ir.x)/ir.w*stencilImageData.width);
-    const sy=Math.floor((y-ir.y)/ir.h*stencilImageData.height);
-    if (sx>=0&&sx<stencilImageData.width&&sy>=0&&sy<stencilImageData.height) {
-      const si=(sy*stencilImageData.width+sx)*4;
-      const r=stencilImageData.data[si],g2=stencilImageData.data[si+1],b=stencilImageData.data[si+2],a=stencilImageData.data[si+3];
-      if (a>50) {
-        let bestIdx=0,bestDist=Infinity;
-        PALETTE.forEach((p,pi)=>{
-          const pr=parseInt(p.c.slice(1,3),16),pg=parseInt(p.c.slice(3,5),16),pb=parseInt(p.c.slice(5,7),16);
-          const dist=(r-pr)**2+(g2-pg)**2+(b-pb)**2;
-          if (dist<bestDist){bestDist=dist;bestIdx=pi;}
-        });
-        colorToPlace=bestIdx;
-        selectColor(bestIdx);
-      }
+  if (stencilActive&&stencilAutoColorEnabled&&purchasedItems.includes('stencil_auto_1')&&!stencilEditMode) {
+    const stencilColor = getStencilPaletteIndexAt(x, y);
+    if (stencilColor !== null) {
+      colorToPlace = stencilColor;
+      selectColor(stencilColor);
     }
   }
   sendPixel(x,y,colorToPlace);
@@ -863,17 +866,34 @@ function startCooldown() {
   },50);
 }
 
+function claimXpCycleReward(cycle) {
+  sendJSON({ action: 'claim_xp_cycle_reward', cycle });
+}
+
 function renderProfileChangelogTab() {
   const box = document.getElementById('profile-changelog-list');
   if (!box) return;
-  const entries = [
-    ['Новый интерфейс трафаретов', 'Автоподбор цвета и подсветку теперь можно временно включать и выключать после покупки улучшений.'],
-    ['Бомбочки и статистика', 'Цветная бомбочка стоит 10 монет. Все закрашенные ею клетки принадлежат игроку, добавляются в пиксели, опыт, монеты и статистику клана.'],
-    ['Награды за достижения', 'Исправлена выдача «Дикого огурца»: прогресс одной игровой сессии проверяется сервером, поэтому награду можно забрать корректно.'],
-    ['Надёжнее инвентарь', 'Применение предметов берёт актуальное состояние аккаунта, что предотвращает потерю покупки при нескольких открытых вкладках.'],
-    ['Мобильная версия', 'Палитра и панели адаптированы для управления пальцем: больше рабочей области и более предсказуемое размещение меню.'],
+  const versions = [
+    { version:'v2026.07.29', title:'Точность и производительность трафаретов', items:[
+      'Автоподбор берёт точный индекс палитры из клетки трафарета — без повторного подбора похожего цвета.',
+      'Подсветка ошибок и автоподбор используют одну координатную сетку.',
+      'Добавлены оттенки «Тёмно-серый» и «Серо-светлый»; они учитываются при обработке трафаретов.',
+      'Крупные трафареты работают быстрее: убрана непрерывная анимация и ускорена проверка ошибок.'
+    ]},
+    { version:'v2026.07.26', title:'Прогресс, магазин и кланы', items:[
+      'После «Бога Пикселей» доступна повторяемая награда: 200 монет за каждые следующие 1 000 XP.',
+      'Формулировки ачивок магазина уточнены: учитываются предметы и улучшения, которые есть в инвентаре одновременно.',
+      'Бомбочки учитываются в пикселях, опыте, монетах, клановой статистике и лидерборде.',
+      'Клан может открыть до трёх одновременных трафаретов через магазин клана.'
+    ]},
+    { version:'v2026.07.24', title:'Улучшения интерфейса и стабильности', items:[
+      'Автоподбор цвета и подсветку трафарета можно временно отключать после покупки улучшений.',
+      '«Дикий огурец» проверяется сервером и корректно выдаёт награду.',
+      'Инвентарь защищён от устаревшего состояния при нескольких открытых вкладках.',
+      'Мобильные панели и палитра переработаны для удобного управления пальцем.'
+    ]},
   ];
-  box.innerHTML = `<div class="profile-stats-charts"><div class="profile-stats-charts-title">✨ Последние изменения</div><div style="display:grid;gap:10px">${entries.map(([title, text], i) => `<article style="padding:13px;border:1px solid var(--surface3);border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(15,15,17,.25));"><div style="display:flex;gap:9px;align-items:center;margin-bottom:5px"><span style="display:grid;place-items:center;width:24px;height:24px;border-radius:7px;background:var(--accent);color:#fff;font-size:11px;font-weight:800">${entries.length-i}</span><strong>${esc(title)}</strong></div><div style="font-size:12px;line-height:1.45;color:var(--text2)">${esc(text)}</div></article>`).join('')}</div></div>`;
+  box.innerHTML = `<div style="display:grid;gap:10px">${versions.map((entry, index) => `<details ${index === 0 ? 'open' : ''} style="border:1px solid var(--surface3);border-radius:12px;background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(15,15,17,.25));overflow:hidden"><summary style="display:flex;align-items:center;gap:10px;padding:13px;cursor:pointer;list-style:none"><span style="display:grid;place-items:center;min-width:30px;height:24px;padding:0 6px;border-radius:7px;background:var(--accent);color:#fff;font-size:10px;font-weight:800">${esc(entry.version)}</span><strong style="font-size:13px">${esc(entry.title)}</strong><span style="margin-left:auto;color:var(--text2);font-size:16px">⌄</span></summary><div style="padding:0 13px 14px;border-top:1px solid var(--surface3);font-size:12px;line-height:1.45;color:var(--text2)"><ul style="margin:10px 0 0;padding-left:18px;display:grid;gap:6px">${entry.items.map(item => `<li>${esc(item)}</li>`).join('')}</ul></div></details>`).join('')}</div>`;
 }
 
 function updatePlaceStatus() {
@@ -1095,6 +1115,11 @@ const _paletteRGB = PALETTE.map(p => ({
 }));
 
 function snapColorToPalette(r, g, b) {
+  const bestIdx = snapColorIndexToPalette(r, g, b);
+  return _paletteRGB[bestIdx];
+}
+
+function snapColorIndexToPalette(r, g, b) {
   let bestIdx = 0, bestDist = Infinity;
   for (let pi = 0; pi < _paletteRGB.length; pi++) {
     const p = _paletteRGB[pi];
@@ -1105,7 +1130,19 @@ function snapColorToPalette(r, g, b) {
     const dist = (2 + rMean / 256) * (r-p.r)**2 + 4 * (g-p.g)**2 + (2 + (255-rMean) / 256) * (b-p.b)**2;
     if (dist < bestDist) { bestDist = dist; bestIdx = pi; }
   }
-  return _paletteRGB[bestIdx];
+  return bestIdx;
+}
+
+// Координата берётся по готовой сетке отображения, а не пересчитывается
+// пропорционально каждый раз. Так отрисовка, подсветка и автоподбор смотрят
+// ровно в одну и ту же клетку, включая правую/нижнюю границы трафарета.
+function getStencilPaletteIndexAt(x, y) {
+  if (!stencilImageData || !stencilPaletteIndices || !stencilRect) return null;
+  const sx = Math.floor(x - stencilRect.x);
+  const sy = Math.floor(y - stencilRect.y);
+  if (sx < 0 || sy < 0 || sx >= stencilImageData.width || sy >= stencilImageData.height) return null;
+  const paletteIndex = stencilPaletteIndices[sy * stencilImageData.width + sx];
+  return paletteIndex === 255 ? null : paletteIndex;
 }
 
 function updateStencilGraphic() {
@@ -1120,16 +1157,20 @@ function updateStencilGraphic() {
   tctx.drawImage(stencilOrigImg, 0, 0, stencilRect.w, stencilRect.h);
 
   const idata = tctx.getImageData(0, 0, stencilRect.w, stencilRect.h);
+  const paletteIndices = new Uint8Array(stencilRect.w * stencilRect.h);
+  paletteIndices.fill(255);
   for (let i = 0; i < idata.data.length; i += 4) {
     const a = idata.data[i+3];
     if (a < 128) { idata.data[i+3] = 0; continue; }
     // Снапим к ближайшему цвету палитры — убираем любые промежуточные цвета
     // от интерполяции браузера при масштабировании
-    const snapped = snapColorToPalette(idata.data[i], idata.data[i+1], idata.data[i+2]);
+    const paletteIndex = snapColorIndexToPalette(idata.data[i], idata.data[i+1], idata.data[i+2]);
+    const snapped = _paletteRGB[paletteIndex];
     idata.data[i]   = snapped.r;
     idata.data[i+1] = snapped.g;
     idata.data[i+2] = snapped.b;
     idata.data[i+3] = 255;
+    paletteIndices[i / 4] = paletteIndex;
   }
   tctx.putImageData(idata, 0, 0);
 
@@ -1137,6 +1178,7 @@ function updateStencilGraphic() {
   scaledImg.onload = () => {
     stencilImg = scaledImg;
     stencilImageData = idata;
+    stencilPaletteIndices = paletteIndices;
     renderOverlay();
   };
   scaledImg.src = tmpC.toDataURL();
@@ -1171,17 +1213,11 @@ document.getElementById('stencil-file-input').addEventListener('change',e=>{
       for (let i = 0; i < idata.data.length; i += 4) {
         const r = idata.data[i], g = idata.data[i+1], b = idata.data[i+2], a = idata.data[i+3];
         if (a < 50) { idata.data[i+3] = 0; continue; }
-        let bestIdx = 0, bestDist = Infinity;
-        PALETTE.forEach((p, pi) => {
-          const pr = parseInt(p.c.slice(1,3), 16), pg = parseInt(p.c.slice(3,5), 16), pb = parseInt(p.c.slice(5,7), 16);
-        const rMean = (r + pr) / 2;
-        const dist = (2 + rMean / 256) * (r-pr)**2 + 4 * (g-pg)**2 + (2 + (255-rMean) / 256) * (b-pb)**2;
-          if (dist < bestDist) { bestDist = dist; bestIdx = pi; }
-        });
-        const c = PALETTE[bestIdx].c;
-        idata.data[i] = parseInt(c.slice(1,3), 16);
-        idata.data[i+1] = parseInt(c.slice(3,5), 16);
-        idata.data[i+2] = parseInt(c.slice(5,7), 16);
+        const bestIdx = snapColorIndexToPalette(r, g, b);
+        const c = _paletteRGB[bestIdx];
+        idata.data[i] = c.r;
+        idata.data[i+1] = c.g;
+        idata.data[i+2] = c.b;
         idata.data[i+3] = 255;
       }
       tctx.putImageData(idata, 0, 0);
@@ -1248,7 +1284,7 @@ function updateStencilOpacity(v){
 function cancelStencil(){
   const wasLocked = stencilLocked;
   // Сбрасываем весь стейт трафарета
-  stencilActive=false; stencilImg=null; stencilImageData=null; stencilOrigImg=null; personalStencilUrl=null;
+  stencilActive=false; stencilImg=null; stencilImageData=null; stencilPaletteIndices=null; stencilOrigImg=null; personalStencilUrl=null;
   stencilHandle=null; isDraggingTool=false; adminActiveHandle=null; stencilLocked=false; stencilOwnerName='';
   stencilUploadPending=false; stencilPendingSave=null; stencilUploadGen++;
   document.getElementById('stencil-panel').style.display='none';

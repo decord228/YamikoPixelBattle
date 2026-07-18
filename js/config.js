@@ -9,7 +9,8 @@ const PALETTE = [
   {c:'#00a368',n:'Зелёный'},{c:'#00cc78',n:'Светло-зелёный'},{c:'#7eed56',n:'Лаймовый'},{c:'#00756f',n:'Тёмно-бирюзовый'},
   {c:'#009eaa',n:'Бирюзовый'},{c:'#00ccc0',n:'Светло-бирюзовый'},{c:'#1d2b53',n:'Тёмно-синий'},{c:'#2450a4',n:'Синий'},
   {c:'#3690ea',n:'Голубой'},{c:'#51e9f4',n:'Светло-голубой'},{c:'#493ac1',n:'Индиго'},{c:'#6a5cff',n:'Фиолетовый'},
-  {c:'#811e9f',n:'Пурпурный'},{c:'#b44ac0',n:'Сиреневый'},{c:'#2b1e3e',n:'Тёмно-пурпурный'},{c:'#1a1a1a',n:'Почти чёрный'}
+  {c:'#811e9f',n:'Пурпурный'},{c:'#b44ac0',n:'Сиреневый'},{c:'#2b1e3e',n:'Тёмно-пурпурный'},{c:'#1a1a1a',n:'Почти чёрный'},
+  {c:'#444444',n:'Тёмно-серый'},{c:'#b8b8b8',n:'Серо-светлый'}
 ];
 
 // ── ЗВАНИЯ (Этап 4: переход на опыт) ──
@@ -319,12 +320,12 @@ const ACHIEVEMENTS = [
   { id:'coins_50000',   title:'Владелец Ямианиме', desc:'Накопи 50 000 монет одновременно',       icon:'🏆', xp:600,  check: s => s.coins >= 50000,     progress: s => [s.coins, 50000] },
   { id:'coins_100000',  title:'ЮЕЧКА ЗАМЕТЬ МЕНЯЯЯ', desc:'Накопи 100 000 монет одновременно',    icon:'🤑', xp:1100, check: s => s.coins >= 100000,    progress: s => [s.coins, 100000] },
   // ── Покупки ──
-  { id:'first_purchase',title:'Первая покупка',    desc:'Купи что-нибудь в магазине',             icon:'🛒', xp:15,   check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
-  { id:'purchase_5',    title:'Постоянный клиент', desc:'Соверши 5 покупок в магазине',           icon:'🛍️', xp:25,   check: s => s.purchasedCount >= 5,  progress: s => [s.purchasedCount, 5] },
-  { id:'purchase_10',   title:'Завсегдатай магазина', desc:'Соверши 10 покупок в магазине',       icon:'🧺', xp:45,   check: s => s.purchasedCount >= 10, progress: s => [s.purchasedCount, 10] },
-  { id:'purchase_20',   title:'Шопоголик',         desc:'Соверши 20 покупок в магазине',          icon:'🧾', xp:75,   check: s => s.purchasedCount >= 20, progress: s => [s.purchasedCount, 20] },
-  { id:'purchase_50',   title:'Скупщик товаров',   desc:'Соверши 50 покупок в магазине',          icon:'📦', xp:150,  check: s => s.purchasedCount >= 50, progress: s => [s.purchasedCount, 50] },
-  { id:'purchase_100',  title:'Данил Колбасенко',     desc:'Соверши 100 покупок в магазине',         icon:'🏪', xp:280,  check: s => s.purchasedCount >= 100, progress: s => [s.purchasedCount, 100] },
+  { id:'first_purchase',title:'Первая покупка',    desc:'Имей хотя бы 1 предмет или улучшение в инвентаре', icon:'🛒', xp:15, check: s => s.purchasedCount > 0, progress: s => [Math.min(s.purchasedCount,1), 1] },
+  { id:'purchase_5',    title:'Постоянный клиент', desc:'Имей 5 предметов и улучшений в инвентаре одновременно', icon:'🛍️', xp:25, check: s => s.purchasedCount >= 5, progress: s => [s.purchasedCount, 5] },
+  { id:'purchase_10',   title:'Завсегдатай магазина', desc:'Имей 10 предметов и улучшений в инвентаре одновременно', icon:'🧺', xp:45, check: s => s.purchasedCount >= 10, progress: s => [s.purchasedCount, 10] },
+  { id:'purchase_20',   title:'Шопоголик',         desc:'Имей 20 предметов и улучшений в инвентаре одновременно', icon:'🧾', xp:75, check: s => s.purchasedCount >= 20, progress: s => [s.purchasedCount, 20] },
+  { id:'purchase_50',   title:'Скупщик товаров',   desc:'Имей 50 предметов и улучшений в инвентаре одновременно', icon:'📦', xp:150, check: s => s.purchasedCount >= 50, progress: s => [s.purchasedCount, 50] },
+  { id:'purchase_100',  title:'Данил Колбасенко',  desc:'Имей 100 предметов и улучшений в инвентаре одновременно', icon:'🏪', xp:280, check: s => s.purchasedCount >= 100, progress: s => [s.purchasedCount, 100] },
   // ── Друзья ──
   { id:'friend_1',      title:'Больше не изгой :(',       desc:'Добавь хотя бы одного друга',            icon:'🤝', xp:15,   check: s => s.friendsCount >= 1,  progress: s => [s.friendsCount, 1] },
   { id:'friend_5',      title:'Душа компании',     desc:'Добавь 5 друзей',                        icon:'🎉', xp:35,   check: s => s.friendsCount >= 5,  progress: s => [s.friendsCount, 5] },
@@ -346,8 +347,8 @@ const ACHIEVEMENTS = [
   // ── Комбо-ачивки ──
   { id:'combo_starter',          title:'Крепкий старт',          desc:'Наберите 50 опыта и накопите 100 монет',                                        icon:'🚀', xp:30,   check: s => s.xp >= 50 && s.coins >= 100, progress: s => [(s.xp>=50&&s.coins>=100)?1:0, 1] },
   { id:'combo_social_clan',      title:'Душа клана',             desc:'Вступи в клан и заведи 5 друзей',                                               icon:'🏰', xp:90,   check: s => !!s.clan && s.friendsCount >= 5, progress: s => [(!!s.clan&&s.friendsCount>=5)?1:0, 1] },
-  { id:'combo_shopaholic',       title:'Транжира',               desc:'20 покупок и 5000 монет в кошельке одновременно',                               icon:'💸', xp:200,  check: s => s.purchasedCount >= 20 && s.coins >= 5000, progress: s => [(s.purchasedCount>=20&&s.coins>=5000)?1:0, 1] },
-  { id:'combo_collector_deluxe', title:'Коллекционер де люкс',   desc:'10 баннеров и 20 покупок в магазине',                                           icon:'🎭', xp:220,  check: s => (s.ownedBannersCount||0) >= 10 && s.purchasedCount >= 20, progress: s => [((s.ownedBannersCount||0)>=10&&s.purchasedCount>=20)?1:0, 1] },
+  { id:'combo_shopaholic',       title:'Транжира',               desc:'20 предметов/улучшений в инвентаре и 5000 монет одновременно',                   icon:'💸', xp:200,  check: s => s.purchasedCount >= 20 && s.coins >= 5000, progress: s => [(s.purchasedCount>=20&&s.coins>=5000)?1:0, 1] },
+  { id:'combo_collector_deluxe', title:'Коллекционер де люкс',   desc:'10 баннеров и 20 предметов/улучшений в инвентаре одновременно',                 icon:'🎭', xp:220,  check: s => (s.ownedBannersCount||0) >= 10 && s.purchasedCount >= 20, progress: s => [((s.ownedBannersCount||0)>=10&&s.purchasedCount>=20)?1:0, 1] },
   { id:'combo_ultimate',         title:'Идеальный игрок',        desc:'100 000 опыта, 50 000 монет, 25 друзей, 15 баннеров, клан и VIP — всё сразу',   icon:'🌠', xp:1500, check: s => s.xp >= 100000 && s.coins >= 50000 && s.friendsCount >= 25 && (s.ownedBannersCount||0) >= 15 && !!s.clan && (s.isVip||s.isAdmin), progress: s => [[s.xp>=100000,s.coins>=50000,s.friendsCount>=25,(s.ownedBannersCount||0)>=15,!!s.clan,(s.isVip||s.isAdmin)].filter(Boolean).length, 6] },
   { id:'combo_grandmaster',      title:'Ты на улицу выходишь вообще?',  desc:'250 000 опыта, 100 000 монет и 100 покупок — вершина мастерства',               icon:'🏅', xp:2500, check: s => s.xp >= 250000 && s.coins >= 100000 && s.purchasedCount >= 100, progress: s => [[s.xp>=250000,s.coins>=100000,s.purchasedCount>=100].filter(Boolean).length, 3] },
 ];

@@ -70,6 +70,10 @@ let tool = 'pencil';
 // Состояние живёт только в текущей сессии и по умолчанию сохраняет привычное
 // поведение улучшений.
 let stencilAutoColorEnabled = true, stencilAutoHighlightEnabled = true;
+let claimedXpCycles = [];
+// Индекс палитры для каждой клетки готового трафарета. Нужен, чтобы
+// автоподбор никогда не выбирал «похожий», но другой цвет повторно.
+let stencilPaletteIndices = null;
 let gridEnabled = false, smoothCamera = true, showCursors = true;
 let inspectorEnabled = true, soundEnabled = false;
 let camX = 0, camY = 0, camZoom = 3;

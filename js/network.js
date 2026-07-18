@@ -81,6 +81,7 @@ function handleJSON(d) {
     unlockedAchievements=d.unlocked_achievements||[];
     currentFriendsCount=(d.friends||[]).length;
     claimedRanks=d.claimed_ranks||[];
+    claimedXpCycles=d.claimed_xp_cycles||[];
     claimedAchievements=d.claimed_achievements||[];
     selectedEmoji=currentEmoji;
     savedStencils = d.saved_stencils || [];
@@ -197,6 +198,12 @@ function handleJSON(d) {
     if (d.message) showToast(d.message, 'success');
     if (typeof updateProfileStats === 'function') updateProfileStats(currentPixels, currentXp);
     if (typeof renderProfileAchievementsTab === 'function') renderProfileAchievementsTab();
+  }
+  else if (a==='xp_cycle_reward_claimed') {
+    claimedXpCycles = d.claimed_xp_cycles || claimedXpCycles;
+    if (d.coins !== undefined) { currentCoins = d.coins; updateCoinsUI(currentCoins); }
+    if (d.message) showToast(d.message, 'success');
+    if (typeof renderRanksList === 'function') renderRanksList('profile-ranks-road-list', currentXp);
   }
   else if (a==='banner_update') {
     currentBannerId=d.banner||null;

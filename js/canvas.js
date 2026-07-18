@@ -253,6 +253,10 @@ function renderOverlayNow() {
 
 function renderStencilErrors(ctx) {
   if (!stencilImageData || !stencilActive) return;
+  // На далёком масштабе отдельные клетки всё равно неразличимы. Пропуск
+  // подсветки тут сохраняет отзывчивость для больших шаблонов без потери
+  // полезной информации при реальном рисовании.
+  if (camZoom < 2) return;
   const ir = stencilRect;
   const off = getRenderOffset();
   
@@ -270,25 +274,14 @@ function renderStencilErrors(ctx) {
       const canvasColorIdx = canvasData[y * canvasW + x];
       if (canvasColorIdx === 0) continue; 
       
-      const sx = Math.floor((x - ir.x) / ir.w * stencilImageData.width);
-      const sy = Math.floor((y - ir.y) / ir.h * stencilImageData.height);
-      
+      const sx = Math.floor(x - ir.x);
+      const sy = Math.floor(y - ir.y);
       if (sx < 0 || sy < 0 || sx >= stencilImageData.width || sy >= stencilImageData.height) continue;
-      
-      const idx = (sy * stencilImageData.width + sx) * 4;
-      const a = stencilImageData.data[idx + 3];
-      
-      if (a > 50) {
-        const sr = stencilImageData.data[idx];
-        const sg = stencilImageData.data[idx+1];
-        const sb = stencilImageData.data[idx+2];
-        
-        const palHex = PALETTE[canvasColorIdx].c;
-        const pr = parseInt(palHex.slice(1,3), 16);
-        const pg = parseInt(palHex.slice(3,5), 16);
-        const pb = parseInt(palHex.slice(5,7), 16);
-        
-        if (Math.abs(pr - sr) > 10 || Math.abs(pg - sg) > 10 || Math.abs(pb - sb) > 10) {
+      const stencilColorIdx = stencilPaletteIndices ? stencilPaletteIndices[sy * stencilImageData.width + sx] : 255;
+      // Оба слоя уже хранят индексы палитры. Раньше здесь для каждой клетки
+      // парсились 6 hex-каналов и вычислялась дистанция — это и тормозило
+      // крупные трафареты. Сравнение индексов даёт тот же точный результат.
+      if (stencilColorIdx !== 255 && canvasColorIdx !== stencilColorIdx) {
           ctx.fillRect(x, y, 1, 1);
           
           if (camZoom >= 3) {
@@ -303,7 +296,6 @@ function renderStencilErrors(ctx) {
         }
       }
     }
-  }
 }
 
 // Плашка-лейбл над трафаретом (DOM-элемент, обновляется в координатах экрана,
@@ -433,7 +425,10 @@ function smoothTick() {
 let _rafLoopId = null;
 
 function _stencilNeedsAnim() {
-  return typeof stencilActive !== 'undefined' && stencilActive && !stencilEditMode;
+  // Постоянная анимация рамки держала 60 FPS-рендер даже когда игрок ничего
+  // не делает. Для больших трафаретов это лишняя нагрузка; рамка остаётся
+  // видимой и обновляется при движении/масштабировании/рисовании.
+  return false;
 }
 
 function _rafLoop() {

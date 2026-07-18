@@ -117,7 +117,7 @@ function beginDiscordLogin() {
     : state;
   const query = new URLSearchParams({
     client_id: DISCORD_CLIENT_ID,
-    redirect_uri: DISCORD_WEB_REDIRECT_URI,
+    redirect_uri: getDiscordWebRedirectUri(),
     response_type: 'code',
     scope: 'identify',
     state: oauthState,
@@ -144,7 +144,7 @@ async function finishWebsiteDiscordLogin() {
     const response = await fetch(`${getApiUrl()}/discord-web-token`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ code, redirect_uri: DISCORD_WEB_REDIRECT_URI }),
+      body: JSON.stringify({ code, redirect_uri: getDiscordWebRedirectUri() }),
     });
     const data = await response.json();
     if (!response.ok || !data.access_token) throw new Error(data.error || 'Token exchange failed');

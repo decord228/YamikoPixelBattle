@@ -365,6 +365,15 @@ const DISCORD_CLIENT_ID = '1521337257938911283';
 // OAuth2 сверяет redirect URI посимвольно. В Developer Portal добавлен
 // именно этот адрес — без завершающего слеша.
 const DISCORD_WEB_REDIRECT_URI = 'https://decord228.github.io/YamikoPixelBattle';
+// Локальный callback для разработки. Его нужно один раз добавить в Discord
+// Developer Portal → OAuth2 → Redirects. Discord не принимает file:// URI,
+// поэтому локально проект запускается через http://localhost:5500.
+const DISCORD_LOCAL_REDIRECT_URI = 'http://localhost:5500';
+
+function getDiscordWebRedirectUri() {
+  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+  return isLocalhost ? DISCORD_LOCAL_REDIRECT_URI : DISCORD_WEB_REDIRECT_URI;
+}
 
 // WS_URL вычисляется в момент вызова connect(), после patchUrlMappings
 function getWsUrl() {

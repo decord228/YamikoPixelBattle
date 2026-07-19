@@ -11,7 +11,7 @@ function connect() {
     updateConnStatus(true);
     document.getElementById('connecting-screen').classList.add('hide');
     if (typeof websiteDiscordToken !== 'undefined' && websiteDiscordToken) {
-      sendJSON({ action: 'auth', discord_token: websiteDiscordToken });
+      sendJSON({ action: 'auth', discord_token: websiteDiscordToken, palette_size: PALETTE.length });
     }
   };
 
@@ -161,7 +161,7 @@ function handleJSON(d) {
   else if (a==='resize') {
     resizeCanvas(d.w,d.h||canvasH);
     if (typeof websiteDiscordToken !== 'undefined' && websiteDiscordToken) {
-      sendJSON({ action: 'auth', discord_token: websiteDiscordToken });
+      sendJSON({ action: 'auth', discord_token: websiteDiscordToken, palette_size: PALETTE.length });
     }
   }
   else if (a==='cursor') {

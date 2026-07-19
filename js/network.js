@@ -182,8 +182,8 @@ function handleJSON(d) {
   }
   else if (a==='discord_campaign_result') {
     const input = document.getElementById('discord-campaign-msg');
-    if (input) input.value = '';
-    showToast(`Discord-рассылка завершена: ${d.sent||0} отправлено, ${d.failed||0} недоставлено`, d.failed ? 'info' : 'success');
+    if (input && !d.test) input.value = '';
+    showToast(d.test ? 'Тестовое сообщение отправлено в Discord' : `Discord-рассылка завершена: ${d.sent||0} отправлено, ${d.failed||0} недоставлено`, d.failed ? 'info' : 'success');
   }
   else if (a==='achievement_unlocked') {
     // Опыт (d.xp) больше НЕ начисляется тут автоматически — это просто

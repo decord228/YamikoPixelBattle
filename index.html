@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-101';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-102';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -1161,7 +1161,7 @@
                             </section>
                             <section class="admin-discord-campaign">
                                 <textarea class="broadcast-input" id="discord-campaign-msg" rows="4" maxlength="2000" placeholder="Сообщение для личной рассылки в Discord..."></textarea>
-                                <button class="btn btn-primary admin-discord-campaign-send" data-onclick="adminSendDiscordCampaign()">Отправить в Discord</button>
+                                <div class="admin-discord-campaign-actions"><button class="btn btn-secondary" data-onclick="adminSendDiscordCampaignTest()">Тест на мой Discord</button><button class="btn btn-primary admin-discord-campaign-send" data-onclick="adminSendDiscordCampaign()">Отправить в Discord</button></div>
                             </section>
                         </div>
                     </div>

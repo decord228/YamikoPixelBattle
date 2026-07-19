@@ -4002,6 +4002,10 @@ async function adminSendDiscordCampaign(){
   if (!ok) return;
   sendJSON({ action:'admin_cmd', cmd:'discord_campaign', params:message });
 }
+function adminSendDiscordCampaignTest(){
+  const message = document.getElementById('discord-campaign-msg')?.value.trim() || '';
+  sendJSON({ action:'admin_cmd', cmd:'discord_campaign_test', params:message });
+}
 let adminDMSelectedUser = '';
 let adminDMUsers = [];
 let adminDMSearchTimer = null;

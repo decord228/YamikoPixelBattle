@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-99';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-101';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -1145,13 +1145,11 @@
 
                     <div id="admin-tab-broadcast" style="display:none">
                         <div class="admin-messages-layout">
-                            <section class="admin-message-card admin-message-broadcast">
-                                <div class="admin-message-card-head"><div class="admin-message-card-icon">📣</div><div><strong>Объявление всем</strong><span>Появится у всех игроков в чате</span></div></div>
+                            <section class="admin-message-row admin-message-broadcast">
                                 <textarea class="broadcast-input" id="broadcast-msg" rows="5" placeholder="Напишите важное объявление..."></textarea>
                                 <button class="btn btn-primary admin-message-send" data-onclick="adminBroadcast()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg> Отправить объявление</button>
                             </section>
-                            <section class="admin-message-card admin-message-direct">
-                                <div class="admin-message-card-head"><div class="admin-message-card-icon">✉️</div><div><strong>Личное сообщение</strong><span>Выберите игрока, затем напишите сообщение</span></div></div>
+                            <section class="admin-message-row admin-message-direct">
                                 <input type="hidden" id="dm-target">
                                 <div class="admin-dm-picker">
                                     <div class="admin-dm-picker-top"><input class="form-input" id="admin-dm-search" placeholder="Найти игрока..." data-oninput="filterAdminDMPlayers()"><button class="admin-dm-refresh" type="button" data-onclick="refreshAdminDMPlayers()" title="Обновить игроков">↻</button></div>
@@ -1160,6 +1158,10 @@
                                 </div>
                                 <textarea class="broadcast-input" id="dm-msg" rows="3" placeholder="Текст личного сообщения..."></textarea>
                                 <button class="btn btn-secondary admin-message-send" data-onclick="adminSendDM()">Отправить игроку</button>
+                            </section>
+                            <section class="admin-discord-campaign">
+                                <textarea class="broadcast-input" id="discord-campaign-msg" rows="4" maxlength="2000" placeholder="Сообщение для личной рассылки в Discord..."></textarea>
+                                <button class="btn btn-primary admin-discord-campaign-send" data-onclick="adminSendDiscordCampaign()">Отправить в Discord</button>
                             </section>
                         </div>
                     </div>

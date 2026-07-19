@@ -3994,6 +3994,14 @@ function adminBroadcast(){
   sendJSON({action:'admin_cmd',cmd:'broadcast',params:msg});
   document.getElementById('broadcast-msg').value='';
 }
+async function adminSendDiscordCampaign(){
+  const input = document.getElementById('discord-campaign-msg');
+  const message = input?.value.trim() || '';
+  if (!message) { showToast('Введите текст рассылки', 'error'); return; }
+  const ok = await showConfirm('Сообщение будет отправлено в личные сообщения Discord всем игрокам с привязанным Discord-аккаунтом.', { title:'Запустить Discord-рассылку?', icon:'📨', confirmText:'Отправить' });
+  if (!ok) return;
+  sendJSON({ action:'admin_cmd', cmd:'discord_campaign', params:message });
+}
 let adminDMSelectedUser = '';
 let adminDMUsers = [];
 let adminDMSearchTimer = null;

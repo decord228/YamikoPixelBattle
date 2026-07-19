@@ -48,6 +48,8 @@ function applyCanvasSnapshot(data) {
     return;
   }
   canvasData.set(data);
+  // Снимок — авторитетное состояние сервера: старые локальные ожидания больше не актуальны.
+  if (typeof pendingPixelRequests !== 'undefined') pendingPixelRequests.clear();
   fullRender(data);
   renderOverlay();
 }
@@ -122,6 +124,24 @@ function handleJSON(d) {
       cpCacheUser({ username: currentUser, emoji: currentEmoji, avatar: currentAvatar, rank: currentRank, role: (isAdmin?'admin':isVip?'vip':'user'), clan: currentClan, online: true });
     }
     onAuthSuccess(d);
+  }
+  else if (a==='pixel_result') {
+    const pending=pendingPixelRequests.get(d.id);
+    if (!pending) return;
+    pendingPixelRequests.delete(d.id);
+    if (!d.ok) {
+      const color=Number.isInteger(d.color)?d.color:pending.previousColor;
+      canvasData[pending.y*canvasW+pending.x]=color;
+      pixelOwnerCache.delete(`${pending.x},${pending.y}`);
+      renderPixel(pending.x,pending.y,color);
+      // Эти счётчики были показаны оптимистично вместе с пикселем.
+      // При отказе возвращаем только локальное предположение, не ожидая перезахода.
+      sessionPixels=Math.max(0,sessionPixels-1);
+      if (typeof updateProfileStats === 'function') {
+        updateProfileStats(Math.max(0,currentPixels-1),Math.max(0,currentXp-1));
+      }
+      if (d.reason && d.reason!=='cooldown') showToast(`Пиксель не поставлен: ${d.reason}`,'error');
+    }
   }
   else if (a==='toast') {
     const msg=d.message||'Уведомление';

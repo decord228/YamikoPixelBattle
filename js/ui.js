@@ -841,8 +841,11 @@ function placePixel() {
       selectColor(stencilColor);
     }
   }
-  sendPixel(x,y,colorToPlace);
+  const requestId=sendPixel(x,y,colorToPlace);
+  if (requestId===null){showToast('Нет соединения с сервером','error');return;}
+  const previousColor=canvasData[y*canvasW+x];
   canvasData[y*canvasW+x]=colorToPlace;
+  pendingPixelRequests.set(requestId,{x,y,previousColor,placedColor:colorToPlace,createdAt:Date.now()});
   // Сразу записываем себя в кэш авторов — не ждём ответа сервера
   pixelOwnerCache.set(`${x},${y}`, { username: currentUser, emoji: currentEmoji, avatar: currentAvatar });
   renderPixel(x,y,colorToPlace);
@@ -854,10 +857,13 @@ function placePixel() {
 }
 
 function sendPixel(x,y,cidx) {
-  if (!ws||ws.readyState!==WebSocket.OPEN) return;
-  const buf=new Uint8Array(5);
+  if (!ws||ws.readyState!==WebSocket.OPEN) return null;
+  const requestId=nextPixelRequestId++ >>> 0;
+  const buf=new Uint8Array(9);
   buf[0]=(x>>8)&0xFF;buf[1]=x&0xFF;buf[2]=(y>>8)&0xFF;buf[3]=y&0xFF;buf[4]=cidx;
+  buf[5]=(requestId>>>24)&0xFF;buf[6]=(requestId>>>16)&0xFF;buf[7]=(requestId>>>8)&0xFF;buf[8]=requestId&0xFF;
   ws.send(buf.buffer);
+  return requestId;
 }
 
 function startCooldown() {
@@ -891,6 +897,15 @@ function renderProfileChangelogTab() {
   const box = document.getElementById('profile-changelog-list');
   if (!box) return;
   const versions = [
+    { version:'v2026.08.05', title:'Надёжная синхронизация холста', items:[
+      'Исправлено рассинхронизированное отображение рисунков: после переподключения на холсте больше не должны появляться случайные белые пропуски.',
+      'Пиксель по-прежнему появляется сразу после нажатия, но теперь дополнительно подтверждается сервером. Если установить его нельзя, клетка автоматически вернётся к настоящему цвету.',
+      'Состояние холста после входа и переподключения берётся из подтверждённой серверной версии — без сохранения ошибочных локальных пикселей.',
+      'Для каждой установки игра запоминает цвет клетки до нажатия. Сервер сообщает результат отдельно для этого действия: принятый пиксель остаётся на полотне, а отклонённый аккуратно откатывается без перерисовки всего холста.',
+      'Проверка работает параллельно с отображением: не нужно ждать ответа сервера, поэтому рисование остаётся таким же быстрым даже при нестабильном соединении.',
+      'Синхронизация учитывает действующий кулдаун, блокировку холста и ограничения аккаунта. Это устраняет ситуацию, когда пиксель выглядел поставленным только в одной вкладке, но не успевал сохраниться на сервере.',
+      'Обновлённый протокол совместим с уже открытыми клиентами и не меняет формат записи таймлапсов: в историю попадают только подтверждённые сервером изменения.'
+    ]},
     { version:'v2026.08.04', title:'Большое обновление удобства и скорости', items:[
       'Полностью переработано отображение холста: полотно, сетка и трафарет теперь работают как единая система. Pixel Battle стал заметно быстрее и стабильнее, особенно на больших артах и при долгой игре.',
       'При приближении, отдалении и перемещении камера стала плавнее, а интерфейс больше не отвлекает рывками и задержками.',

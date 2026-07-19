@@ -4,6 +4,10 @@
 let ws = null;
 let canvasW = 256, canvasH = 256;
 let canvasData = new Uint8Array(canvasW * canvasH);
+// Обычные пиксели рисуются сразу, но остаются в этом списке до ответа сервера.
+// Это не даёт «призрачным» локальным пикселям пережить отказ сервера.
+let pendingPixelRequests = new Map();
+let nextPixelRequestId = 1;
 let selectedColor = 0;
 let cooldown = 0, cooldownTime = 10.0, cooldownTimer = null;
 // ── КУЛДАУН-УСКОРИТЕЛИ (магазин) ──

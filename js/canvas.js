@@ -75,7 +75,13 @@ function applyTransform() {
   }
   shadowDiv.style.width = canvasW + 'px';
   shadowDiv.style.height = canvasH + 'px';
-  renderOverlay();
+  if (_zoomPreviewBase) {
+    updateZoomPreview();
+    // Canvas в этот момент движется композитором, поэтому DOM-плашки должны
+    // следовать за актуальной камерой отдельно, не дожидаясь финального кадра.
+    updateStencilLabel();
+    updateStencilEditorControls();
+  } else renderOverlay();
 }
 
 function renderPixel(x,y,colorIdx) {
@@ -110,12 +116,71 @@ function fullRender(data) {
 // Объединяем их в один requestAnimationFrame: это убирает накопление дорогих
 // clear/draw-операций и мерцание UI после долгой игры.
 let _overlayRenderFrame = 0;
+let _lastOverlayRenderAt = 0;
+let _zoomRenderSettleTimer = 0;
+let _cursorFlagsFrame = 0;
+// При прокрутке колесом не пересобираем огромный world-frame на каждое
+// деление. Браузер композитит уже готовый кадр через CSS-трансформацию, а
+// настоящий Canvas-кадр собирается один раз после окончания жеста.
+let _zoomPreviewBase = null;
+
+function updateZoomPreview() {
+  if (!_zoomPreviewBase || !overlayCanvas) return;
+  const ratio = camZoom / _zoomPreviewBase.zoom;
+  const tx = camX - _zoomPreviewBase.x * ratio;
+  const ty = camY - _zoomPreviewBase.y * ratio;
+  overlayCanvas.style.transformOrigin = '0 0';
+  overlayCanvas.style.willChange = 'transform';
+  overlayCanvas.style.transform = `translate3d(${tx}px,${ty}px,0) scale(${ratio})`;
+}
+
+function clearZoomPreview() {
+  _zoomPreviewBase = null;
+  if (!overlayCanvas) return;
+  overlayCanvas.style.transform = '';
+  overlayCanvas.style.transformOrigin = '';
+  overlayCanvas.style.willChange = '';
+}
+
+function scheduleCursorFlagsUpdate() {
+  if (_cursorFlagsFrame) return;
+  _cursorFlagsFrame = requestAnimationFrame(() => {
+    _cursorFlagsFrame = 0;
+    updateAllCursorFlags();
+  });
+}
+
+function markZoomRendering() {
+  if (!_zoomPreviewBase) _zoomPreviewBase = { x: camX, y: camY, zoom: camZoom };
+  clearTimeout(_zoomRenderSettleTimer);
+  _zoomRenderSettleTimer = setTimeout(() => {
+    _zoomRenderSettleTimer = 0;
+    clearZoomPreview();
+    renderOverlay(); // финальный чёткий кадр после окончания жеста
+    scheduleCursorFlagsUpdate();
+  // На тачпадах и инерционных колёсах пауза между импульсами нередко
+  // превышает 130 мс. Более длинное окно не даёт кадру «схлопываться» и
+  // снова пересобираться посреди одного жеста.
+  }, 240);
+}
+
 function renderOverlay() {
+  // Пока колесо/пинч продолжается, CSS-композитор уже показывает актуальное
+  // положение кадра. Полная Canvas-перерисовка здесь лишь съедает FPS.
+  if (_zoomPreviewBase) return;
   if (_overlayRenderFrame) return;
-  _overlayRenderFrame = requestAnimationFrame(() => {
+  const elapsed = performance.now() - _lastOverlayRenderAt;
+  // Во время непрерывного зума не собираем тяжёлый полный кадр чаще 30 FPS.
+  // После остановки колеса markZoomRendering() сразу дорисует точный кадр.
+  const isZooming = _zoomRenderSettleTimer !== 0;
+  const delay = isZooming ? Math.max(0, 33 - elapsed) : 0;
+  const schedule = () => requestAnimationFrame(() => {
     _overlayRenderFrame = 0;
+    _lastOverlayRenderAt = performance.now();
     renderOverlayNow();
   });
+  if (delay) _overlayRenderFrame = setTimeout(schedule, delay);
+  else _overlayRenderFrame = schedule();
 }
 
 function renderOverlayNow() {
@@ -132,6 +197,20 @@ function renderOverlayNow() {
   if (typeof tlFullscreen !== 'undefined' && tlFullscreen) {
     const label = document.getElementById('stencil-label');
     if (label) label.style.display = 'none';
+    const controls = document.getElementById('stencil-editor-controls');
+    if (controls) controls.style.display = 'none';
+    // Основной canvas теперь является внутренним буфером и скрыт в CSS.
+    // Таймлапс раньше рисовал только в него, из-за чего fullscreen становился
+    // пустым. Выводим его через тот же финальный overlay-пайплайн, что и
+    // обычное полотно, но без сетки, трафарета и игровых курсоров.
+    const off = getRenderOffset();
+    octx.setTransform(overlayDpr, 0, 0, overlayDpr, 0, 0);
+    octx.save();
+    octx.translate(off.x, off.y);
+    octx.scale(camZoom, camZoom);
+    octx.imageSmoothingEnabled = false;
+    octx.drawImage(mainCanvas, 0, 0);
+    octx.restore();
     return;
   }
 
@@ -231,6 +310,20 @@ function renderOverlayNow() {
       octx.setLineDash([6 / camZoom, 3 / camZoom]); 
       octx.strokeRect(ir.x, ir.y, ir.w, ir.h); 
       octx.setLineDash([]);
+      // Угловые маркеры остаются одного размера на экране при любом зуме.
+      // Они рисуются в том же world-space, что и рамка — поэтому всегда
+      // точно совпадают с реальными углами трафарета.
+      const handleRadius = 7 / camZoom;
+      const handlePoints = [[ir.x, ir.y], [ir.x + ir.w, ir.y], [ir.x, ir.y + ir.h], [ir.x + ir.w, ir.y + ir.h]];
+      octx.fillStyle = '#f8fafc';
+      octx.strokeStyle = '#6366f1';
+      octx.lineWidth = 2 / camZoom;
+      for (const [hx, hy] of handlePoints) {
+        octx.beginPath();
+        octx.arc(hx, hy, handleRadius, 0, Math.PI * 2);
+        octx.fill();
+        octx.stroke();
+      }
     } else {
       // Лёгкая "бегущая" обводка, чтобы трафарет визуально отличался от уже
       // выставленных пикселей холста, даже когда редактирование выключено.
@@ -258,9 +351,10 @@ function renderOverlayNow() {
   // читаемым при любом зуме). Показывается только когда трафарет не в режиме
   // редактирования — в этот момент важно не спутать его с пикселями холста.
   updateStencilLabel();
+  updateStencilEditorControls();
 
   // Курсор / Пипетка
-  if (tool==='pencil'||tool==='eyedrop'||(!stencilEditMode && stencilActive)) {
+  if (!stencilEditMode && (tool==='pencil'||tool==='eyedrop'||stencilActive)) {
     if (hoveredPixel.x>=0&&hoveredPixel.x<canvasW&&hoveredPixel.y>=0&&hoveredPixel.y<canvasH) {
       octx.fillStyle='rgba(255,255,255,0.35)';
       octx.fillRect(hoveredPixel.x, hoveredPixel.y, 1, 1);
@@ -271,7 +365,7 @@ function renderOverlayNow() {
   }
 
   // Бомбочки / Расходники
-  if (activeItem && hoveredPixel.x >= 0) {
+  if (!stencilEditMode && activeItem && hoveredPixel.x >= 0) {
     let size = 3;
     if (activeItem === 'rainbow_5x5') size = 5;
     else if (activeItem === 'eraser_10x10') size = 10;
@@ -495,6 +589,28 @@ function updateStencilLabel() {
   el.style.display = 'flex';
 }
 
+// Пилюля относится к экрану, а не к canvas: так её кнопки остаются удобными
+// для тапа и не меняют размер вместе с трафаретом.
+function updateStencilEditorControls() {
+  const el = document.getElementById('stencil-editor-controls');
+  if (!el) return;
+  if (!stencilActive || !stencilEditMode || stencilLocked || !stencilRect) {
+    el.style.display = 'none';
+    return;
+  }
+  const bottomCenter = canvasToScreen(stencilRect.x + stencilRect.w / 2, stencilRect.y + stencilRect.h);
+  el.style.left = `${Math.max(96, Math.min(window.innerWidth - 96, bottomCenter.x))}px`;
+  el.style.top = `${Math.max(8, Math.min(window.innerHeight - 42, bottomCenter.y + 12))}px`;
+  const lock = document.getElementById('stencil-aspect-toggle');
+  if (lock) {
+    lock.classList.toggle('is-locked', stencilAspectLocked);
+    lock.setAttribute('aria-pressed', String(stencilAspectLocked));
+  }
+  const size = document.getElementById('stencil-size-readout');
+  if (size) size.textContent = `${stencilRect.w} × ${stencilRect.h}`;
+  el.style.display = 'flex';
+}
+
 // ── CURSORS ──
 function updateCursorFlag(username, canvasX, canvasY, colorIdx, emoji, avatar) {
   if (!showCursors||(!serverCursorsEnabled&&!clanShareCursor)) return;
@@ -563,10 +679,11 @@ function applyZoom(nz, cx, cy) {
   targetCamX=cx-(cx-targetCamX)*(nz/oldZoom);
   targetCamY=cy-(cy-targetCamY)*(nz/oldZoom);
   targetCamZoom=nz;
+  markZoomRendering();
   if (!smoothCamera) {
     camX = targetCamX; camY = targetCamY; camZoom = targetCamZoom;
     applyTransform();
-    updateAllCursorFlags();
+    scheduleCursorFlagsUpdate();
   } else {
     startSmoothAnim();
   }
@@ -579,7 +696,9 @@ function startSmoothAnim() {
 
 function smoothTick() {
   const EPS = 0.01;
-  const FACTOR = 0.15;
+  // Чуть более мягкая интерполяция убирает ступеньки при серии wheel-событий,
+  // при этом GPU-превью сохраняет мгновенную отзывчивость кадра.
+  const FACTOR = 0.12;
   camX += (targetCamX - camX) * FACTOR;
   camY += (targetCamY - camY) * FACTOR;
   camZoom += (targetCamZoom - camZoom) * FACTOR;
@@ -592,7 +711,7 @@ function smoothTick() {
     smoothAnimId = requestAnimationFrame(smoothTick);
   }
   applyTransform();
-  updateAllCursorFlags();
+  scheduleCursorFlagsUpdate();
 }
 
 // ── RAF RENDER LOOP (keeps overlay + cursors + stencil pulse in sync) ──
@@ -610,7 +729,7 @@ function _rafLoop() {
   const stencilAnim = _stencilNeedsAnim();
   if (dragging || stencilAnim) {
     renderOverlay();
-    if (dragging) updateAllCursorFlags();
+    if (dragging) scheduleCursorFlagsUpdate();
     _rafLoopId = requestAnimationFrame(_rafLoop);
   } else {
     _rafLoopId = null;

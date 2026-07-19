@@ -6,7 +6,7 @@
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-51';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-99';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
@@ -38,15 +38,19 @@
     <!-- ── ЛОКАУТ: экран закрытия Пиксель Батла для всех, кроме админов ── -->
     <div id="lockdown-screen">
         <div id="lockdown-card">
-            <div id="lockdown-icon">🔒</div>
-            <div id="lockdown-title">PIXEL BATTLE ЗАКРЫТ</div>
+            <div class="lockdown-card-glow"></div>
+            <div class="lockdown-eyebrow"><span></span>Техническая пауза</div>
+            <div id="lockdown-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></svg></div>
+            <div id="lockdown-title">ПИКСЕЛЬ БАТЛ ВРЕМЕННО ЗАКРЫТ</div>
             <div id="lockdown-message">Скоро вернёмся! Идёт подготовка к новому сезону.</div>
-            <div id="lockdown-timer">
-                <div class="lockdown-timer-unit"><span id="lockdown-hh">00</span><small>ч</small></div>
-                <div class="lockdown-timer-unit"><span id="lockdown-mm">00</span><small>м</small></div>
-                <div class="lockdown-timer-unit"><span id="lockdown-ss">00</span><small>с</small></div>
+            <div id="lockdown-timer" aria-label="До открытия осталось">
+                <div class="lockdown-timer-unit"><span id="lockdown-hh">00</span><small>часов</small></div>
+                <i>:</i>
+                <div class="lockdown-timer-unit"><span id="lockdown-mm">00</span><small>минут</small></div>
+                <i>:</i>
+                <div class="lockdown-timer-unit"><span id="lockdown-ss">00</span><small>секунд</small></div>
             </div>
-            <div id="lockdown-sub">до открытия — оставайтесь на связи</div>
+            <div id="lockdown-sub">Доступ откроется автоматически</div>
         </div>
     </div>
 
@@ -82,6 +86,17 @@
     <canvas id="overlay-canvas"></canvas>
     <div id="cursors-layer"></div>
     <div id="stencil-label" style="display:none;"></div>
+    <div id="stencil-editor-controls" style="display:none;" aria-label="Управление трафаретом">
+        <button id="stencil-aspect-toggle" class="stencil-editor-btn is-locked" data-onclick="toggleStencilAspectLock()" title="Сохранять пропорции" aria-pressed="true">
+            <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>
+            <span>Пропорции</span>
+        </button>
+        <span id="stencil-size-readout" class="stencil-size-readout">100 × 100</span>
+        <span class="stencil-editor-sep"></span>
+        <button class="stencil-editor-btn stencil-editor-close" data-onclick="cancelStencil()" title="Закрыть трафарет" aria-label="Закрыть трафарет">
+            <svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+    </div>
 
     <div id="backdrop"></div>
 
@@ -330,15 +345,6 @@
                             <span class="dock-control-label">Прозрачн.</span>
                             <input type="range" id="stencil-panel-opacity" min="10" max="100" value="60" data-oninput="updateStencilOpacity(this.value)">
                             <span class="dock-control-value" id="stencil-opacity-val">60%</span>
-                        </div>
-
-                        <div class="dock-control dock-control-scale" id="stencil-scale-row" title="Масштаб трафарета">
-                            <svg class="icon dock-control-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="15" height="15"><path d="M15 3h6v6" /><path d="M9 21H3v-6" /><path d="M21 3l-7 7" /><path d="M3 21l7-7" /></svg>
-                            <span class="dock-control-label">Размер</span>
-                            <div class="dock-scale-btns">
-                                <button class="dock-scale-btn" data-onclick="scaleStencil(0.5)">÷2</button>
-                                <button class="dock-scale-btn" data-onclick="scaleStencil(2)">×2</button>
-                            </div>
                         </div>
 
                         <div class="dock-auto-controls" id="stencil-auto-controls" style="display:none;">
@@ -661,7 +667,11 @@
                 <div class="sub-tab active" data-onclick="switchLbTab('players')">Игроки</div>
                 <div class="sub-tab" data-onclick="switchLbTab('clans')">Кланы</div>
             </div>
-            <div id="lb-players-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+            <div id="lb-players-view">
+                <div class="lb-top-caption">Топ 50 по опыту</div>
+                <div id="lb-players-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
+                <div id="lb-player-self"></div>
+            </div>
             <div id="lb-clans-list" style="display:none"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
         </div>
     </div>
@@ -1065,25 +1075,28 @@
                         </div>
                     </div>
 
-                    <div id="admin-tab-canvas" style="display:none">
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Размер холста</div>
+                    <div id="admin-tab-canvas" class="canvas-admin" style="display:none">
+                        <section class="canvas-admin-card canvas-admin-size">
+                        <div class="canvas-admin-card-title">Размер холста</div>
                         <div class="resize-form">
                             <div><label class="form-label">Ширина</label><input class="form-input" id="admin-canvas-w" type="number" value="256" min="16" max="2048"></div>
                             <div><label class="form-label">Высота</label><input class="form-input" id="admin-canvas-h" type="number" value="256" min="16" max="2048"></div>
                         </div>
                         <div style="margin-bottom:12px;font-size:11px;color:var(--red);"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 3L2 20h20L12 3z" /><path d="M12 10v4" /><circle cx="12" cy="17" r="0.9" fill="currentColor" stroke="none" /></svg> Изменение сохранит пиксели в пределах нового размера.</div>
-                        <button class="btn btn-primary" data-onclick="adminResizeCanvas()" style="margin-bottom:10px">Применить размер</button>
-                        <div class="section-sep"></div>
+                        <button class="btn btn-primary" data-onclick="adminResizeCanvas()">Применить размер</button>
+                        </section>
 
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg> Задержка пикселей (Кулдаун)</div>
+                        <section class="canvas-admin-card canvas-admin-cooldown">
+                        <div class="canvas-admin-card-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg>Задержка пикселей</div>
                         <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">
                             <input type="range" class="admin-range" id="admin-cooldown-slider" min="0" max="30000" step="500" value="3000" data-oninput="updateCooldownLabel(this.value)">
                             <span id="admin-cooldown-label" style="font-family:'Space Mono',monospace;font-size:12px;color:var(--accent2);min-width:50px;">3.0с</span>
                         </div>
-                        <button class="btn btn-secondary btn-sm" data-onclick="adminSetCooldown()" style="margin-bottom:10px;">Применить</button>
-                        <div class="section-sep"></div>
+                        <button class="btn btn-secondary btn-sm" data-onclick="adminSetCooldown()">Применить</button>
+                        </section>
 
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Авто-билдер (картинка → превью → холст)</div>
+                        <section class="canvas-admin-card canvas-admin-image">
+                        <div class="canvas-admin-card-title">Авто-билдер <small>Картинка → превью → холст</small></div>
                         <div id="image-drop-zone" data-onclick="document.getElementById('admin-image-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;">
                             <div style="font-size:28px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
                             <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите или перетащите изображение</p>
@@ -1091,44 +1104,64 @@
                         </div>
                         <input type="file" id="admin-image-file" accept="image/*" style="display:none" data-onchange="handleAdminImage(event)">
                         <img id="image-preview" alt="Preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
-                        <button class="btn btn-primary" id="btn-place-image" data-onclick="startAdminImagePreview()" disabled style="margin-bottom:10px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.7-4.7" /></svg> Открыть превью</button>
+                        <button class="btn btn-primary" id="btn-place-image" data-onclick="startAdminImagePreview()" disabled><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="10.5" cy="10.5" r="6.5" /><path d="M20 20l-4.7-4.7" /></svg> Открыть превью</button>
+                        </section>
 
-                        <div class="section-sep"></div>
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" /></svg> Глобальный трафарет (для всех)</div>
+                        <section class="canvas-admin-card canvas-admin-stencil">
+                        <div class="canvas-admin-card-title"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3c2.5 2.5 3.8 6 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-6-3.8-9s1.3-6.5 3.8-9z" /></svg>Глобальный трафарет <small>Для всех игроков</small></div>
                         <div id="global-stencil-drop" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;transition:.2s;margin-bottom:8px;" data-onclick="document.getElementById('admin-stencil-file').click()">
                             <div style="font-size:22px"><svg class="icon icon-fill" viewBox="0 0 14 12" xmlns="http://www.w3.org/2000/svg"><path d="M12 0H2C1.46974 0.000579017 0.961373 0.211479 0.586426 0.586426C0.211479 0.961373 0.000579017 1.46974 0 2V10C0.000579017 10.5303 0.211479 11.0386 0.586426 11.4136C0.961373 11.7885 1.46974 11.9994 2 12H12C12.5303 11.9994 13.0386 11.7885 13.4136 11.4136C13.7885 11.0386 13.9994 10.5303 14 10V2C13.9994 1.46974 13.7885 0.961373 13.4136 0.586426C13.0386 0.211479 12.5303 0.000579017 12 0ZM9.5 2C9.79667 2 10.0867 2.08797 10.3334 2.2528C10.58 2.41762 10.7723 2.65189 10.8858 2.92597C10.9994 3.20006 11.0291 3.50166 10.9712 3.79264C10.9133 4.08361 10.7704 4.35088 10.5607 4.56066C10.3509 4.77044 10.0836 4.9133 9.79264 4.97118C9.50166 5.02906 9.20006 4.99935 8.92597 4.88582C8.65189 4.77229 8.41762 4.58003 8.2528 4.33336C8.08797 4.08668 8 3.79667 8 3.5C8.00041 3.1023 8.15858 2.72101 8.4398 2.4398C8.72101 2.15858 9.1023 2.00041 9.5 2ZM2 11C1.73478 11 1.48043 10.8946 1.29289 10.7071C1.10536 10.5196 1 10.2652 1 10V7.88656L3.96375 5.25219C4.2497 4.99858 4.62159 4.86354 5.00364 4.87457C5.38569 4.8856 5.74916 5.04188 6.02 5.31156L8.04969 7.33687L4.38656 11H2ZM13 10C13 10.2652 12.8946 10.5196 12.7071 10.7071C12.5196 10.8946 12.2652 11 12 11H5.80094L9.59531 7.20562C9.86396 6.97717 10.2049 6.8513 10.5575 6.85039C10.9102 6.84947 11.2517 6.97356 11.5216 7.20063L13 8.4325V10Z" /></svg></div>
                             <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите для выбора трафарета</p>
                         </div>
                         <input type="file" id="admin-stencil-file" accept="image/*" style="display:none" data-onchange="handleAdminGlobalStencil(event)">
                         <button class="btn btn-secondary" id="btn-clear-global-stencil" data-onclick="clearGlobalStencil()">Снять глобальный трафарет</button>
+                        </section>
 
-                        <div class="section-sep"></div>
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Курсоры игроков (глобально)</div>
+                        <section class="canvas-admin-card canvas-admin-cursors">
+                        <div class="canvas-admin-card-title">Курсоры игроков <small>Глобальная настройка</small></div>
                         <div class="setting-row" style="padding-top:0">
                             <div><div class="setting-label">Отображать курсоры</div><div class="setting-desc">Все клиенты увидят флажки других игроков</div></div>
                             <div class="toggle" id="admin-toggle-cursors" data-onclick="adminToggleCursors()"></div>
                         </div>
-                        <div class="section-sep"></div>
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Очистить холст</div>
+                        </section>
+
+                        <section class="canvas-admin-danger" id="canvas-danger-zone">
+                        <div class="canvas-admin-danger-content" id="canvas-danger-content">
+                        <div class="canvas-admin-danger-title">Опасные действия</div>
                         <button class="btn btn-danger" data-onclick="adminClearCanvas()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16" /><path d="M9 7V4h6v3" /><path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" /><path d="M10 11v6" /><path d="M14 11v6" /></svg> Очистить весь холст</button>
 
-                        <div class="section-sep"></div>
-                        <div style="border:1px solid #ef4444;border-radius:12px;padding:14px;background:rgba(239,68,68,.08);">
-                            <div style="font-size:11px;font-weight:700;color:#ef4444;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px;">⚠️ Опасная зона — перед мероприятием</div>
-                            <p style="font-size:11px;color:var(--text2);margin-bottom:10px;line-height:1.5;">Полностью очищает холст, все статистики, уровни, монеты, ачивки, кланы, новости и чат. Удаляет всех обычных игроков — остаются только админ-аккаунты (тоже обнулённые). Необратимо!</p>
+                        <div class="canvas-admin-reset">
+                            <div class="canvas-admin-reset-copy"><div>Полный сброс проекта</div><p>Полностью очищает холст, все статистики, уровни, монеты, ачивки, кланы, новости и чат. Удаляет всех обычных игроков — остаются только админ-аккаунты (тоже обнулённые). Необратимо!</p></div>
                             <button class="btn btn-danger" data-onclick="adminFullReset()" style="width:100%"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 6h18" /><path d="M8 6V4h8v2" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6" /><path d="M14 11v6" /><circle cx="12" cy="2" r="1" fill="currentColor" stroke="none" /></svg> Полный сброс проекта</button>
                         </div>
+                        </div>
+                        <div class="canvas-danger-lock" id="canvas-danger-lock">
+                            <div class="canvas-danger-lock-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></svg></div>
+                            <div><strong>Опасные действия заблокированы</strong><span>Введите код, чтобы временно открыть доступ</span></div>
+                            <div class="canvas-danger-lock-input"><input class="form-input" id="canvas-danger-password" type="password" inputmode="numeric" maxlength="4" placeholder="Код"><button class="btn btn-danger" type="button" data-onclick="unlockCanvasDangerZone()">Открыть</button></div>
+                        </div>
+                        </section>
                     </div>
 
                     <div id="admin-tab-broadcast" style="display:none">
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Сообщение всем</div>
-                        <textarea class="broadcast-input" id="broadcast-msg" rows="3" placeholder="Введите сообщение..."></textarea>
-                        <button class="btn btn-primary" data-onclick="adminBroadcast()" style="margin-bottom:14px"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg> Отправить всем</button>
-                        <div class="section-sep"></div>
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">Личное сообщение</div>
-                        <div class="form-group"><input class="form-input" id="dm-target" placeholder="Имя пользователя"></div>
-                        <div class="form-group"><input class="form-input" id="dm-msg" placeholder="Сообщение"></div>
-                        <button class="btn btn-secondary" data-onclick="adminSendDM()">Отправить</button>
+                        <div class="admin-messages-layout">
+                            <section class="admin-message-card admin-message-broadcast">
+                                <div class="admin-message-card-head"><div class="admin-message-card-icon">📣</div><div><strong>Объявление всем</strong><span>Появится у всех игроков в чате</span></div></div>
+                                <textarea class="broadcast-input" id="broadcast-msg" rows="5" placeholder="Напишите важное объявление..."></textarea>
+                                <button class="btn btn-primary admin-message-send" data-onclick="adminBroadcast()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M3 10v4h3l5 4V6L6 10H3z" /><path d="M16 9a4 4 0 0 1 0 6" /><path d="M19 7a7 7 0 0 1 0 10" /></svg> Отправить объявление</button>
+                            </section>
+                            <section class="admin-message-card admin-message-direct">
+                                <div class="admin-message-card-head"><div class="admin-message-card-icon">✉️</div><div><strong>Личное сообщение</strong><span>Выберите игрока, затем напишите сообщение</span></div></div>
+                                <input type="hidden" id="dm-target">
+                                <div class="admin-dm-picker">
+                                    <div class="admin-dm-picker-top"><input class="form-input" id="admin-dm-search" placeholder="Найти игрока..." data-oninput="filterAdminDMPlayers()"><button class="admin-dm-refresh" type="button" data-onclick="refreshAdminDMPlayers()" title="Обновить игроков">↻</button></div>
+                                    <div class="admin-dm-selected" id="admin-dm-selected">Выберите получателя из списка</div>
+                                    <div class="admin-dm-players" id="admin-dm-players"><div class="admin-dm-empty">Загрузка игроков…</div></div>
+                                </div>
+                                <textarea class="broadcast-input" id="dm-msg" rows="3" placeholder="Текст личного сообщения..."></textarea>
+                                <button class="btn btn-secondary admin-message-send" data-onclick="adminSendDM()">Отправить игроку</button>
+                            </section>
+                        </div>
                     </div>
 
                     <div id="admin-tab-stats" style="display:none">
@@ -1162,23 +1195,24 @@
                         </div>
                     </div>
 
-                    <div id="admin-tab-news" style="display:none">
+                    <div id="admin-tab-news" class="news-admin" style="display:none">
                         <div id="admin-news-list-wrap">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                                <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">Новости и события</div>
-                                <button class="btn btn-primary btn-sm" data-onclick="openNewsAdminForm(null)">+ Добавить</button>
+                            <div class="news-admin-toolbar">
+                                <span class="news-admin-count" id="admin-news-count">0 публикаций</span>
+                                <button class="btn btn-primary btn-sm" data-onclick="openNewsAdminForm(null)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 5v14M5 12h14"/></svg>Новая новость</button>
                             </div>
                             <div id="admin-news-list"><div style="color:var(--text3);text-align:center;padding:20px;">Загрузка...</div></div>
                         </div>
 
                         <div id="admin-news-form" style="display:none">
-                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;">
-                                <div id="admin-news-form-title" style="font-size:13px;font-weight:700;color:var(--text1);">Новая новость</div>
-                                <div class="panel-close" style="position:static" data-onclick="closeNewsAdminForm()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12" /><path d="M18 6L6 18" /></svg></div>
+                            <div class="news-editor-toolbar">
+                                <button class="news-editor-back" type="button" data-onclick="closeNewsAdminForm()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="m15 18-6-6 6-6"/></svg>К публикациям</button>
+                                <div id="admin-news-form-title">Новая новость</div>
+                                <button class="news-editor-close" type="button" data-onclick="closeNewsAdminForm()" aria-label="Закрыть редактор"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
                             </div>
 
                             <!-- Содержание -->
-                            <div class="adm-card">
+                            <div class="adm-card news-editor-content">
                                 <div class="adm-card-head">
                                     <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="4" width="14" height="16" rx="2" /><path d="M7 8h6" /><path d="M7 11.5h6" /><path d="M7 15h3" /></svg></div>
                                     <div class="adm-card-title-wrap">
@@ -1192,7 +1226,7 @@
                             </div>
 
                             <!-- Оформление -->
-                            <div class="adm-card">
+                            <div class="adm-card news-editor-style">
                                 <div class="adm-card-head">
                                     <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="13.5" cy="6.5" r="1.5" /><circle cx="17.5" cy="10.5" r="1.5" /><circle cx="8.5" cy="7.5" r="1.5" /><circle cx="6.5" cy="12.5" r="1.5" /><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c1 0 1.8-.8 1.8-1.8 0-.5-.2-.9-.5-1.2-.3-.3-.5-.7-.5-1.2 0-1 .8-1.8 1.8-1.8H16c3.3 0 6-2.7 6-6 0-4.4-4.5-8-10-8z" /></svg></div>
                                     <div class="adm-card-title-wrap">
@@ -1228,7 +1262,7 @@
                             </div>
 
                             <!-- Фон панели — не менять логику/поведение -->
-                            <div class="adm-card">
+                            <div class="adm-card news-editor-background">
                                 <div class="adm-card-head">
                                     <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="9" r="1.5" fill="currentColor" stroke="none" /><path d="M21 15l-5.5-5.5L9 16l-2.5-2.5L3 17" /></svg></div>
                                     <div class="adm-card-title-wrap">
@@ -1254,7 +1288,7 @@
                             </div>
 
                             <!-- Таймер события — свёрнуто по умолчанию -->
-                            <details class="adm-card" id="na-card-timer">
+                            <details class="adm-card news-editor-option" id="na-card-timer">
                                 <summary>
                                     <div class="adm-card-head">
                                         <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="13" r="8" /><path d="M12 9v4l3 2" /><path d="M10 2h4" /><path d="M12 2v2.5" /></svg></div>
@@ -1273,7 +1307,7 @@
                             </details>
 
                             <!-- Видимость элементов слайда — свёрнуто по умолчанию -->
-                            <details class="adm-card" id="na-card-visibility">
+                            <details class="adm-card news-editor-option" id="na-card-visibility">
                                 <summary>
                                     <div class="adm-card-head">
                                         <div class="adm-card-icon"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></svg></div>
@@ -1292,138 +1326,162 @@
                                 </div>
                             </details>
 
-                            <div style="display:flex;gap:8px;margin-top:4px;">
+                            <div class="news-editor-actions">
                                 <button class="btn btn-secondary" data-onclick="closeNewsAdminForm()">Отмена</button>
-                                <button class="btn btn-primary" data-onclick="saveNewsAdmin()">💾 Сохранить</button>
+                                <button class="btn btn-primary" data-onclick="saveNewsAdmin()"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 4h11l3 3v13H5z"/><path d="M8 4v6h8V4M8 20v-6h8v6"/></svg>Сохранить новость</button>
                             </div>
                         </div>
                     </div>
 
-                    <div id="admin-tab-lockdown" style="display:none">
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">🔒 Локаут Пиксель Батла</div>
-                        <p style="font-size:11px;color:var(--text3);margin:0 0 12px;">Пока локаут активен, обычные игроки видят экран блокировки с таймером вместо холста. Админы работают как обычно. Ровно в указанное время доступ откроется автоматически у всех.</p>
+                    <div id="admin-tab-lockdown" class="lockdown-admin" style="display:none">
+                        <div id="admin-lockdown-status" class="lockdown-status is-open"><span class="lockdown-status-dot"></span><div><strong>Пиксель Батл открыт</strong><small>Игроки могут размещать пиксели</small></div></div>
 
-                        <div id="admin-lockdown-status" style="padding:10px 12px;border-radius:10px;margin-bottom:14px;font-size:12px;font-weight:600;">—</div>
+                        <div class="lockdown-admin-grid">
+                            <section class="lockdown-admin-section">
+                                <div class="lockdown-section-head"><span>Сообщение игрокам</span><small>Покажем на экране паузы</small></div>
+                                <textarea class="form-input" id="admin-lockdown-message" rows="4" maxlength="220" placeholder="Скоро вернёмся! Идёт подготовка к новому сезону."></textarea>
+                            </section>
+                            <section class="lockdown-admin-section lockdown-duration-section">
+                                <div class="lockdown-section-head"><span>Длительность</span><small>Открытие произойдёт автоматически</small></div>
+                                <div class="lockdown-duration-input"><input class="form-input" id="admin-lockdown-minutes" type="number" min="1" value="60"><span>минут</span></div>
+                                <div class="lockdown-presets" aria-label="Быстрый выбор длительности">
+                                    <button type="button" data-minutes="15" data-onclick="adminSetLockdownMinutes(this.dataset.minutes)">15 мин</button>
+                                    <button type="button" data-minutes="60" data-onclick="adminSetLockdownMinutes(this.dataset.minutes)">1 час</button>
+                                    <button type="button" data-minutes="180" data-onclick="adminSetLockdownMinutes(this.dataset.minutes)">3 часа</button>
+                                </div>
+                            </section>
+                        </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Сообщение для игроков</label>
-                            <textarea class="form-input" id="admin-lockdown-message" rows="2" placeholder="Скоро вернёмся! Идёт подготовка к новому сезону."></textarea>
+                        <div class="lockdown-admin-actions">
+                            <button class="btn btn-danger" data-onclick="adminSetLockdown(true)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M7 10V7a5 5 0 0 1 10 0v3"/></svg>Закрыть Пиксель Батл</button>
+                            <button class="btn btn-secondary" data-onclick="adminSetLockdown(false)"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M5 12a7 7 0 1 0 2-5"/><path d="M5 4v4h4"/></svg>Открыть немедленно</button>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label">Закрыть на сколько минут</label>
-                            <input class="form-input" id="admin-lockdown-minutes" type="number" min="1" value="60">
-                        </div>
-                        <button class="btn btn-danger" data-onclick="adminSetLockdown(true)" style="margin-bottom:8px;">🔒 Закрыть Пиксель Батл</button>
-                        <button class="btn btn-secondary" data-onclick="adminSetLockdown(false)">🔓 Открыть немедленно</button>
                     </div>
 
                     <div id="admin-tab-ads" style="display:none">
-                        <div style="font-size:11px;font-weight:600;color:var(--text2);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px;">📢 Реклама</div>
-                        <p style="font-size:11px;color:var(--text3);margin:0 0 12px;">Картинка + ссылка показываются игрокам с заданным интервалом. Пользователь может закрыть рекламу — она вернётся через указанный интервал.</p>
-
-                        <div class="setting-row" style="padding-top:0">
-                            <div><div class="setting-label">Реклама включена</div><div class="setting-desc">Показывать баннер/попап игрокам</div></div>
-                            <div class="toggle" id="admin-ads-toggle" data-onclick="this.classList.toggle('on')"></div>
+                        <div class="ads-admin-head">
+                            <div class="ads-admin-status">
+                                <div><div class="setting-label">Реклама включена</div><div class="setting-desc">Показывать баннер или попап игрокам</div></div>
+                                <div class="toggle" id="admin-ads-toggle" data-onclick="this.classList.toggle('on')"></div>
+                            </div>
                         </div>
 
-                        <div class="form-group">
-                            <label class="form-label">Тип рекламы</label>
-                            <select class="form-input" id="admin-ads-type">
-                                <option value="banner">Баннер (под шапкой)</option>
-                                <option value="popup">Попап (по центру экрана)</option>
-                            </select>
-                        </div>
+                        <div class="ads-admin-grid">
+                            <section class="ads-admin-section ads-admin-media">
+                                <div class="ads-admin-section-head"><span>КРЕАТИВ</span><small>Изображение объявления</small></div>
+                                <div id="ads-admin-drop" data-onclick="document.getElementById('admin-ads-file').click()" class="ads-admin-drop">
+                                    <div class="ads-admin-drop-icon">🖼️</div>
+                                    <strong>Загрузить изображение</strong>
+                                    <span>Нажмите, чтобы выбрать файл</span>
+                                </div>
+                                <input type="file" id="admin-ads-file" accept="image/*" style="display:none" data-onchange="handleAdsAdminImage(event)">
+                                <img id="admin-ads-preview" class="ads-admin-preview" alt="Предпросмотр рекламы" style="display:none">
+                            </section>
 
-                        <div id="ads-admin-drop" data-onclick="document.getElementById('admin-ads-file').click()" style="border:2px dashed var(--border2);border-radius:12px;padding:18px;text-align:center;cursor:pointer;margin-bottom:8px;">
-                            <div style="font-size:22px">🖼️</div>
-                            <p style="font-size:12px;color:var(--text2);margin-top:4px">Нажмите, чтобы загрузить картинку рекламы</p>
+                            <section class="ads-admin-section ads-admin-settings">
+                                <div class="ads-admin-section-head"><span>ПАРАМЕТРЫ</span><small>Где и как часто показывать</small></div>
+                                <div class="form-group">
+                                    <label class="form-label">Формат показа</label>
+                                    <select class="form-input" id="admin-ads-type">
+                                        <option value="banner">Баннер под шапкой</option>
+                                        <option value="popup">Попап по центру экрана</option>
+                                    </select>
+                                </div>
+                                <div class="form-group ads-admin-interval">
+                                    <label class="form-label">Повторный показ</label>
+                                    <div class="ads-admin-input-suffix"><input class="form-input" id="admin-ads-interval" type="number" min="1" value="5"><span>мин.</span></div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label">Ссылка перехода</label>
+                                    <input class="form-input" id="admin-ads-link" placeholder="https://...">
+                                </div>
+                            </section>
                         </div>
-                        <input type="file" id="admin-ads-file" accept="image/*" style="display:none" data-onchange="handleAdsAdminImage(event)">
-                        <img id="admin-ads-preview" alt="preview" style="display:none;max-width:100%;border-radius:8px;margin-bottom:8px;">
-
-                        <div class="form-group">
-                            <label class="form-label">Ссылка (куда ведёт реклама)</label>
-                            <input class="form-input" id="admin-ads-link" placeholder="https://...">
-                        </div>
-                        <div class="form-group">
-                            <label class="form-label">Интервал показа (минуты)</label>
-                            <input class="form-input" id="admin-ads-interval" type="number" min="1" value="5">
-                        </div>
-                        <button class="btn btn-primary" data-onclick="adminSaveAds()">Сохранить настройки рекламы</button>
+                        <div class="ads-admin-footer"><button class="btn btn-primary" data-onclick="adminSaveAds()">Сохранить рекламу</button></div>
                     </div>
 
                     <div id="admin-tab-timelapse" style="display:none">
-
-                        <!-- Статус записи -->
-                        <div class="tl-rec-card">
-                            <div class="tl-rec-header">
-                                <div class="tl-rec-dot idle" id="tl-rec-dot"></div>
-                                <div class="tl-rec-card-text">
-                                    <div class="tl-rec-title" id="tl-rec-title">Запись не ведётся</div>
-                                    <div class="tl-rec-sub" id="tl-rec-info">Нажми «Начать», чтобы запустить тайм-лапс холста</div>
+                        <div class="tl-admin-head">
+                            <div class="tl-rec-card">
+                                <div class="tl-rec-header">
+                                    <div class="tl-rec-dot idle" id="tl-rec-dot"></div>
+                                    <div class="tl-rec-card-text">
+                                        <div class="tl-rec-title" id="tl-rec-title">Запись не ведётся</div>
+                                        <div class="tl-rec-sub" id="tl-rec-info">Нажми «Начать», чтобы запустить тайм-лапс холста</div>
+                                    </div>
+                                    <button class="tl-icon-btn" id="tl-refresh-btn" data-onclick="tlRefreshStatus()" title="Обновить статус">↺</button>
+                                    <div class="tl-rec-actions">
+                                        <button class="tl-btn tl-btn-primary" id="tl-rec-start" data-onclick="tlStartRecording()">▶ Начать запись</button>
+                                        <button class="tl-btn tl-btn-danger" id="tl-rec-stop" disabled data-onclick="tlStopServer()">■ Остановить</button>
+                                    </div>
                                 </div>
-                                <button class="tl-icon-btn" id="tl-refresh-btn" data-onclick="tlRefreshStatus()" title="Обновить статус">↺</button>
-                            </div>
-                            <div class="tl-rec-actions">
-                                <button class="tl-btn tl-btn-primary" id="tl-rec-start" data-onclick="tlStartRecording()">▶ Начать</button>
-                                <button class="tl-btn tl-btn-danger" id="tl-rec-stop" disabled data-onclick="tlStopServer()">■ Стоп</button>
-                            </div>
-                            <div class="tl-rec-hint">R2 · автосейв каждые 5 мин или 10 000 пикселей</div>
-                        </div>
-
-                        <!-- Список сессий -->
-                        <div class="tl-section">
-                            <div class="tl-section-head">
-                                <span>📂 Записанные сессии</span>
-                                <button class="tl-btn tl-btn-ghost tl-btn-sm" id="tl-load-btn" data-onclick="tlLoadSessions()">↻ Обновить</button>
-                            </div>
-                            <div id="tl-session-list" class="tl-session-list">
-                                <div class="tl-empty-hint">Нажми «Обновить», чтобы увидеть записанные сессии</div>
                             </div>
                         </div>
 
-                        <!-- Плеер (скрыт до выбора сессии) -->
-                        <div id="tl-player-section" class="tl-player-section" style="display:none">
-                            <div class="tl-section-sep"></div>
+                        <div class="tl-admin-workspace">
+                            <aside class="tl-library">
+                                <div class="tl-library-head">
+                                    <div><span class="tl-library-title">Сессии</span><span class="tl-library-count" id="tl-session-count">0</span></div>
+                                    <button class="tl-icon-btn" id="tl-load-btn" data-onclick="tlLoadSessions()" title="Обновить список">↻</button>
+                                </div>
+                                <div class="tl-library-caption">Выберите запись для предпросмотра</div>
+                                <div id="tl-session-list" class="tl-session-list">
+                                    <div class="tl-empty-hint">Загрузите список записей</div>
+                                </div>
+                            </aside>
 
-                            <button class="tl-btn tl-btn-primary tl-btn-full" id="tl-prepare-btn" data-onclick="tlLoadAndPrepare()">
-                                ⬇ Загрузить сессию
-                            </button>
-
-                            <div class="tl-load-track"><div id="tl-load-bar" class="tl-load-fill" style="width:0%"></div></div>
-
-                            <!-- tl-player-core: переносится целиком в fullscreen-оверлей и обратно -->
-                            <div id="tl-player-core">
-                                <div id="tl-canvas-wrap" class="tl-canvas-wrap">
-                                    <button class="tl-fullscreen-btn" id="tl-fullscreen-btn" data-onclick="tlToggleFullscreen()" title="На весь экран">⛶</button>
-                                    <canvas id="tl-canvas"></canvas>
+                            <section id="tl-player-section" class="tl-player-section" style="display:none">
+                                <div class="tl-player-head">
+                                    <div>
+                                        <div class="tl-player-kicker">ВЫБРАННАЯ СЕССИЯ</div>
+                                        <div id="tl-selected-session-title" class="tl-selected-session-title">—</div>
+                                        <div id="tl-selected-session-meta" class="tl-selected-session-meta"></div>
+                                    </div>
+                                    <button class="tl-btn tl-btn-primary" id="tl-prepare-btn" data-onclick="tlLoadAndPrepare()">↓ Загрузить в плеер</button>
                                 </div>
 
-                                <div class="tl-progress-wrap">
-                                    <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
-                                        <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
-                                    </div>
-                                    <div id="tl-progress-label" class="tl-progress-label">0 / 0</div>
-                                </div>
+                                <div class="tl-load-track"><div id="tl-load-bar" class="tl-load-fill" style="width:0%"></div></div>
 
-                                <div class="tl-controls-row">
-                                    <div class="tl-ctrl-buttons">
-                                        <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало">⏮</button>
-                                        <button class="tl-ctrl-btn tl-ctrl-play tl-play-btn-sync" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза">▶</button>
-                                        <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
-                                        <button class="tl-ctrl-btn" id="tl-video-export-btn" disabled data-onclick="tlOpenVideoExport()" title="Экспорт в MP4/WebM видео">🎥</button>
+                                <!-- tl-player-core: переносится целиком в fullscreen-оверлей и обратно -->
+                                <div id="tl-player-core">
+                                    <div id="tl-canvas-wrap" class="tl-canvas-wrap">
+                                        <button class="tl-fullscreen-btn" id="tl-fullscreen-btn" data-onclick="tlToggleFullscreen()" title="На весь экран">⛶</button>
+                                        <canvas id="tl-canvas"></canvas>
                                     </div>
-                                    <div class="tl-speed-group">
-                                        <button class="tl-speed-btn" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
-                                        <button class="tl-speed-btn" data-speed="2" data-onclick="tlSetSpeed(2)">×2</button>
-                                        <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
-                                        <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
-                                        <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
-                                        <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
-                                        <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
+
+                                    <div class="tl-progress-wrap tl-mini-progress-wrap">
+                                        <div class="tl-mini-progress-meta"><span>ПРОГРЕСС СЕССИИ</span><span id="tl-progress-label" class="tl-progress-label">0 / 0</span></div>
+                                        <div id="tl-progress-bar-bg" class="tl-progress-bg" data-onclick="tlSeek(event)">
+                                            <div id="tl-progress-fill" class="tl-progress-fill" style="width:0%"></div>
+                                        </div>
+                                    </div>
+
+                                    <div class="tl-controls-row">
+                                        <div class="tl-ctrl-buttons">
+                                            <button class="tl-ctrl-btn" id="tl-reset-btn" disabled data-onclick="tlResetPlayer()" title="В начало"><svg class="icon" viewBox="0 0 24 24"><path d="M6 6v12"/><path d="m18 7-7 5 7 5z"/></svg></button>
+                                            <button class="tl-ctrl-btn tl-ctrl-play tl-play-btn-sync" id="tl-play-btn" disabled data-onclick="tlPlay()" title="Играть/Пауза"><svg class="icon" viewBox="0 0 24 24"><path d="m9 6 8 6-8 6z" fill="currentColor" stroke="none"/></svg></button>
+                                        </div>
+                                        <div class="tl-speed-group">
+                                            <button class="tl-speed-btn active" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
+                                            <button class="tl-speed-btn" data-speed="2" data-onclick="tlSetSpeed(2)">×2</button>
+                                            <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
+                                            <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
+                                            <button class="tl-speed-btn" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
+                                            <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
+                                            <button class="tl-speed-btn" data-speed="2000" data-onclick="tlSetSpeed(2000)">×2k</button>
+                                        </div>
+                                        <div class="tl-mini-tools">
+                                            <button class="tl-ctrl-btn" id="tl-export-btn" disabled data-onclick="tlExportFrame()" title="Сохранить кадр PNG"><svg class="icon" viewBox="0 0 24 24"><path d="M4 7h4l1.4-2h5.2L16 7h4v12H4z"/><circle cx="12" cy="13" r="3.2"/></svg></button>
+                                            <button class="tl-ctrl-btn tl-mini-video-btn" id="tl-video-export-btn" disabled data-onclick="tlOpenVideoExport()" title="Экспорт в MP4/WebM видео"><svg class="icon" viewBox="0 0 24 24"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 5-3v10l-5-3z"/></svg></button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
+                            </section>
+                            <section id="tl-player-empty" class="tl-player-empty">
+                                <div class="tl-player-empty-icon">◌</div>
+                                <strong>Выберите запись</strong>
+                                <span>Она откроется здесь, без переходов и лишней прокрутки.</span>
+                            </section>
                         </div>
 
                         <div id="tl-status" class="tl-status-line"></div>
@@ -1450,33 +1508,37 @@
     <!-- ── Timelapse fullscreen HUD (поверх основного канваса) ── -->
     <div id="tl-fs-hud" class="tl-fs-hud" style="display:none">
         <div class="tl-fs-topbar">
-            <div class="tl-fs-badge">🎬 ТАЙМ-ЛАПС</div>
+            <div class="tl-fs-badge"><span class="tl-fs-live-dot"></span>ТАЙМ-ЛАПС</div>
             <div class="tl-fs-session-label" id="tl-fs-session-label"></div>
-            <div class="tl-fs-speed">
-                <button class="tl-speed-btn" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
-                <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
-                <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
-                <button class="tl-speed-btn" data-speed="50" data-onclick="tlSetSpeed(50)">×50</button>
-                <button class="tl-speed-btn active" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
-                <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
-            </div>
             <div class="tl-fs-topbar-actions">
-                <button class="tl-fs-hud-btn tl-autocenter-btn" id="tl-autocenter-btn" data-onclick="tlSetAutocenter(!tlAutocenter)" title="Автоцентрирование">⊕ Авто</button>
-                <button class="tl-fs-hud-btn tl-fs-hud-btn-close" data-onclick="tlExitFullscreen()" title="Выйти (Esc)">✕ Выйти</button>
+                <button class="tl-fs-hud-btn tl-fs-hud-btn-close" data-onclick="tlExitFullscreen()" title="Выйти (Esc)" aria-label="Выйти из таймлапса"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
             </div>
         </div>
-        <div class="tl-fs-timeline">
+        <div class="tl-fs-timeline" aria-label="Управление таймлапсом">
             <div class="tl-fs-progress-area">
+                <div class="tl-fs-progress-meta"><span>ПРОГРЕСС СЕССИИ</span><div class="tl-fs-progress-count tl-progress-label">0с / 0с</div></div>
                 <div class="tl-fs-progress-track" id="tl-fs-progress-bar-bg" data-onclick="tlSeekFs(event)">
                     <div class="tl-fs-progress-fill tl-progress-fill" style="width:0%"></div>
                 </div>
-                <div class="tl-fs-progress-count tl-progress-label">0с / 0с</div>
             </div>
-            <div class="tl-fs-controls">
-                <button class="tl-fs-ctrl" data-onclick="tlResetPlayer()" title="В начало">⏮</button>
-                <button class="tl-fs-ctrl tl-fs-ctrl-play tl-play-btn-sync" data-onclick="tlPlay()">▶</button>
-                <button class="tl-fs-ctrl" data-onclick="tlExportFrame()" title="Сохранить кадр PNG">📸</button>
-                <button class="tl-fs-ctrl" data-onclick="tlOpenVideoExport()" title="Экспорт в MP4/WebM">🎥</button>
+            <div class="tl-fs-nav-row">
+                <div class="tl-fs-controls">
+                    <button class="tl-fs-ctrl" data-onclick="tlResetPlayer()" title="В начало" aria-label="В начало"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M6 5v14M18 6 9 12l9 6z"/></svg></button>
+                    <button class="tl-fs-ctrl tl-fs-ctrl-play tl-play-btn-sync" data-onclick="tlPlay()" title="Воспроизвести или остановить" aria-label="Воспроизвести">▶</button>
+                </div>
+                <div class="tl-fs-speed" aria-label="Скорость воспроизведения">
+                    <button class="tl-speed-btn active" data-speed="1" data-onclick="tlSetSpeed(1)">×1</button>
+                    <button class="tl-speed-btn" data-speed="5" data-onclick="tlSetSpeed(5)">×5</button>
+                    <button class="tl-speed-btn" data-speed="10" data-onclick="tlSetSpeed(10)">×10</button>
+                    <button class="tl-speed-btn" data-speed="50" data-onclick="tlSetSpeed(50)">×50</button>
+                    <button class="tl-speed-btn" data-speed="100" data-onclick="tlSetSpeed(100)">×100</button>
+                    <button class="tl-speed-btn" data-speed="500" data-onclick="tlSetSpeed(500)">×500</button>
+                </div>
+                <div class="tl-fs-tools">
+                    <button class="tl-fs-hud-btn tl-autocenter-btn" id="tl-autocenter-btn" data-onclick="tlSetAutocenter(!tlAutocenter)" title="Автоцентрирование"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><circle cx="12" cy="12" r="7"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg><span>Авто</span></button>
+                    <button class="tl-fs-ctrl" data-onclick="tlExportFrame()" title="Сохранить кадр PNG" aria-label="Сохранить кадр"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h4l1.4-2h5.2L16 7h4v12H4z"/><circle cx="12" cy="13" r="3.5"/></svg></button>
+                    <button class="tl-fs-ctrl tl-fs-export-video" data-onclick="tlOpenVideoExport()" title="Экспорт видео" aria-label="Экспорт видео"><svg class="icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><rect x="3" y="6" width="12" height="12" rx="2"/><path d="m15 10 5-3v10l-5-3z"/></svg></button>
+                </div>
             </div>
         </div>
     </div>

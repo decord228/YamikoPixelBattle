@@ -172,6 +172,8 @@ let stencilRect = {x:0,y:0,w:100,h:100};
 let stencilOpacity = 0.6;
 let stencilHandle = null;
 let stencilDragOffset = {x:0,y:0};
+let stencilResizeStart = null;
+let stencilAspectLocked = true;
 let stencilImageData = null;
 let stencilOrigWidth = 0, stencilOrigHeight = 0;
 let savedStencils = []; // Сохраненные пресеты трафаретов

@@ -54,7 +54,9 @@ wrap.addEventListener('mousemove',e=>{
     const dx = e.clientX-dragStart.x, dy = e.clientY-dragStart.y;
     if (smoothCamera) { targetCamX = camStart.x + dx; targetCamY = camStart.y + dy; camX = targetCamX; camY = targetCamY; } 
     else { camX=camStart.x+dx; camY=camStart.y+dy; targetCamX=camX; targetCamY=camY; }
-    applyTransform(); updateAllCursorFlags();
+    applyTransform();
+    if (typeof scheduleCursorFlagsUpdate === 'function') scheduleCursorFlagsUpdate();
+    else updateAllCursorFlags();
     // БАГ (жалоба: "лейбл пикселя остаётся на месте, пока таскаю холст
     // зажатым колёсиком"): раньше updateInspector вообще не вызывался во
     // время панорамирования (ранний return тут), поэтому подсказка
@@ -111,10 +113,13 @@ wrap.addEventListener('mouseup',e=>{
   if (e.button===0) { isDragging=false; wrap.style.cursor='crosshair'; }
   
   let wasDraggingStencil = !!stencilHandle;
+  let wasResizingStencil = typeof stencilHandle === 'string' && stencilHandle.startsWith('resize-');
   isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
   
   // Сохраняем позицию трафарета в облако после перемещения
   if (wasDraggingStencil && typeof savePersonalStencil === 'function') {
+      if (wasResizingStencil && typeof updateStencilGraphic === 'function') updateStencilGraphic();
+      stencilResizeStart = null;
       savePersonalStencil();
   }
 
@@ -189,7 +194,9 @@ wrap.addEventListener('touchmove',e=>{
   }
   if (t.length===1&&isDragging){
     camX=camStart.x+(t[0].clientX-dragStart.x); camY=camStart.y+(t[0].clientY-dragStart.y);
-    targetCamX=camX;targetCamY=camY; applyTransform();updateAllCursorFlags();
+    targetCamX=camX;targetCamY=camY; applyTransform();
+    if (typeof scheduleCursorFlagsUpdate === 'function') scheduleCursorFlagsUpdate();
+    else updateAllCursorFlags();
   } else if (t.length===2&&touches.length===2){
     const d0=Math.hypot(touches[0].clientX-touches[1].clientX,touches[0].clientY-touches[1].clientY);
     const d1=Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
@@ -202,10 +209,13 @@ wrap.addEventListener('touchmove',e=>{
 wrap.addEventListener('touchend',e=>{
   if (e.touches.length===0){
     let wasDraggingStencil = !!stencilHandle;
+    let wasResizingStencil = typeof stencilHandle === 'string' && stencilHandle.startsWith('resize-');
     isDragging=false;isDraggingTool=false;adminActiveHandle=null;stencilHandle=null;
     
     if (wasDraggingStencil && typeof savePersonalStencil === 'function') {
-        savePersonalStencil();
+      if (wasResizingStencil && typeof updateStencilGraphic === 'function') updateStencilGraphic();
+      stencilResizeStart = null;
+      savePersonalStencil();
     }
 
     if (e.changedTouches.length===1){

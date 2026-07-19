@@ -129,14 +129,25 @@ function handleJSON(d) {
     showToast(msg,type);
   }
   else if (a==='leaderboard_data') {
-    renderLeaderboardPlayers(d.players||[]);
+    renderLeaderboardPlayers(d.players||[], d.you || null);
     renderLeaderboardClans(d.clans||[]);
   }
   else if (a==='admin_users_list') {
+    if (d.recipient_picker) {
+      if (typeof renderAdminDMPlayers === 'function') renderAdminDMPlayers(d.users||[]);
+      return;
+    }
+    // Список приходит асинхронно: ответ на старое открытие вкладки без
+    // фильтра может прийти уже после ответа на поиск и затирать его.
+    // Принимаем только результат для текущей строки поиска.
+    const q=(document.getElementById('admin-search')?.value||'').trim().toLocaleLowerCase('ru-RU');
+    const responseQuery=typeof d.query==='string' ? d.query.trim().toLocaleLowerCase('ru-RU') : '';
+    if (responseQuery !== q) return;
     allAdminUsers=d.users||[];
+    if (typeof renderAdminDMPlayers === 'function') renderAdminDMPlayers(allAdminUsers);
     adminPage=d.page||1;
     adminTotalPages=d.total_pages||1;
-    renderAdminUsers(allAdminUsers);
+    renderAdminUsers(q ? allAdminUsers.filter(u=>String(u.username||'').toLocaleLowerCase('ru-RU').includes(q)) : allAdminUsers);
     document.getElementById('admin-page-info').textContent=`${adminPage} / ${adminTotalPages}`;
     const navCount=document.getElementById('admin-nav-user-count');
     if (navCount) navCount.textContent = d.total!=null ? d.total : allAdminUsers.length;
@@ -167,6 +178,7 @@ function handleJSON(d) {
       currentXp=d.xp;
       updateProfileStats(currentPixels,currentXp);
     }
+    if (typeof requestLeaderboardRefresh === 'function') requestLeaderboardRefresh(120);
   }
   else if (a==='achievement_unlocked') {
     // Опыт (d.xp) больше НЕ начисляется тут автоматически — это просто
@@ -221,6 +233,7 @@ function handleJSON(d) {
     if (d.message) showToast(d.message, 'success');
     if (typeof updateProfileStats === 'function') updateProfileStats(currentPixels, currentXp);
     if (typeof renderProfileAchievementsTab === 'function') renderProfileAchievementsTab();
+    if (typeof requestLeaderboardRefresh === 'function') requestLeaderboardRefresh(120);
   }
   else if (a==='xp_cycle_reward_claimed') {
     claimedXpCycles = d.claimed_xp_cycles || claimedXpCycles;

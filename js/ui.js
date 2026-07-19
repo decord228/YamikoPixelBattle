@@ -829,6 +829,9 @@ function placePixel() {
     return;
   }
 
+  // Один обычный пиксель ждёт серверного подтверждения. Это исключает гонку,
+  // когда второй оптимистичный клик маскирует результат первого.
+  if (pendingPixelRequests.size>0){showToast('Проверяем предыдущий пиксель…','info');return;}
   if (cooldown>0){showToast(`Подождите ${Math.ceil(cooldown)}с`,'error');return;}
   const x=hoveredPixel.x,y=hoveredPixel.y;
   if (x<0||y<0||x>=canvasW||y>=canvasH){showToast('Наведите на холст','error');return;}
@@ -845,15 +848,39 @@ function placePixel() {
   if (requestId===null){showToast('Нет соединения с сервером','error');return;}
   const previousColor=canvasData[y*canvasW+x];
   canvasData[y*canvasW+x]=colorToPlace;
-  pendingPixelRequests.set(requestId,{x,y,previousColor,placedColor:colorToPlace,createdAt:Date.now()});
+  const pending={x,y,previousColor,placedColor:colorToPlace,createdAt:Date.now(),timeoutId:null};
+  // WebSocket.send означает только, что браузер принял пакет в очередь. Если
+  // сервер не подтвердил его, игрок не должен получать ложный кулдаун.
+  pending.timeoutId=setTimeout(()=>{
+    const timedOut=pendingPixelRequests.get(requestId);
+    if (!timedOut) return;
+    pendingPixelRequests.delete(requestId);
+    rollbackPendingPixel(timedOut, timedOut.previousColor);
+    // Сервер мог принять пиксель, а ответ потерялся по дороге. Запрашиваем
+    // снимок только для сверки, не отправляя установку повторно вслепую.
+    sendJSON({action:'get_canvas_snapshot'});
+    showToast('Пиксель не подтверждён. Проверьте соединение','error');
+  }, 3000);
+  pendingPixelRequests.set(requestId,pending);
   // Сразу записываем себя в кэш авторов — не ждём ответа сервера
   pixelOwnerCache.set(`${x},${y}`, { username: currentUser, emoji: currentEmoji, avatar: currentAvatar });
   renderPixel(x,y,colorToPlace);
   sessionPixels++;
   updateProfileStats(currentPixels+1,currentXp+1);
   spawnPixelFlash(x,y);
-  startCooldown();
   if (soundEnabled) playClick();
+}
+
+function rollbackPendingPixel(pending, color) {
+  if (!pending) return;
+  if (pending.timeoutId) clearTimeout(pending.timeoutId);
+  canvasData[pending.y*canvasW+pending.x]=Number.isInteger(color)?color:pending.previousColor;
+  pixelOwnerCache.delete(`${pending.x},${pending.y}`);
+  renderPixel(pending.x,pending.y,canvasData[pending.y*canvasW+pending.x]);
+  sessionPixels=Math.max(0,sessionPixels-1);
+  if (typeof updateProfileStats === 'function') {
+    updateProfileStats(Math.max(0,currentPixels-1),Math.max(0,currentXp-1));
+  }
 }
 
 function sendPixel(x,y,cidx) {
@@ -866,14 +893,16 @@ function sendPixel(x,y,cidx) {
   return requestId;
 }
 
-function startCooldown() {
-  cooldown=cooldownTime;
+function startCooldown(serverSeconds) {
+  cooldown=Math.max(0, Number.isFinite(serverSeconds) ? serverSeconds : cooldownTime);
+  const cooldownDuration=Math.max(0.05,cooldown);
+  if (cooldown<=0) { updatePlaceStatus(); return; }
   document.getElementById('place-btn').disabled=true;
   updatePlaceStatus();
   if (cooldownTimer) clearInterval(cooldownTimer);
   cooldownTimer=setInterval(()=>{
     cooldown-=0.05;
-    const ratio=1-(cooldown/cooldownTime);
+    const ratio=1-(cooldown/cooldownDuration);
     document.getElementById('place-btn-fill').style.transform=`scaleX(${Math.max(0,Math.min(1,ratio))})`;
     if (cooldown<=0){
       cooldown=0;

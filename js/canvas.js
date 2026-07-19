@@ -365,20 +365,40 @@ function renderOverlayNow() {
   }
 
   // Бомбочки / Расходники
-  if (!stencilEditMode && activeItem && hoveredPixel.x >= 0) {
+  if (!stencilEditMode && activeItem && hoveredPixel.x >= 0 && hoveredPixel.x < canvasW && hoveredPixel.y >= 0 && hoveredPixel.y < canvasH) {
     let size = 3;
     if (activeItem === 'rainbow_5x5') size = 5;
     else if (activeItem === 'eraser_10x10') size = 10;
     else if (activeItem === 'mirror_stamp') size = 5;
     const half = Math.floor(size / 2);
-    
-    octx.fillStyle = 'rgba(245,158,11,0.25)';
+    const isBomb = activeItem === 'bomb_3x3' || activeItem === 'rainbow_5x5';
+    const accent = activeItem === 'eraser_10x10' ? '#fb7185' : isBomb ? '#fbbf24' : '#60a5fa';
+
+    octx.fillStyle = isBomb ? 'rgba(251,191,36,0.34)' : `${accent}55`;
     octx.fillRect(hoveredPixel.x - half, hoveredPixel.y - half, size, size);
-    octx.strokeStyle = '#f59e0b';
-    octx.lineWidth = 2 / camZoom;
+    octx.strokeStyle = accent;
+    octx.lineWidth = 2.5 / camZoom;
     octx.setLineDash([4 / camZoom, 2 / camZoom]);
     octx.strokeRect(hoveredPixel.x - half, hoveredPixel.y - half, size, size);
     octx.setLineDash([]);
+
+    // На обзорном масштабе 3×3 физически занимает всего несколько пикселей.
+    // Добавляем экранную метку, не меняя реальную привязку области к клеткам.
+    if (size * camZoom < 26) {
+      const cx = hoveredPixel.x + .5, cy = hoveredPixel.y + .5;
+      octx.save();
+      octx.fillStyle = 'rgba(9,9,12,.88)';
+      octx.strokeStyle = accent;
+      octx.lineWidth = 2 / camZoom;
+      octx.beginPath();
+      octx.arc(cx, cy, 11 / camZoom, 0, Math.PI * 2);
+      octx.fill(); octx.stroke();
+      octx.fillStyle = '#fff';
+      octx.font = `700 ${9 / camZoom}px Inter, sans-serif`;
+      octx.textAlign = 'center'; octx.textBaseline = 'middle';
+      octx.fillText(`${size}×${size}`, cx, cy);
+      octx.restore();
+    }
   }
 
   octx.restore();

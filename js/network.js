@@ -1,13 +1,23 @@
 ﻿'use strict';
 
 // ── WEBSOCKET ──
+let reconnectTimer = null;
 function connect() {
-  if (ws&&ws.readyState===WebSocket.OPEN) ws.close();
+  const previousSocket=ws;
+  if (previousSocket && (previousSocket.readyState===WebSocket.OPEN || previousSocket.readyState===WebSocket.CONNECTING)) {
+    // Закрытие старого сокета не должно через onclose переподключить игру ещё
+    // раз и случайно закрыть уже новый рабочий сокет.
+    previousSocket._replacedByNewConnection=true;
+    try { previousSocket.close(); } catch (_) {}
+  }
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer=null; }
   updateConnStatus(false);
-  ws = new WebSocket(typeof getWsUrl === 'function' ? getWsUrl() : WS_URL);
-  ws.binaryType = 'arraybuffer';
+  const socket = new WebSocket(typeof getWsUrl === 'function' ? getWsUrl() : WS_URL);
+  ws = socket;
+  socket.binaryType = 'arraybuffer';
 
-  ws.onopen = () => {
+  socket.onopen = () => {
+    if (ws!==socket) return;
     updateConnStatus(true);
     document.getElementById('connecting-screen').classList.add('hide');
     if (typeof websiteDiscordToken !== 'undefined' && websiteDiscordToken) {
@@ -15,24 +25,33 @@ function connect() {
     }
   };
 
-  ws.onclose = () => {
+  socket.onclose = () => {
+    if (ws!==socket || socket._replacedByNewConnection) return;
     updateConnStatus(false);
     if (isLoggedIn){isLoggedIn=false;showToast('Соединение потеряно. Переподключение...','error');}
     document.getElementById('online-count').textContent='0';
     clearCursorFlags();
-    if (!isReconnecting){isReconnecting=true;setTimeout(()=>{isReconnecting=false;connect();},3500);}
+    if (!isReconnecting){
+      isReconnecting=true;
+      reconnectTimer=setTimeout(()=>{reconnectTimer=null;isReconnecting=false;connect();},3500);
+    }
   };
 
-  ws.onerror=()=>{};
+  socket.onerror=()=>{};
 
-  ws.onmessage=(e)=>{
+  socket.onmessage=(e)=>{
+    if (ws!==socket) return;
     if (e.data instanceof ArrayBuffer) handleBinary(new Uint8Array(e.data));
     else try{handleJSON(JSON.parse(e.data));}catch(_){}
   };
 }
 
 function sendJSON(obj){if(ws&&ws.readyState===WebSocket.OPEN)ws.send(JSON.stringify(obj));}
-function reconnectWS(){connect();}
+function reconnectWS(){
+  if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer=null; }
+  isReconnecting=false;
+  connect();
+}
 
 function updateConnStatus(ok){
   const el=document.getElementById('conn-status');
@@ -49,7 +68,12 @@ function applyCanvasSnapshot(data) {
   }
   canvasData.set(data);
   // Снимок — авторитетное состояние сервера: старые локальные ожидания больше не актуальны.
-  if (typeof pendingPixelRequests !== 'undefined') pendingPixelRequests.clear();
+  if (typeof pendingPixelRequests !== 'undefined') {
+    for (const pending of pendingPixelRequests.values()) {
+      if (pending?.timeoutId) clearTimeout(pending.timeoutId);
+    }
+    pendingPixelRequests.clear();
+  }
   fullRender(data);
   renderOverlay();
 }
@@ -129,18 +153,21 @@ function handleJSON(d) {
     const pending=pendingPixelRequests.get(d.id);
     if (!pending) return;
     pendingPixelRequests.delete(d.id);
-    if (!d.ok) {
+    if (pending.timeoutId) clearTimeout(pending.timeoutId);
+    if (d.ok) {
+      // Только серверное подтверждение расходует ход игрока. Сервер передаёт
+      // относительный интервал через пару timestamp'ов, поэтому часы клиента
+      // не могут продлить или сократить кулдаун.
+      const seconds=(Number.isFinite(d.nextAllowedAt)&&Number.isFinite(d.serverNow))
+        ? Math.max(0,(d.nextAllowedAt-d.serverNow)/1000) : undefined;
+      if (typeof startCooldown === 'function') startCooldown(seconds);
+    } else {
       const color=Number.isInteger(d.color)?d.color:pending.previousColor;
-      canvasData[pending.y*canvasW+pending.x]=color;
-      pixelOwnerCache.delete(`${pending.x},${pending.y}`);
-      renderPixel(pending.x,pending.y,color);
-      // Эти счётчики были показаны оптимистично вместе с пикселем.
-      // При отказе возвращаем только локальное предположение, не ожидая перезахода.
-      sessionPixels=Math.max(0,sessionPixels-1);
-      if (typeof updateProfileStats === 'function') {
-        updateProfileStats(Math.max(0,currentPixels-1),Math.max(0,currentXp-1));
-      }
-      if (d.reason && d.reason!=='cooldown') showToast(`Пиксель не поставлен: ${d.reason}`,'error');
+      if (typeof rollbackPendingPixel === 'function') rollbackPendingPixel(pending,color);
+      const seconds=(Number.isFinite(d.nextAllowedAt)&&Number.isFinite(d.serverNow))
+        ? Math.max(0,(d.nextAllowedAt-d.serverNow)/1000) : 0;
+      if (d.reason==='cooldown' && seconds>0 && typeof startCooldown === 'function') startCooldown(seconds);
+      else if (d.reason) showToast(`Пиксель не поставлен: ${d.reason}`,'error');
     }
   }
   else if (a==='toast') {

@@ -95,7 +95,7 @@ wrap.addEventListener('mousemove',e=>{
       _lastCursorSendAt = performance.now();
       lastSentCursor={x:px,y:py}; sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
     }
-  }
+  } else if (activeItem) renderOverlay();
 });
 
 wrap.addEventListener('mouseup',e=>{

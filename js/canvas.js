@@ -680,6 +680,19 @@ function applyZoom(nz, cx, cy) {
   targetCamY=cy-(cy-targetCamY)*(nz/oldZoom);
   targetCamZoom=nz;
   markZoomRendering();
+  // Пока зажато перемещение, следующий mousemove считает смещение от
+  // dragStart/camStart. После zoom старые базовые координаты уже неверны:
+  // они повторно применяли старый перенос и выбрасывали камеру далеко за холст.
+  // Фиксируем новую базу ровно в точке масштабирования и не смешиваем
+  // инерцию zoom с перетаскиванием.
+  if (typeof isDragging !== 'undefined' && isDragging) {
+    camX=targetCamX; camY=targetCamY; camZoom=targetCamZoom;
+    if (typeof dragStart !== 'undefined') dragStart={x:cx,y:cy};
+    if (typeof camStart !== 'undefined') camStart={x:targetCamX,y:targetCamY};
+    applyTransform();
+    scheduleCursorFlagsUpdate();
+    return;
+  }
   if (!smoothCamera) {
     camX = targetCamX; camY = targetCamY; camZoom = targetCamZoom;
     applyTransform();

@@ -4,8 +4,7 @@
 let _lastCursorSendAt = 0;
 wrap.addEventListener('mousedown',e=>{
   if (e.button===1||e.button===2){
-    isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
-    targetCamX=camX;targetCamY=camY;
+    isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:targetCamX,y:targetCamY};
     wrap.style.cursor='grabbing';e.preventDefault();
     if (typeof startDragRaf === 'function') startDragRaf();
   } else if (e.button===0){
@@ -18,8 +17,8 @@ wrap.addEventListener('mousedown',e=>{
     if (stencilActive && stencilEditMode){ if (handleStencilStart(e.clientX,e.clientY)){isDraggingTool=true;} return; }
     if (tool==='admin_image'||adminImagePreviewMode){
       if (!handleToolInteractionStart(e.clientX,e.clientY)){
-        isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:camX,y:camY};
-        targetCamX=camX;targetCamY=camY; wrap.style.cursor='grabbing';
+        isDragging=true;dragStart={x:e.clientX,y:e.clientY};camStart={x:targetCamX,y:targetCamY};
+        wrap.style.cursor='grabbing';
         if (typeof startDragRaf === 'function') startDragRaf();
       }
       return;
@@ -180,7 +179,7 @@ wrap.addEventListener('touchstart',e=>{
     if (stencilActive && stencilEditMode){ if (handleStencilStart(touches[0].clientX,touches[0].clientY)){isDraggingTool=true;} return; }
     if (tool==='admin_image'||adminImagePreviewMode){ if (handleToolInteractionStart(touches[0].clientX,touches[0].clientY)) return; }
     isDragging=true;dragStart={x:touches[0].clientX,y:touches[0].clientY};
-    camStart={x:camX,y:camY};targetCamX=camX;targetCamY=camY;
+    camStart={x:targetCamX,y:targetCamY};
     if (typeof startDragRaf === 'function') startDragRaf();
   }
 },{passive:false});

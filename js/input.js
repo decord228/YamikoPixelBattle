@@ -43,6 +43,12 @@ wrap.addEventListener('mousedown',e=>{
     }
     const p=getCanvasPos(e.clientX,e.clientY);
     let px=Math.floor(p.x),py=Math.floor(p.y);
+    // Даже без движения мыши сервер получает актуальную позицию до клика.
+    if (isLoggedIn && px >= 0 && px < canvasW && py >= 0 && py < canvasH) {
+      _lastCursorSendAt = performance.now();
+      lastSentCursor={x:px,y:py};
+      sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
+    }
     if (tool==='pencil'||tool==='stencil') placePixel();
     else if (tool==='eyedrop') eyedrop(px,py);
   }
@@ -221,7 +227,13 @@ wrap.addEventListener('touchend',e=>{
       const t=e.changedTouches[0]; const dx=t.clientX-dragStart.x,dy=t.clientY-dragStart.y;
       if (Math.hypot(dx,dy)<10&&(tool==='pencil'||(!stencilEditMode && tool==='stencil'))){
         const p=getCanvasPos(t.clientX,t.clientY);
-        hoveredPixel={x:Math.floor(p.x),y:Math.floor(p.y)};placePixel();
+        const px=Math.floor(p.x),py=Math.floor(p.y);
+        hoveredPixel={x:px,y:py};
+        if (isLoggedIn && px >= 0 && px < canvasW && py >= 0 && py < canvasH) {
+          lastSentCursor={x:px,y:py};
+          sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
+        }
+        placePixel();
       }
     }
   }

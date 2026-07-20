@@ -2,6 +2,35 @@
 
 // ── WEBSOCKET ──
 let reconnectTimer = null;
+let canvasSnapshotTimer = null;
+
+function clearCanvasSnapshotWait() {
+  if (canvasSnapshotTimer) { clearTimeout(canvasSnapshotTimer); canvasSnapshotTimer=null; }
+  awaitingCanvasSnapshot=false;
+}
+
+function expectCanvasSnapshot() {
+  if (canvasSnapshotTimer) clearTimeout(canvasSnapshotTimer);
+  awaitingCanvasSnapshot=true;
+  // Заголовок и бинарный снимок приходят подряд. Если бинарный пакет потерялся,
+  // не оставляем клиент в состоянии, где следующая обычная пачка ошибочно
+  // будет принята за полный холст.
+  canvasSnapshotTimer=setTimeout(()=>{
+    canvasSnapshotTimer=null;
+    if (!awaitingCanvasSnapshot) return;
+    awaitingCanvasSnapshot=false;
+    sendJSON({action:'get_canvas_snapshot'});
+  }, 5000);
+}
+
+function clearPendingPixelTimers() {
+  if (typeof pendingPixelRequests === 'undefined') return;
+  for (const pending of pendingPixelRequests.values()) {
+    if (pending?.timeoutId) clearTimeout(pending.timeoutId);
+  }
+  pendingPixelRequests.clear();
+}
+
 function connect() {
   const previousSocket=ws;
   if (previousSocket && (previousSocket.readyState===WebSocket.OPEN || previousSocket.readyState===WebSocket.CONNECTING)) {
@@ -27,6 +56,8 @@ function connect() {
 
   socket.onclose = () => {
     if (ws!==socket || socket._replacedByNewConnection) return;
+    clearCanvasSnapshotWait();
+    clearPendingPixelTimers();
     updateConnStatus(false);
     if (isLoggedIn){isLoggedIn=false;showToast('Соединение потеряно. Переподключение...','error');}
     document.getElementById('online-count').textContent='0';
@@ -68,12 +99,7 @@ function applyCanvasSnapshot(data) {
   }
   canvasData.set(data);
   // Снимок — авторитетное состояние сервера: старые локальные ожидания больше не актуальны.
-  if (typeof pendingPixelRequests !== 'undefined') {
-    for (const pending of pendingPixelRequests.values()) {
-      if (pending?.timeoutId) clearTimeout(pending.timeoutId);
-    }
-    pendingPixelRequests.clear();
-  }
+  clearPendingPixelTimers();
   fullRender(data);
   renderOverlay();
 }
@@ -81,7 +107,7 @@ function applyCanvasSnapshot(data) {
 function handleBinary(data) {
   const len=data.length;
   if (awaitingCanvasSnapshot) {
-    awaitingCanvasSnapshot = false;
+    clearCanvasSnapshotWait();
     applyCanvasSnapshot(data);
   }
   else if (len===canvasW*canvasH){applyCanvasSnapshot(data);}
@@ -104,7 +130,7 @@ function handleJSON(d) {
 
   if (a==='canvas_snapshot') {
     if (d.w && d.h && (d.w !== canvasW || d.h !== canvasH)) resizeCanvas(d.w, d.h);
-    awaitingCanvasSnapshot = true;
+    expectCanvasSnapshot();
   }
 
   else if (a==='auth_success'||a==='auth_ok') {
@@ -526,6 +552,17 @@ function handleJSON(d) {
     if (d.cooldownMs) {
       const slider = document.getElementById('admin-cooldown-slider');
       if (slider) { slider.value = d.cooldownMs; updateCooldownLabel(d.cooldownMs); }
+    }
+    const persist=d.board_persist;
+    const saveEl=document.getElementById('stat-board-save');
+    const saveDetail=document.getElementById('stat-board-save-detail');
+    if (persist && saveEl && saveDetail) {
+      const ok=!persist.last_error && persist.last_success_at>0;
+      saveEl.textContent=ok ? '● Сохранено' : (persist.dirty ? '● Ожидание' : '● Нет данных');
+      saveEl.style.color=ok ? 'var(--green,#34d399)' : 'var(--red,#fb7185)';
+      const at=persist.last_success_at ? new Date(persist.last_success_at).toLocaleTimeString('ru-RU') : 'ещё не было';
+      const suffix=persist.last_error ? ` Ошибка: ${persist.last_error}` : '';
+      saveDetail.textContent=`Последний снимок: ${at}. Ошибок подряд: ${persist.consecutive_failures||0}.${suffix}`;
     }
   }
   else if (a==='move_saved') {

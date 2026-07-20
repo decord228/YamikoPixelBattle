@@ -44,10 +44,10 @@ wrap.addEventListener('mousedown',e=>{
     const p=getCanvasPos(e.clientX,e.clientY);
     let px=Math.floor(p.x),py=Math.floor(p.y);
     // Даже без движения мыши сервер получает актуальную позицию до клика.
-    if (isLoggedIn && px >= 0 && px < canvasW && py >= 0 && py < canvasH) {
+    if (e.isTrusted && isLoggedIn && px >= 0 && px < canvasW && py >= 0 && py < canvasH) {
       _lastCursorSendAt = performance.now();
       lastSentCursor={x:px,y:py};
-      sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
+      sendJSON({action:'cursor',x:px,y:py,c:selectedColor,trusted:true,clan_only:clanShareCursor&&!serverCursorsEnabled});
     }
     if (tool==='pencil'||tool==='stencil') placePixel();
     else if (tool==='eyedrop') eyedrop(px,py);
@@ -97,9 +97,9 @@ wrap.addEventListener('mousemove',e=>{
   const px=Math.floor(p.x),py=Math.floor(p.y);
   if (px!==hoveredPixel.x||py!==hoveredPixel.y){
     hoveredPixel={x:px,y:py}; renderOverlay(); updateInspector(e.clientX,e.clientY,px,py); updateCoordsBar(px,py);
-    if (isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y) && performance.now() - _lastCursorSendAt >= 50){
+    if (e.isTrusted && isLoggedIn&&(px!==lastSentCursor.x||py!==lastSentCursor.y) && performance.now() - _lastCursorSendAt >= 50){
       _lastCursorSendAt = performance.now();
-      lastSentCursor={x:px,y:py}; sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
+      lastSentCursor={x:px,y:py}; sendJSON({action:'cursor',x:px,y:py,c:selectedColor,trusted:true,clan_only:clanShareCursor&&!serverCursorsEnabled});
     }
   } else if (activeItem) renderOverlay();
 });
@@ -229,9 +229,9 @@ wrap.addEventListener('touchend',e=>{
         const p=getCanvasPos(t.clientX,t.clientY);
         const px=Math.floor(p.x),py=Math.floor(p.y);
         hoveredPixel={x:px,y:py};
-        if (isLoggedIn && px >= 0 && px < canvasW && py >= 0 && py < canvasH) {
+        if (e.isTrusted && isLoggedIn && px >= 0 && px < canvasW && py >= 0 && py < canvasH) {
           lastSentCursor={x:px,y:py};
-          sendJSON({action:'cursor',x:px,y:py,c:selectedColor,clan_only:clanShareCursor&&!serverCursorsEnabled});
+          sendJSON({action:'cursor',x:px,y:py,c:selectedColor,trusted:true,clan_only:clanShareCursor&&!serverCursorsEnabled});
         }
         placePixel();
       }

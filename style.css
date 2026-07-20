@@ -12598,3 +12598,22 @@ body.mini-mode #backdrop {
     #admin-tab-timelapse .tl-rec-sub { display: none; }
     #admin-tab-timelapse .tl-rec-actions .tl-btn { padding: 0 7px; font-size: 8px; }
 }
+
+/* ── ANTI-BOT TURNSTILE ── */
+#turnstile-gate {
+    display:none; position:fixed; inset:0; z-index:1000000;
+    align-items:center; justify-content:center; padding:20px;
+    background:rgba(5,6,12,.76); backdrop-filter:blur(8px);
+}
+#turnstile-gate.show { display:flex; }
+.turnstile-card {
+    width:min(390px,100%); padding:26px 24px 22px; border-radius:18px;
+    background:linear-gradient(145deg,#181a2a,#10111a); border:1px solid rgba(129,140,248,.42);
+    box-shadow:0 24px 80px rgba(0,0,0,.65); text-align:center;
+}
+.turnstile-icon { font-size:28px; margin-bottom:8px; }
+.turnstile-title { font-family:'Unbounded',sans-serif; font-size:14px; font-weight:700; color:#f5f5ff; }
+.turnstile-text { margin:11px auto 18px; max-width:310px; color:var(--text3); font-size:12px; line-height:1.55; }
+#turnstile-widget { display:flex; justify-content:center; min-height:65px; }
+.turnstile-status { margin-top:10px; color:var(--text3); font-size:11px; min-height:16px; }
+.turnstile-status.error { color:#ff7b8a; }

@@ -193,8 +193,15 @@ function handleJSON(d) {
       const seconds=(Number.isFinite(d.nextAllowedAt)&&Number.isFinite(d.serverNow))
         ? Math.max(0,(d.nextAllowedAt-d.serverNow)/1000) : 0;
       if (d.reason==='cooldown' && seconds>0 && typeof startCooldown === 'function') startCooldown(seconds);
+      else if (d.reason==='restricted') showToast('Действие временно недоступно','error');
       else if (d.reason) showToast(`Пиксель не поставлен: ${d.reason}`,'error');
     }
+  }
+  else if (a==='turnstile_required') {
+    if (typeof openTurnstileChallenge === 'function') openTurnstileChallenge();
+  }
+  else if (a==='turnstile_result') {
+    if (typeof handleTurnstileResult === 'function') handleTurnstileResult(d);
   }
   else if (a==='toast') {
     const msg=d.message||'Уведомление';

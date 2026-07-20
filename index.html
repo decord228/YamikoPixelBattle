@@ -5,12 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>Pixel Battle · d3cord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://challenges.cloudflare.com">
     <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Unbounded:wght@300;400;700;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script>window.BUILD_V = '20260721-112';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
+    <script>window.BUILD_V = '20260721-115';</script><!-- ← единая версия для CSS и JS, меняй только тут при каждом деплое -->
     <link rel="stylesheet" id="main-stylesheet" href="">
     <link rel="stylesheet" id="skins-stylesheet" href="">
     <script>document.getElementById('main-stylesheet').href = `style.css?v=${window.BUILD_V}`;</script>
     <script>document.getElementById('skins-stylesheet').href = `skins.css?v=${window.BUILD_V}`;</script>
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
     <!--
       ВАЖНО про Discord Activity: discordsays.com проксирует ваш фронтенд
       через свой CDN/прокси-слой, который кэширует статику по URL гораздо
@@ -1561,7 +1563,7 @@
         const v = window.BUILD_V || '0'; // ← единая версия задаётся один раз в <head> (window.BUILD_V)
         const scripts = [
         'js/config.js', 'js/state.js', 'js/canvas.js', 'js/modal.js',
-        'js/network.js', 'js/ui.js', 'js/input.js', 'js/events.js', 'js/main.js'
+        'js/network.js', 'js/turnstile.js', 'js/ui.js', 'js/input.js', 'js/events.js', 'js/main.js'
         ].map(s => `${s}?v=${v}`);
         for (const src of scripts) {
         await new Promise((resolve, reject) => {
@@ -1585,6 +1587,17 @@
          style.css, #toast-wrap) сравнивается напрямую со всеми остальными
          и тосты всегда поверх всего интерфейса. -->
     <div id="toast-wrap"></div>
+
+    <!-- Показывается только по команде сервера после антибот-срабатывания. -->
+    <div id="turnstile-gate" role="dialog" aria-modal="true" aria-labelledby="turnstile-title">
+        <div class="turnstile-card">
+            <div class="turnstile-icon">🛡️</div>
+            <div class="turnstile-title" id="turnstile-title">Подтверждение действия</div>
+            <div class="turnstile-text">Подтвердите действие, чтобы продолжить рисовать.</div>
+            <div id="turnstile-widget"></div>
+            <div id="turnstile-status" class="turnstile-status">Загружаем проверку…</div>
+        </div>
+    </div>
 
     <script>document.write(`<script src="timelapse_client.js?v=${window.BUILD_V}"><\/script>`);</script>
 </body>

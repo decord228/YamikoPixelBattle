@@ -817,7 +817,6 @@ function selectColor(idx) {
   document.querySelectorAll('.color-cell').forEach((c,i)=>c.classList.toggle('selected',i===idx));
   const p = PALETTE[idx];
   document.getElementById('color-name-bar').textContent = p ? `${p.n} · ${p.c.toUpperCase()}` : '';
-  if (isLoggedIn) sendJSON({action:'cursor',x:hoveredPixel.x,y:hoveredPixel.y,c:idx});
 }
 
 function placePixel() {

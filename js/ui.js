@@ -3922,6 +3922,7 @@ function renderAdminUserModal(u){
 
     <div class="aum-section-title">Модерация</div>
     <div class="aum-action-grid">
+      <button class="aum-action-btn aum-good" data-onclick="aumTimeout(0)">✅ Снять таймаут</button>
       <button class="aum-action-btn" data-onclick="aumTimeout(300)">⏳ Таймаут 5м</button>
       <button class="aum-action-btn" data-onclick="aumTimeout(3600)">⏳ Таймаут 1ч</button>
       <button class="aum-action-btn ${u.banned?'aum-good':'aum-danger'}" data-onclick="aumToggleBan(${!!u.banned})">${u.banned?'✅ Разбанить':'🚫 Забанить'}</button>

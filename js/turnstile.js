@@ -5,6 +5,23 @@
 const TURNSTILE_SITEKEY = '0x4AAAAAAD5WCVYAgPNYBRnn';
 let turnstileWidgetId = null;
 let turnstileRenderWaiting = false;
+let turnstileDiscordBypassPending = false;
+
+function isDiscordActivityTurnstileContext() {
+  return typeof IS_DISCORD_ACTIVITY !== 'undefined' && IS_DISCORD_ACTIVITY === true;
+}
+
+// Discord Activity runs inside an embedded frame where Cloudflare's challenge
+// script is not available. Do not leave a real player in an endless loader:
+// the server keeps the suspicious-action record for manual review instead.
+function bypassUnavailableTurnstileInDiscord() {
+  if (!isDiscordActivityTurnstileContext() || turnstileDiscordBypassPending) return false;
+  turnstileDiscordBypassPending = true;
+  const gate = document.getElementById('turnstile-gate');
+  if (gate) gate.classList.remove('show');
+  sendJSON({ action:'turnstile_unavailable', source:'discord_activity' });
+  return true;
+}
 
 function turnstileSetStatus(message, isError=false) {
   const status = document.getElementById('turnstile-status');
@@ -14,6 +31,7 @@ function turnstileSetStatus(message, isError=false) {
 }
 
 function openTurnstileChallenge() {
+  if (bypassUnavailableTurnstileInDiscord()) return;
   const gate = document.getElementById('turnstile-gate');
   const holder = document.getElementById('turnstile-widget');
   if (!gate || !holder) return;
@@ -50,10 +68,11 @@ function openTurnstileChallenge() {
 
 function handleTurnstileResult(result) {
   const gate = document.getElementById('turnstile-gate');
+  turnstileDiscordBypassPending = false;
   if (result?.ok) {
     if (gate) gate.classList.remove('show');
     if (turnstileWidgetId !== null && window.turnstile) window.turnstile.reset(turnstileWidgetId);
-    showToast('Проверка пройдена. Спасибо!', 'success');
+    if (!result?.bypassed) showToast('Проверка пройдена. Спасибо!', 'success');
     return;
   }
   turnstileSetStatus(result?.message || 'Проверка не пройдена. Попробуйте ещё раз.', true);

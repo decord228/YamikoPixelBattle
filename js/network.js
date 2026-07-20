@@ -198,6 +198,7 @@ function handleJSON(d) {
     }
   }
   else if (a==='turnstile_required') {
+    if (typeof bypassUnavailableTurnstileInDiscord === 'function' && bypassUnavailableTurnstileInDiscord()) return;
     if (typeof openTurnstileChallenge === 'function') openTurnstileChallenge();
   }
   else if (a==='turnstile_result') {

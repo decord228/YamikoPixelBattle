@@ -607,17 +607,16 @@ let tlExportCancelled = false;
 
 // Определяем лучший поддерживаемый формат (MP4 предпочтителен — маленький файл,
 // широкая совместимость; если не поддерживается — WebM с VP9 или базовый WebM).
-function tlGetExportMimeType() {
-  const candidates = [
-    'video/mp4',
-    'video/webm;codecs=vp9',
-    'video/webm;codecs=vp8',
-    'video/webm',
-  ];
+function tlGetExportMimeType(format = 'auto') {
+  const candidates = format === 'mp4'
+    ? ['video/mp4;codecs=avc1.42E01E', 'video/mp4']
+    : format === 'webm'
+      ? ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm']
+      : ['video/mp4;codecs=avc1.42E01E', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm'];
   for (const mime of candidates) {
     if (MediaRecorder.isTypeSupported(mime)) return mime;
   }
-  return 'video/webm'; // последний fallback
+  return null;
 }
 
 function tlShowExportModal() {
@@ -653,6 +652,14 @@ function tlShowExportModal() {
             <button class="tl-speed-btn tl-exp-qual-btn" data-qual="2160"
               data-onclick="tlExpSelectQual(2160)">4K</button>
           </div>
+          <label style="display:block;margin-top:12px;margin-bottom:6px">Формат файла:</label>
+          <div style="display:flex;gap:6px">
+            <button class="tl-speed-btn tl-exp-format-btn" data-format="mp4"
+              data-onclick="tlExpSelectFormat('mp4')">MP4</button>
+            <button class="tl-speed-btn tl-exp-format-btn" data-format="webm"
+              data-onclick="tlExpSelectFormat('webm')">WebM</button>
+          </div>
+          <div id="tl-exp-format-hint" style="margin-top:7px;color:var(--text3);font-size:10px"></div>
           <div style="margin-top:14px">
             <button class="tl-btn tl-btn-primary" style="width:100%"
               data-onclick="tlStartExport()">▶ Начать экспорт</button>
@@ -676,10 +683,7 @@ function tlShowExportModal() {
   document.getElementById('tl-exp-settings').style.display = '';
   document.getElementById('tl-exp-progress-wrap').style.display = 'none';
   document.getElementById('tl-exp-title').textContent = 'Экспорт видео';
-  const mime = tlGetExportMimeType();
-  const ext  = mime.startsWith('video/mp4') ? 'MP4' : 'WebM';
-  document.getElementById('tl-exp-sub').textContent =
-    `Формат: ${ext} · ${tlEvents.length.toLocaleString()} событий`;
+  tlUpdateExportFormatControls();
 }
 
 function tlHideExportModal() {
@@ -689,6 +693,33 @@ function tlHideExportModal() {
 
 let _tlExpSpeed = 100;  // скорость экспорта
 let _tlExpQual  = 1080; // высота в пикселях выходного видео
+let _tlExpFormat = 'mp4';
+
+function tlUpdateExportFormatControls() {
+  const mp4Mime = tlGetExportMimeType('mp4');
+  const webmMime = tlGetExportMimeType('webm');
+  if (_tlExpFormat === 'mp4' && !mp4Mime) _tlExpFormat = 'webm';
+  if (_tlExpFormat === 'webm' && !webmMime && mp4Mime) _tlExpFormat = 'mp4';
+  document.querySelectorAll('.tl-exp-format-btn').forEach(button => {
+    const available = button.dataset.format === 'mp4' ? !!mp4Mime : !!webmMime;
+    button.disabled = !available;
+    button.classList.toggle('active', button.dataset.format === _tlExpFormat);
+    button.title = available ? '' : 'Этот формат не поддерживается вашим браузером';
+  });
+  const chosenMime = _tlExpFormat === 'mp4' ? mp4Mime : webmMime;
+  const ext = chosenMime?.startsWith('video/mp4') ? 'MP4' : 'WebM';
+  const sub = document.getElementById('tl-exp-sub');
+  const hint = document.getElementById('tl-exp-format-hint');
+  if (sub) sub.textContent = `Формат: ${ext} · ${tlEvents.length.toLocaleString()} событий`;
+  if (hint) hint.textContent = mp4Mime
+    ? 'MP4 совместим с большинством плееров. WebM обычно даёт меньший файл.'
+    : 'MP4 недоступен в этом браузере; используй WebM или открой экспорт в Chrome/Edge.';
+}
+function tlExpSelectFormat(format) {
+  if (!tlGetExportMimeType(format)) return;
+  _tlExpFormat = format;
+  tlUpdateExportFormatControls();
+}
 
 function tlExpSelectSpeed(s) {
   _tlExpSpeed = s;
@@ -708,7 +739,13 @@ async function tlStartExport() {
   document.getElementById('tl-exp-settings').style.display = 'none';
   document.getElementById('tl-exp-progress-wrap').style.display = '';
 
-  const mime   = tlGetExportMimeType();
+  const mime   = tlGetExportMimeType(_tlExpFormat);
+  if (!mime) {
+    showToast('Выбранный формат не поддерживается браузером', 'error');
+    document.getElementById('tl-exp-settings').style.display = '';
+    document.getElementById('tl-exp-progress-wrap').style.display = 'none';
+    return;
+  }
   const ext    = mime.startsWith('video/mp4') ? 'mp4' : 'webm';
   const FPS    = 60;
   const speed  = _tlExpSpeed;
@@ -808,7 +845,11 @@ async function tlStartExport() {
   const chunks = [];
   recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-  recorder.start(100); // запрашивать данные каждые 100 мс
+  // Не передаём timeslice. Нарезка WebM каждые 100 мс порождает
+  // фрагментированный поток без надёжной таблицы навигации: такой файл
+  // иногда воспроизводится, но не даёт перематывать. Один финальный Blob
+  // после stop() браузер закрывает корректными метаданными.
+  recorder.start();
 
   // Перебираем все события с правильным темпом: каждый «виртуальный» кадр
   // (1000ms / FPS мс реального времени = speed * (1000/FPS) мс сессии) рисуем.

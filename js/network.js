@@ -235,6 +235,12 @@ function handleJSON(d) {
   else if (a==='admin_user_detail') {
     if (typeof renderAdminUserModal === 'function') renderAdminUserModal(d.user);
   }
+  else if (a==='admin_antibot_logs') {
+    if (typeof renderAdminAntiBotLogs === 'function') renderAdminAntiBotLogs(d.logs||[]);
+  }
+  else if (a==='admin_antibot_log_reviewed') {
+    if (typeof loadAdminAntiBotLogs === 'function') loadAdminAntiBotLogs();
+  }
   else if (a==='admin_clans_list') {
     if (typeof renderAdminClans === 'function') renderAdminClans(d.clans||[]);
   }

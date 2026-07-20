@@ -8457,6 +8457,24 @@ details.adm-card {
     border-width: 1px;
 }
 
+/* Журнал подозрительной активности: это экран ручной модерации, а не
+   источник автоматических ограничений для игроков. */
+#admin-tab-antibot { max-width: 760px; }
+.antibot-review-list { display:grid; gap:10px; }
+.antibot-review-empty { padding:28px 14px; border:1px dashed var(--border2); border-radius:12px; color:var(--text3); text-align:center; }
+.antibot-review-card { padding:13px; border:1px solid var(--border2); border-radius:13px; background:var(--bg2); }
+.antibot-review-card.is-reviewed { opacity:.62; }
+.antibot-review-head { display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+.antibot-review-head strong { display:block; color:var(--text); font-size:13px; }
+.antibot-review-head span { display:block; margin-top:3px; color:var(--text3); font-size:10px; }
+.antibot-status { flex:none; padding:4px 7px; border:1px solid var(--border2); border-radius:999px; color:var(--text3); font-size:9px; font-weight:700; }
+.antibot-status.is-captcha { border-color:rgba(251,191,36,.45); color:#fbbf24; background:rgba(251,191,36,.08); }
+.antibot-reasons { display:flex; flex-wrap:wrap; gap:5px; margin-top:10px; }
+.antibot-reason { padding:4px 7px; border-radius:7px; color:#c7c9ff; background:rgba(129,140,248,.12); font-size:10px; }
+.antibot-review-meta,.antibot-review-coords { margin-top:8px; color:var(--text3); font:10px/1.45 'Space Mono',monospace; }
+.antibot-review-actions { display:flex; flex-wrap:wrap; gap:7px; margin-top:12px; }
+.antibot-review-actions .btn { min-height:30px; }
+
 /* ── УПРАВЛЕНИЕ РАЗМЕРОМ ТРАФАРЕТА ── */
 #stencil-editor-controls {
     position: fixed;

@@ -4094,6 +4094,55 @@ function adminSendDM(){
 }
 function prefillDM(username){switchAdminTab('broadcast');adminDMSelect(username);}
 function loadAdminStats(){ sendJSON({action:'admin_cmd',cmd:'admin_stats'}); }
+
+function loadAdminAntiBotLogs(){
+  sendJSON({action:'admin_cmd',cmd:'get_antibot_logs',limit:100});
+}
+function renderAdminAntiBotLogs(logs){
+  const root=document.getElementById('admin-antibot-logs');
+  const badge=document.getElementById('admin-nav-antibot-count');
+  if (!root) return;
+  const list=Array.isArray(logs)?logs:[];
+  const unread=list.filter(item=>!item.reviewed).length;
+  if (badge) badge.textContent=unread;
+  if (!list.length){
+    root.innerHTML='<div class="antibot-review-empty">Подозрительных серий пока нет.</div>';
+    return;
+  }
+  root.innerHTML=list.map(item=>{
+    const username=esc(item.username||'Неизвестный');
+    const date=item.createdAt?new Date(item.createdAt).toLocaleString('ru-RU'):'—';
+    const reasons=(item.reasons||[]).map(reason=>`<span class="antibot-reason">${esc(reason)}</span>`).join('') || '<span class="antibot-reason">нет описания</span>';
+    const metrics=item.metrics||{};
+    const interval=Number.isFinite(Number(metrics.mean_interval_ms))?`${Math.round(metrics.mean_interval_ms)} мс`:null;
+    const cv=Number.isFinite(Number(metrics.interval_cv))?`CV ${Number(metrics.interval_cv).toFixed(3)}`:null;
+    const coords=(item.sample||[]).slice(-6).map(point=>`${point.x},${point.y}`).join(' · ') || 'нет';
+    const id=esc(String(item._id||''));
+    return `<article class="antibot-review-card${item.reviewed?' is-reviewed':''}">
+      <div class="antibot-review-head"><div><strong>${username}</strong><span>${date}</span></div><span class="antibot-status ${item.captcha_required?'is-captcha':''}">${item.captcha_required?'CAPTCHA запрошена':'Только журнал'}</span></div>
+      <div class="antibot-reasons">${reasons}</div>
+      <div class="antibot-review-meta">${[interval,cv].filter(Boolean).join(' · ') || 'метрики недоступны'}</div>
+      <div class="antibot-review-coords">Последние цели: ${esc(coords)}</div>
+      <div class="antibot-review-actions">
+        <button class="btn btn-secondary btn-sm" data-onclick="openAdminUserProfile('${username}')">Открыть игрока</button>
+        <button class="btn btn-secondary btn-sm" data-onclick="adminAntiBotTimeout('${username}')">Таймаут 5м</button>
+        <button class="btn btn-danger btn-sm" data-onclick="adminAntiBotBan('${username}')">Забанить</button>
+        ${item.reviewed?'':`<button class="btn btn-ghost btn-sm" data-onclick="adminReviewAntiBotLog('${id}')">Отметить просмотренным</button>`}
+      </div>
+    </article>`;
+  }).join('');
+}
+function adminReviewAntiBotLog(id){
+  if (!id) return;
+  sendJSON({action:'admin_cmd',cmd:'review_antibot_log',params:{id}});
+}
+function adminAntiBotTimeout(username){
+  sendJSON({action:'admin_cmd',cmd:'timeout',target:username,params:300});
+}
+async function adminAntiBotBan(username){
+  const ok=await showConfirm(`Забанить ${username}?`,{title:'Бан игрока',icon:'🚫',danger:true,confirmText:'Забанить'});
+  if (ok) sendJSON({action:'admin_cmd',cmd:'ban',target:username});
+}
 function updateCooldownLabel(ms) {
   const secs = (parseInt(ms) / 1000).toFixed(1);
   document.getElementById('admin-cooldown-label').textContent = secs + 'с';
@@ -4202,7 +4251,7 @@ function playClick(){
   }catch(_){}
 }
 
-const ADMIN_TABS = ['users','canvas','broadcast','stats','clans','news','lockdown','ads','timelapse'];
+const ADMIN_TABS = ['users','antibot','canvas','broadcast','stats','clans','news','lockdown','ads','timelapse'];
 function switchAdminTab(tab){
   ADMIN_TABS.forEach(t=>{ const el=document.getElementById(`admin-tab-${t}`); if (el) el.style.display=t===tab?'':'none'; });
   document.querySelectorAll('#admin-sidenav .csn-item').forEach(el=>{ el.classList.toggle('active', el.dataset.tab===tab); });
@@ -4213,6 +4262,7 @@ function switchAdminTab(tab){
     el.classList.toggle('clan-content-fixed', tab === 'users' || tab === 'timelapse');
   });
   if (tab==='users') loadAdminUsers(adminPage);
+  if (tab==='antibot') loadAdminAntiBotLogs();
   if (tab==='broadcast') { renderAdminDMPlayers(); refreshAdminDMPlayers(); }
   if (tab==='stats') loadAdminStats();
   if (tab==='clans') loadAdminClans();

@@ -737,6 +737,41 @@ async function tlStartExport() {
   // Клонируем начальный кадр — не трогаем глобальные tlFrame/tlW/tlH
   let expW0 = tlOrigW, expH0 = tlOrigH;
   let expFrame = new Uint8Array(tlSnapshot);
+  // Палитра вычисляется один раз. Раньше drawExpFrame проходил по всему
+  // холсту и парсил HEX для каждого кадра; на 1024×1024 это миллионы
+  // операций и экспорт неизбежно пропускал визуальные состояния.
+  const expPaletteRgb = new Uint8ClampedArray(Math.max(256, PALETTE.length) * 3);
+  for (let i = 0; i < PALETTE.length; i++) {
+    const hex = PALETTE[i]?.c || '#000000';
+    expPaletteRgb[i * 3] = parseInt(hex.slice(1, 3), 16) || 0;
+    expPaletteRgb[i * 3 + 1] = parseInt(hex.slice(3, 5), 16) || 0;
+    expPaletteRgb[i * 3 + 2] = parseInt(hex.slice(5, 7), 16) || 0;
+  }
+  let expImage = null;
+
+  function rebuildExpImage(curW, curH) {
+    expImage = pixCtx.createImageData(curW, curH);
+    for (let i = 0; i < expFrame.length; i++) {
+      const colorOffset = expFrame[i] * 3;
+      const pixelOffset = i * 4;
+      expImage.data[pixelOffset] = expPaletteRgb[colorOffset];
+      expImage.data[pixelOffset + 1] = expPaletteRgb[colorOffset + 1];
+      expImage.data[pixelOffset + 2] = expPaletteRgb[colorOffset + 2];
+      expImage.data[pixelOffset + 3] = 255;
+    }
+  }
+
+  function setExpPixel(x, y, color, curW) {
+    const frameIndex = y * curW + x;
+    if (frameIndex < 0 || frameIndex >= expFrame.length) return;
+    expFrame[frameIndex] = color;
+    const colorOffset = color * 3;
+    const pixelOffset = frameIndex * 4;
+    expImage.data[pixelOffset] = expPaletteRgb[colorOffset];
+    expImage.data[pixelOffset + 1] = expPaletteRgb[colorOffset + 1];
+    expImage.data[pixelOffset + 2] = expPaletteRgb[colorOffset + 2];
+    expImage.data[pixelOffset + 3] = 255;
+  }
 
   // Функция «нарисовать expFrame на offCanvas с нужным масштабом»
   function drawExpFrame(curW, curH) {
@@ -751,19 +786,14 @@ async function tlStartExport() {
     if (offCanvas.width !== dstW || offCanvas.height !== dstH) {
       offCanvas.width  = dstW;
       offCanvas.height = dstH;
+      offCtx.imageSmoothingEnabled = false;
     }
 
-    const img = pixCtx.createImageData(curW, curH);
-    for (let i = 0; i < expFrame.length; i++) {
-      const hex = tlGetColor(expFrame[i]);
-      img.data[i*4]   = parseInt(hex.slice(1,3),16)||0;
-      img.data[i*4+1] = parseInt(hex.slice(3,5),16)||0;
-      img.data[i*4+2] = parseInt(hex.slice(5,7),16)||0;
-      img.data[i*4+3] = 255;
-    }
-    pixCtx.putImageData(img, 0, 0);
+    pixCtx.putImageData(expImage, 0, 0);
     offCtx.drawImage(pixCanvas, 0, 0, dstW, dstH);
   }
+
+  rebuildExpImage(expW0, expH0);
 
   // Захватываем поток с offCanvas (скорость захвата = FPS)
   const stream   = offCanvas.captureStream(FPS);
@@ -790,6 +820,7 @@ async function tlStartExport() {
 
   for (let frame = 0; frame <= totalFrames && !tlExportCancelled; frame++) {
     const virtualTime = frame * msPerFrame;
+    let frameChanged = frame === 0;
 
     // Применяем все события до virtualTime
     while (evIdx < tlEvents.length && tlEvents[evIdx].t <= virtualTime) {
@@ -803,12 +834,15 @@ async function tlStartExport() {
             grown[y * ev.w + x] = expFrame[y * curW + x];
         expFrame = grown;
         curW = ev.w; curH = ev.h;
+        rebuildExpImage(curW, curH);
+        frameChanged = true;
       } else {
-        expFrame[ev.y * curW + ev.x] = ev.c;
+        setExpPixel(ev.x, ev.y, ev.c, curW);
+        frameChanged = true;
       }
     }
 
-    drawExpFrame(curW, curH);
+    if (frameChanged) drawExpFrame(curW, curH);
 
     // Обновляем прогресс-бар примерно раз в 30 кадров (не тормозим UI)
     if (frame % 30 === 0) {
@@ -817,12 +851,14 @@ async function tlStartExport() {
       const pctEl = document.getElementById('tl-exp-pct');
       if (bar) bar.style.width = pct + '%';
       if (pctEl) pctEl.textContent = pct + '%';
-      // Уступаем UI-потоку, чтобы браузер мог перерисовать прогресс и
-      // MediaRecorder успел захватить кадры с captureStream
-      await new Promise(r => setTimeout(r, 0));
     }
+    // Важно: captureStream работает от реальных кадров браузера. Раньше
+    // экспорт отдавал поток только раз в 30 кадров, из-за чего видео
+    // повторяло один кадр и затем прыгало сразу на пачку пикселей.
+    await new Promise(requestAnimationFrame);
   }
 
+  const recorderStopped = new Promise(resolve => { recorder.onstop = resolve; });
   recorder.stop();
 
   if (tlExportCancelled) {
@@ -830,8 +866,8 @@ async function tlStartExport() {
     return;
   }
 
-  // Ждём onStop (финальный dataavailable), затем собираем файл
-  await new Promise(r => { recorder.onstop = r; });
+  // Ждём финальный dataavailable, затем собираем файл.
+  await recorderStopped;
   const blob = new Blob(chunks, { type: mime });
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
